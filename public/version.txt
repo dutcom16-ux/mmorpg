@@ -1,0 +1,3 @@
+MMORPG ONLINE
+build: 2026-11-06
+server: wss://mmorpg.iamjohnwoo12.workers.dev/ws/world
