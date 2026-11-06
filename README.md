@@ -20,6 +20,20 @@ Players open your `https://mmorpg.<your-name>.workers.dev` link, sign in, and se
 
 Every later push to the `main` branch redeploys automatically.
 
+## The Vercel link
+
+The same repository also deploys to Vercel. `vercel.json` tells Vercel to serve `public/` with no build step.
+
+In the Vercel project, open **Settings → Git** and connect **dutcom16-ux/mmorpg**.
+
+Vercel can't run the server itself. The game finds the server through this line in `public/index.html`:
+
+```html
+<meta name="mmo-server" content="wss://mmorpg.iamjohnwoo12.workers.dev/ws/world">
+```
+
+Because of that line, players on the Vercel link and the Cloudflare link share one world.
+
 ## Updating the game
 
 1. Rebuild the game in the main project: `python3 -I tools/inline_assets.py` writes `dist/web/`.
@@ -57,7 +71,7 @@ If it finds no server (for example on Vercel or a plain file host), it plays sin
 - `npm install`, then `npx wrangler dev`: runs the real Cloudflare setup locally at <http://localhost:8787>.
 - Or `npm i ws`, then `node tools/local-server.mjs`: a small stand-in that runs the same server code without Cloudflare.
 
-On localhost the game doesn't look for a server by itself. Open <http://localhost:8787/?server=ws://localhost:8787/ws/world> in two browser windows, using a private window for the second player.
+Because of the `mmo-server` line, a local copy joins the **live** world by default. To test against your local server instead, open <http://localhost:8787/?server=ws://localhost:8787/ws/world> in two browser windows, using a private window for the second player.
 
 ## Limits
 
