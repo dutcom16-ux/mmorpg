@@ -848,6 +848,7 @@ const JOBS = {
   voidblade:{name:'Void Blade',tier:2,icon:'specter',next:[]}, trickster:{name:'Trickster',tier:2,icon:'specter',next:[]}
 };
 const SECOND_JOB_REQ = 'Base 40 + Job 40';
+for(const j of Object.values(JOBS)) for(const n of j.next) if(JOBS[n]&&JOBS[n].tier===2){JOBS[n].line=JOBS[n].line||j.line;JOBS[n].resource=JOBS[n].resource||j.resource;}   // 2nd jobs keep their path's line
 
 /* Skywarden: the Gale Falcon is a companion with no levels of its own (pet leveling removed).
    Its built-in passive, Gale Sweep, makes it sweep-attack on its own while the Skywarden attacks;
@@ -1758,6 +1759,8 @@ const QUEST_INFO={
   ascension:{title:'The Ascension Trial',desc:'At Base Level 10 Elder Fin tests every Recruit before they may choose a path. Three Moss Boars, fearless and fat, stand between you and your first job.',reward:'Your first job (Vanguard, Elementalist, Wayfinder, Channeler or Specter)',obj:c=>{const n=(c.quests&&c.quests.boars)||0;return n>=3?'Return to Elder Fin and choose your path.':`Defeat Moss Boars in the Whispering Fields (${n}/3).`;}},
   firstSteps:{title:'First Steps',desc:'You woke beside the Central Waystone with no memory of the fall. Elder Fin is waiting by the fountain.',reward:'The way out of town',obj:'Speak with Elder Fin by the Central Waystone.'},
   waystone:{title:'Attune the Waystone',desc:'Every region has a Waystone. Touch Oakhaven\'s and the Sanctuary is bound to you.',reward:'Oakhaven bound to you',obj:'Touch the Central Waystone in the plaza.'},
+  ascension2:{title:'The Second Ascension',desc:'At Base 40 and Job 40 Elder Fin tests whether your craft is ready to split into a specialization. Three Magma Golems in the Scorched Badlands stand in the way.',reward:'Your second job',
+    obj:c=>{const n=(c.quests&&c.quests.golems)||0;return n>=3?'Return to Elder Fin and choose your specialization.':`Defeat Magma Golems in the Scorched Badlands (${n}/3). The portal is at Oakhaven's south gate.`;}},
   horizon:{title:'Cleaning the Horizon',desc:'The slimes of the Whispering Fields have grown bold. Elder Fin wants five portions of their gel.',reward:'120 EXP',obj:c=>{const n=(c.quests&&c.quests.slimes)||0;
     return n>=5?'Bring the slime gel back to Elder Fin.':`Hunt Slimes in the Whispering Fields (${n}/5). Take the portal at the east gate.`;}}
 };
@@ -1968,6 +1971,44 @@ const MOB_DEFS={
 /* numbers for a monster of this kind at this level (Slime Lv 2: 42 HP, hits 3-5, 14 EXP) */
 function mobStats(kind,lvl){const D=MOB_DEFS[kind],L=lvl||D.lvl,b=1.5+L*1.1;
   return {lvl:L,hp:Math.round(D.hp*(18+L*12)),atk:[Math.round(D.atk*b*.8),Math.round(D.atk*b*1.35)],exp:Math.round(D.exp*(4+L*5))};}
+/* the long road: hunting quests from Level 3 to 100, one at a time. Each starts by itself once you reach its level
+   (and the one before is done) and pays out the moment the last monster falls, wherever you are.
+   goals: [monster, map, how many]; level: reach that Base Level instead */
+const QUEST_CHAIN=[
+  {id:'turnips',lv:3,from:'farmer',title:'Turnip Revenge',desc:'Tobin\'s turnip patch is squashed flat, and he knows exactly who did it.',goals:[['slime','fields',10]]},
+  {id:'tusks',lv:6,from:'blacksmith',title:'Tusks for the Forge',desc:'Greta grinds Moss Boar tusks into polishing paste. She is running low.',goals:[['boar','fields',6]]},
+  {id:'windmill',lv:8,from:'courier',title:'The Windmill Rumour',desc:'Pip swears the slimes are massing by the old windmill, and the boars are guarding them. Thin them out.',goals:[['slime','fields',12],['boar','fields',4]]},
+  {id:'canopy',lv:11,from:'guard',title:'Into the Canopy',desc:'Captain Roderic wants a scout south of the Fields. The boars of the Echoing Canopy are bigger and meaner.',goals:[['boar','forest',8]]},
+  {id:'brook',lv:13,from:'innkeeper',title:'Trouble at the Brook',desc:'Bram\'s fish deliveries stopped. Brook Fishmen have claimed the stream in the Canopy.',goals:[['fishman','forest',10]]},
+  {id:'roots',lv:16,from:'scholar',title:'Whispering Roots',desc:'Master Orrin believes the Treants carry Aetherite dust in their bark. He needs samples.',goals:[['treant','forest',8]]},
+  {id:'canopyClear',lv:18,from:'guard',title:'Clearing the Canopy',desc:'The road south must stay open. Roderic wants the Canopy quiet before the caravans pass.',goals:[['treant','forest',6],['fishman','forest',6]]},
+  {id:'clouds',lv:21,from:'wanderer',title:'Chasing Clouds',desc:'Lia saw Cloud Sprites stealing travellers\' hats on Skyward Ridge. Teach them some manners.',goals:[['cloud','sky',12]]},
+  {id:'howls',lv:24,from:'guard',title:'Howls on the Ridge',desc:'Gale Wolves are hunting in packs along the Ridge. Roderic wants the packs broken.',goals:[['wolf','sky',10]]},
+  {id:'stoneWings',lv:27,from:'priestess',title:'Stone Wings',desc:'Sister Seraphine says the Gargoyles were temple guardians once. Lay them to rest.',goals:[['gargoyle','sky',8]]},
+  {id:'ridge',lv:29,from:'elder',title:'Master of the Ridge',desc:'Elder Fin wants proof you can hold the high road on your own.',goals:[['wolf','sky',10],['gargoyle','sky',8]]},
+  {id:'crabs',lv:31,from:'baker',title:'Crab Cakes',desc:'Mila has a recipe that needs Coral Crab meat, and a lot of it. Beyond the Ridge lie the Desolate Crags.',goals:[['crab','canyon',10]]},
+  {id:'stingers',lv:34,from:'alchemist',title:'Stinger Venom',desc:'Granny Hessa brews her strongest draughts from Sand Scorpion venom.',goals:[['scorpion','canyon',15]]},
+  {id:'nest',lv:37,from:'guard',title:'The Scorpion Nest',desc:'The Crags are crawling. Roderic wants the nest broken before it spreads.',goals:[['scorpion','canyon',25]]},
+  {id:'embers',lv:41,from:'scholar',title:'Ember Mischief',desc:'Ember Imps are setting the Scorched Badlands alight. Take the portal at Oakhaven\'s south gate.',goals:[['imp','fire',15]]},
+  {id:'cores',lv:44,from:'blacksmith',title:'Molten Cores',desc:'Greta can forge with a Magma Golem\'s core, if someone brings her ten.',goals:[['golem','fire',10]]},
+  {id:'cinder',lv:47,from:'guard',title:'Wings of Cinder',desc:'Cinder Drakes are raiding the Badlands roads. Ground them.',goals:[['drake','fire',10]]},
+  {id:'bounty50',lv:50,from:'clerk',title:'Guild Bounty: Badlands',desc:'Amelie has opened the Guild\'s bounty ledger to you. First page: the Badlands.',goals:[['imp','fire',20],['golem','fire',15]]},
+  {id:'bounty55',lv:55,from:'clerk',title:'Guild Bounty: Drake Roost',desc:'A drake roost has grown over the lava fields. The Guild pays well to see it emptied.',goals:[['drake','fire',25]]},
+  {id:'bounty60',lv:60,from:'clerk',title:'Guild Bounty: High Ridge',desc:'Skyward Ridge needs a veteran\'s sweep. Wolves and Gargoyles both.',goals:[['wolf','sky',30],['gargoyle','sky',30]]},
+  {id:'bounty65',lv:65,from:'clerk',title:'Guild Bounty: Crag Sweep',desc:'The Crags have filled with scorpions again. All of them, please.',goals:[['scorpion','canyon',50]]},
+  {id:'bounty70',lv:70,from:'clerk',title:'Guild Bounty: Molten Heart',desc:'The golems are gathering at the heart of the Badlands. Break the gathering.',goals:[['golem','fire',40]]},
+  {id:'bounty75',lv:75,from:'clerk',title:'Guild Bounty: Tour of Terago',desc:'A grand tour: one bounty in every wild region you know.',goals:[['treant','forest',20],['gargoyle','sky',20],['scorpion','canyon',20],['imp','fire',20]]},
+  {id:'bounty80',lv:80,from:'clerk',title:'Guild Bounty: Dragonfire',desc:'The drakes are bolder than ever. The Guild wants fifty fewer.',goals:[['drake','fire',50]]},
+  {id:'bounty85',lv:85,from:'clerk',title:'Guild Bounty: The Long Hunt',desc:'A hunt that lasts from dawn to dusk across the Badlands.',goals:[['golem','fire',60],['imp','fire',40]]},
+  {id:'bounty90',lv:90,from:'clerk',title:'Guild Bounty: Ashen Crown',desc:'The oldest drakes wear crowns of ash. Bring them down.',goals:[['drake','fire',80]]},
+  {id:'ascent',lv:95,from:'elder',title:'The Last Ascent',desc:'Elder Fin asks one last thing: clear the Badlands so the Sanctuary can breathe.',goals:[['drake','fire',60],['golem','fire',60]]},
+  {id:'legend',lv:95,from:'elder',title:'Legend of Terago',desc:'Nothing left to ask of you but the summit itself. Reach Base Level 100.',level:100,gold:20000,pots:50}
+];
+QUEST_CHAIN.forEach(Q=>{if(Q.exp==null) Q.exp=Q.level?0:Math.round(expNeed(Q.lv)*.8/10)*10;if(Q.gold==null) Q.gold=Q.lv*15;if(Q.pots==null) Q.pots=2+Math.floor(Q.lv/10);});
+/* a small priority queue for path searches */
+class MinHeap{constructor(){this.h=[];}get size(){return this.h.length;}
+  push(f,i){const h=this.h;h.push([f,i]);let k=h.length-1;while(k>0){const p=(k-1)>>1;if(h[p][0]<=h[k][0]) break;[h[p],h[k]]=[h[k],h[p]];k=p;}}
+  pop(){const h=this.h,top=h[0],last=h.pop();if(h.length){h[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<h.length&&h[l][0]<h[m][0]) m=l;if(r<h.length&&h[r][0]<h[m][0]) m=r;if(m===k) break;[h[m],h[k]]=[h[k],h[m]];k=m;}}return top;}}
 /* maps: id -> name / number (the character's saved map uses these ids; 'oakhaven' is the town) */
 const MAP_NUM={town:1,oakhaven:1,fields:2,sky:3,forest:4,fire:5,canyon:6};
 const MAP_NAMES={town:'Oakhaven Sanctuary',oakhaven:'Oakhaven Sanctuary',fields:'Whispering Fields',sky:'Skyward Ridge',forest:'Echoing Canopy',fire:'Scorched Badlands',canyon:'Desolate Crags'};
@@ -1991,6 +2032,15 @@ const TOWN_NPCS={
         return {pages:['Three boars, and you still standing. The trial is passed.','Choose your path, {name}. Your face stays your own; only your craft changes.'],
           opts:['vanguard','elementalist','wayfinder','channeler','specter'].map(id=>({label:`${JOBS[id].name} · ${JOBS[id].line}`,action:t=>t.ascend(id)}))};
       }
+      {const J=JOBS[c.job.classId],q=c.quests;
+        if(J&&J.tier===1&&(c.baseLevel||1)>=40&&(c.job.jobLevel||1)>=40&&q.ascension2!=='done'){
+          if(q.ascension2!=='active') return {pages:[`Base forty, Job forty. Your ${J.name} craft has put down deep roots, {name}.`,
+            'There is a second ascension, for those strong enough to take it. Three Magma Golems roam the Scorched Badlands, through the portal at our south gate.',
+            `Bring them down and come back. Then you choose: ${J.next.map(id=>JOBS[id].name).join(' or ')}.`],
+            done:t=>{q.ascension2='active';q.golems=0;t.log('sys',null,`New quest · ${QUEST_INFO.ascension2.title}`);toast(`New quest · ${QUEST_INFO.ascension2.title}`);t.tracker();t.save();}};
+          if((q.golems||0)<3) return {pages:[`Three Magma Golems, {name}. You have ${q.golems||0}. They lumber across the Scorched Badlands beyond the south gate.`]};
+          return {pages:['Three golems, cooled and cracked. The Second Ascension is passed.','Choose your specialization, {name}. This path does not turn back.'],
+            opts:J.next.map(id=>({label:`${JOBS[id].name} · ${J.line}`,action:t=>t.ascend(id,'ascension2')}))};}}
       if(c.quests.horizon==='active'&&(c.quests.slimes||0)>=5) return {pages:['Five portions of gel, and not a scratch you couldn\'t walk off. Well done, {name}.',
         'Hessa will turn this into tonics for the whole town. Keep training out in the fields. At Level 10, come back to me for the Ascension Trial.'],
         done:t=>{t.questDone('horizon');t.gainExp(120,'Quest reward');}};
@@ -2100,7 +2150,7 @@ const TownScreen={
     if(id!=='town'){try{await Sprites.ensure(id);}catch(e){id='town';}}
     this.loadMap(id);
     if(c.quests.firstSteps!=='done') this.log('sys',null,'Quest · First Steps: speak with Elder Fin by the Central Waystone.');
-    this.hud();$('#dlg').classList.remove('on');this.save();
+    this.hud();$('#dlg').classList.remove('on');this.save();this.questCheck();
     showScreen('screen-town');
   },
   /* switch the world to a map: its art, depth, walk grid, townspeople or monsters; at = [x, y] to stand on */
@@ -2155,15 +2205,12 @@ const TownScreen={
     let dmg=(8+L*2+main*1.5+(c.job.jobLevel||1)*.5+tier*6+this.gear().atk)*mult*(.85+Math.random()*.3);
     const crit=this.nextCrit||Math.random()<.05+(S.LUK||1)*.004;this.nextCrit=false;if(crit) dmg*=1.6;
     return {dmg:Math.max(1,Math.round(dmg)),crit};},
-  tracker(){const c=this.ch,q=c.quests,att=c.waystones.includes('oakhaven');
-    const item=(id,state)=>{const Q=QUEST_INFO[id],obj=typeof Q.obj==='function'?Q.obj(c):Q.obj;
-      return `<div class="q ${state==='done'?'done':''}"><b>${state==='done'?'✓ ':''}${esc(Q.title)}</b><span class="obj">${esc(obj)}</span></div>`;};
+  tracker(){const c=this.ch;
+    const item=(t,o)=>`<div class="q"><b>${esc(t)}</b><span class="obj">${esc(o)}</span></div>`;
     $('#mm-name').textContent=`Map ${this.meta?this.meta.map:1} · ${this.meta?this.meta.name:'Oakhaven Sanctuary'}`;
     let h=`<div class="qh"><div class="t">Quests</div><button class="ib" id="qt-min" aria-controls="qt-body"></button></div><div class="qbody" id="qt-body">`;
-    h+=item('firstSteps',q.firstSteps);
-    if(q.horizon) h+=item('horizon',q.horizon);
-    if(q.ascension) h+=item('ascension',q.ascension);
-    h+=item('waystone',att?'done':'active');
+    const act=this.activeQuests();for(const a of act) h+=item(a.title,a.obj);       // finished quests drop off
+    if(!act.length){const N=QUEST_CHAIN.find(Q=>!c.quests[Q.id]);h+=`<div class="q"><span class="obj">${N?`Next quest at Base Level ${N.lv}. Keep hunting!`:'Every quest is complete. You are a Legend of Terago.'}</span></div>`;}
     h+=`<div class="keys">Gold ${c.gold||0} · 1-9, 0 skill bar · Caps Lock AUTO · Enter chat</div></div>`;
     $('#hud-tracker').innerHTML=h;$('#qt-min').onclick=()=>this.trackerMin(!SETTINGS.trackerMin);this.trackerMin(SETTINGS.trackerMin);
     if(this.win==='questwin') this.renderQuests();if(this.win==='invwin') this.renderInv();},
@@ -2173,7 +2220,7 @@ const TownScreen={
       hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
-    this.tracker();this.save();},
+    this.tracker();this.save();this.questCheck();},
   /* ---------- grid / movement ---------- */
   block(x,y,r){const C=this.cell;for(let gy=Math.floor((y-r)/C);gy<=Math.floor((y+r)/C);gy++)for(let gx=Math.floor((x-r)/C);gx<=Math.floor((x+r)/C);gx++){
     if(gx<0||gy<0||gx>=this.gw||gy>=this.gh) continue;const cx=(gx+.5)*C-x,cy=(gy+.5)*C-y;if(cx*cx+cy*cy<=r*r) this.grid[gy*this.gw+gx]=0;}},
@@ -2434,9 +2481,34 @@ const TownScreen={
   nearestMob(r){let best=null,bd=r;for(const m of this.mobs){if(m.state==='dead') continue;const d=Math.hypot(this.p.x-m.x,(this.p.y-m.y)*1.3);if(d<bd){bd=d;best=m;}}return best;},
   inReach(m,r){r=r||this.reach();return Math.hypot(this.p.x-m.x,(this.p.y-m.y)*(r>40?1:1.4))<=r&&(r<=40||this.sight([this.p.x,this.p.y],[m.x,m.y]));},
   approach(m,reach){const R=reach||this.reach(),dx=this.p.x-m.x,dy=this.p.y-m.y,d=Math.hypot(dx,dy)||1,r=Math.min(d,R>40?R*.8:(R-6)/Math.hypot(dx/d,dy/d*1.4));   // stop inside reach (vertical reach is shorter)
-    let p=this.findPath(m.x+dx/d*r,m.y+dy/d*r);
-    if((!p||!p.length)&&!this.inReach(m,R)){const c=Math.min(r,26);p=this.findPath(m.x+dx/d*c,m.y+dy/d*c);}   // in range but a rock blocks the shot: step closer
+    const tx=m.x+dx/d*r,ty=m.y+dy/d*r,M=[m.x,m.y];let p=null;
+    // a path is worth taking if it ends with a clear shot, or at least gets us somewhere
+    const ok=q=>{if(!q||!q.length) return false;const e=q[q.length-1];return R<=40||this.sight(e,M)||Math.hypot(e[0]-this.p.x,e[1]-this.p.y)>8;};
+    if(R>40){
+      if(this.free(tx,ty)&&this.sight([tx,ty],M)) p=this.findPath(tx,ty);
+      if(!ok(p)){const s=this.firingSpot(m,R);p=s?this.findPath(s[0],s[1]):null;}            // something blocks the shot: walk around it
+      if(!ok(p)){const c=Math.min(r,26);p=this.findPath(m.x+dx/d*c,m.y+dy/d*c);}
+    }else{p=this.findPath(tx,ty);
+      if(!ok(p)&&!this.inReach(m,R)){const c=Math.min(r,26);p=this.findPath(m.x+dx/d*c,m.y+dy/d*c);}}
+    if(!ok(p)) p=null;
+    if(!p&&!this.inReach(m,R)){m.noReach=performance.now()+6000;   // no way there at all: hunt something else for a while
+      if(this.target===m){this.target=null;this.fx.push({x:this.p.x,y:this.p.y-70,text:"Can't reach",color:'#ffcf7a',t0:performance.now()});}}
     this.path=p&&p.length?p:null;this.goal=null;},
+  /* the nearest place (counted in walking steps) inside reach with a clear line to the target: an A* search
+     that heads for the ring around the target and stops at the first cell there that can see it */
+  firingSpot(m,R){const C=this.cell,W=this.gw,H=this.gh,G=this.grid,N=W*H;
+    const s=this.nearestFree(Math.floor(this.p.x/C),Math.floor(this.p.y/C),6);if(!s) return null;
+    let B=this._fs;if(!B||B.N!==N) B=this._fs={N,g:new Float32Array(N),seen:new Uint32Array(N),done:new Uint32Array(N),gen:0};
+    const gen=++B.gen,g=B.g,seen=B.seen,done=B.done,heap=new MinHeap(),S=s[1]*W+s[0],RR=R*.85,M=[m.x,m.y];
+    const h=(x,y)=>Math.max(0,Math.hypot((x+.5)*C-m.x,(y+.5)*C-m.y)-RR)/C;
+    g[S]=0;seen[S]=gen;heap.push(h(s[0],s[1]),S);let it=0;
+    while(heap.size&&it++<80000){const [,i]=heap.pop();if(done[i]===gen) continue;done[i]=gen;
+      const x=i%W,y=i/W|0,px=(x+.5)*C,py=(y+.5)*C;
+      if(Math.hypot(px-m.x,py-m.y)<=RR&&this.sight([px,py],M)) return [px,py];
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy) continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H) continue;const j=ny*W+nx;
+        if(!G[j]||done[j]===gen) continue;if(dx&&dy&&(!G[y*W+nx]||!G[ny*W+x])) continue;const ng=g[i]+(dx&&dy?1.414:1);
+        if(seen[j]!==gen||ng<g[j]){seen[j]=gen;g[j]=ng;heap.push(ng+h(nx,ny),j);}}}
+    return null;},
   swingCd(){return Math.max(.45,.95-this.st().AGI*.006);},
   swing(m,now){this.atk={t0:now,mob:m,hit:false};this.nextSwing=now+this.swingCd()*1000;this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   /* facing for a fight: sheets whose swing is drawn on the diagonals only (the Recruit's attack sheet) turn the
@@ -2542,7 +2614,7 @@ const TownScreen={
       if(s.kind==='veil') continue;
       if(this.target&&this.target.state!=='dead'&&!this.atk&&(s.kind!=='aoe'||s.at==='target'||this.mobs.some(o=>o.state!=='dead'&&Math.hypot(o.x-this.p.x,o.y-this.p.y)<s.r))) {this.useSlot(i);break;}}}
     if(a.target&&!this.target&&!(this.path&&this.path.length)&&!this.keys.size&&now>=(this.autoNext||0)){this.autoNext=now+400;
-      let best=null,bd=a.range||320;for(const m of this.mobs){if(m.state==='dead') continue;const d=Math.hypot(m.x-this.p.x,m.y-this.p.y)-(m.hostile?120:0);if(d<bd){bd=d;best=m;}}
+      let best=null,bd=a.range||320;for(const m of this.mobs){if(m.state==='dead'||m.noReach>now) continue;const d=Math.hypot(m.x-this.p.x,m.y-this.p.y)-(m.hostile?120:0);if(d<bd){bd=d;best=m;}}
       if(best){this.target=best;this.chaseAt=[-1e9,-1e9];}}},
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
@@ -2686,14 +2758,55 @@ const TownScreen={
     $$('#kw-body [data-up]').forEach(b=>b.onclick=()=>{const id=b.dataset.up;if((c.skillPoints||0)>0&&this.rank(id)<5){c.skills[id]=this.rank(id)+1;c.skillPoints--;AudioFX.sfx('quest');this.renderSkills();this.renderHotbar();this.save();}});
     $$('#kw-body [data-bar]').forEach(b=>b.onclick=()=>this.toBar('skill',b.dataset.bar));
     $$('#kw-body [data-sk]').forEach(b=>b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','skill:'+b.dataset.sk)));},
-  renderQuests(){if(this.win!=='questwin') return;const c=this.ch,q=c.quests,att=c.waystones.includes('oakhaven');
-    const list=[['firstSteps',q.firstSteps],['waystone',att?'done':'active'],['horizon',q.horizon],['ascension',q.ascension]].filter(x=>x[1]);
-    list.sort((a,b)=>(a[1]==='done')-(b[1]==='done'));
-    $('#qw-sub').textContent=`${list.filter(x=>x[1]!=='done').length} active · ${list.filter(x=>x[1]==='done').length} done`;
-    $('#qw-body').innerHTML=list.map(([id,st])=>{const Q=QUEST_INFO[id],obj=typeof Q.obj==='function'?Q.obj(c):Q.obj;
-      return `<div class="qj ${st==='done'?'done':''}"><span class="st">${st==='done'?'Done':'Active'}</span><b>${st==='done'?'✓ ':''}${esc(Q.title)}</b>
-        <p>${esc(Q.desc||'')}</p><p class="obj">${st==='done'?'Completed.':esc(obj)}</p><p>Reward: ${esc(Q.reward||'-')}</p></div>`;}).join('')+
-      `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700">More quests arrive with later maps. The tracker under the minimap follows your active quests.</div>`;},
+  renderQuests(){if(this.win!=='questwin') return;const c=this.ch,q=c.quests,act=this.activeQuests();
+    const done=['firstSteps','horizon','ascension','ascension2'].filter(k=>q[k]==='done').length+(c.waystones.includes('oakhaven')?1:0)+QUEST_CHAIN.filter(Q=>q[Q.id]==='done').length;
+    const N=QUEST_CHAIN.find(Q=>!q[Q.id]);
+    $('#qw-sub').textContent=`${act.length} active · ${done} completed`;
+    $('#qw-body').innerHTML=act.map(a=>`<div class="qj"><span class="st">Active</span><b>${esc(a.title)}</b>
+        <p>From ${esc(a.from)} · ${esc(a.desc||'')}</p><p class="obj">${esc(a.obj)}</p><p>Reward: ${esc(a.reward||'-')}</p></div>`).join('')+
+      `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700">${N?`Up next: ${esc(N.title)} at Base Level ${N.lv}.`:'You have finished every quest in Terago.'} Finished quests leave the list. ${done} completed so far.</div>`;},
+  /* everything still to do: story quests (and trials waiting to be picked up), plus the current hunt */
+  activeQuests(){const c=this.ch,q=c.quests,L=c.baseLevel||1,J=JOBS[c.job.classId]||JOBS.recruit,out=[];
+    const story=id=>{const Q=QUEST_INFO[id];out.push({title:Q.title,from:'Elder Fin',desc:Q.desc,obj:typeof Q.obj==='function'?Q.obj(c):Q.obj,reward:Q.reward});};
+    if(q.firstSteps!=='done') story('firstSteps');
+    if(!c.waystones.includes('oakhaven')) story('waystone');
+    if(q.horizon==='active') story('horizon');
+    if(q.ascension==='active') story('ascension');
+    else if(J.tier===0&&L>=10) out.push({title:QUEST_INFO.ascension.title,from:'Elder Fin',desc:QUEST_INFO.ascension.desc,obj:'Speak with Elder Fin in Oakhaven to begin.',reward:QUEST_INFO.ascension.reward});
+    if(q.ascension2==='active') story('ascension2');
+    else if(J.tier===1&&L>=40&&(c.job.jobLevel||1)>=40&&q.ascension2!=='done') out.push({title:QUEST_INFO.ascension2.title,from:'Elder Fin',desc:QUEST_INFO.ascension2.desc,obj:'Speak with Elder Fin in Oakhaven to begin.',reward:QUEST_INFO.ascension2.reward});
+    const A=this.chainActive();if(A) out.push({title:A.title,from:TOWN_NPCS[A.from]?TOWN_NPCS[A.from].name:'the Guild',desc:A.desc,obj:this.goalText(A),reward:this.rewardText(A)});
+    return out;},
+  chainActive(){const q=this.ch.quests;return QUEST_CHAIN.find(Q=>q[Q.id]==='active')||null;},
+  goalText(Q){if(Q.level) return `Reach Base Level ${Q.level} (now ${this.ch.baseLevel||1}).`;const p=(this.ch.quests.prog||{})[Q.id]||[];
+    return Q.goals.map(([k,,n],i)=>`${MOB_DEFS[k].name} ${Math.min(n,p[i]||0)}/${n}`).join(' · ')+` in ${[...new Set(Q.goals.map(g=>MAP_NAMES[g[1]]))].join(', ')}`;},
+  rewardText(Q){return [Q.exp?`${Q.exp.toLocaleString()} EXP`:'',`${Q.gold.toLocaleString()} gold`,`${Q.pots} Healing Draughts`].filter(Boolean).join(' · ');},
+  /* start the next hunt when your level allows (skipping any you have long outgrown), finish a level quest */
+  questCheck(){const c=this.ch;if(!c||this._qBusy) return;const q=c.quests;if(q.firstSteps!=='done') return;
+    const L=c.baseLevel||1;let A=this.chainActive(),changed=false;
+    if(A&&A.level&&L>=A.level){this.chainFinish(A);return;}
+    if(!A){let i=QUEST_CHAIN.findIndex(Q=>!q[Q.id]);
+      while(i>=0&&i+1<QUEST_CHAIN.length&&!q[QUEST_CHAIN[i+1].id]&&QUEST_CHAIN[i+1].lv<=L){q[QUEST_CHAIN[i].id]='skip';i++;changed=true;}
+      const Q=i>=0?QUEST_CHAIN[i]:null;
+      if(Q&&Q.lv<=L){q[Q.id]='active';q.prog=q.prog||{};q.prog[Q.id]=Q.goals?Q.goals.map(()=>0):[];changed=true;
+        const who=TOWN_NPCS[Q.from]?TOWN_NPCS[Q.from].name:'the Guild';
+        this.log('sys',null,`New quest · ${Q.title} (from ${who}) · ${this.goalText(Q)}`);toast(`New quest · ${Q.title}`);
+        if(Q.level&&L>=Q.level){this.chainFinish(Q);return;}}}
+    const J=JOBS[c.job.classId];
+    if(J&&J.tier===1&&L>=40&&(c.job.jobLevel||1)>=40&&!q.ascension2&&!q.asc2Told){q.asc2Told=1;changed=true;
+      setTimeout(()=>{toast('Base 40 · Job 40 · Elder Fin has your Second Ascension');this.log('sys',null,'Elder Fin in Oakhaven is waiting to set your Second Ascension.');},1400);}
+    if(changed){this.tracker();this.save();}},
+  chainKill(m,now){const Q=this.chainActive();if(!Q||!Q.goals) return;const q=this.ch.quests;q.prog=q.prog||{};const p=q.prog[Q.id]||(q.prog[Q.id]=Q.goals.map(()=>0));
+    const i=Q.goals.findIndex(([k,map,n],j)=>k===m.kind&&map===this.mapId&&(p[j]||0)<n);if(i<0) return;
+    const [k,,n]=Q.goals[i];p[i]=(p[i]||0)+1;
+    this.log('loot',null,`${Q.title} · ${MOB_DEFS[k].name} ${p[i]}/${n}`);this.fx.push({x:m.x,y:m.y-m.def.h-18,text:`${MOB_DEFS[k].name} ${p[i]}/${n}`,color:'#a8f0b8',t0:now+120});
+    if(Q.goals.every((g,j)=>(p[j]||0)>=g[2])) this.chainFinish(Q);else this.tracker();},
+  chainFinish(Q){const c=this.ch,q=c.quests;if(q[Q.id]==='done') return;q[Q.id]='done';if(q.prog) delete q.prog[Q.id];
+    AudioFX.sfx('quest');toast(`Quest complete · ${Q.title}`);this.log('sys',null,`Quest complete · ${Q.title} · ${this.rewardText(Q)}`);
+    this.fx.push({x:this.p.x,y:this.p.y-92,text:'QUEST COMPLETE',color:'#f7d58e',t0:performance.now(),big:true});
+    c.gold=(c.gold||0)+Q.gold;c.items.potion=(c.items.potion||0)+Q.pots;
+    this._qBusy=true;try{if(Q.exp) this.gainExp(Q.exp,'Quest reward');}finally{this._qBusy=false;}
+    this.hud();this.renderHotbar();this.questCheck();this.tracker();this.save();},
   renderSettings(){if(this.win!=='setwin') return;const S=SETTINGS;
     const rng=(k,label,min,max,step,unit='%')=>`<div class="set-row"><label for="st-${k}">${label}</label><input type="range" id="st-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}${unit}</output></div>`;
     const chk=(k,label)=>`<label class="set-chk"><input type="checkbox" data-c="${k}" ${S[k]?'checked':''}> ${label}</label>`;
@@ -2775,7 +2888,7 @@ const TownScreen={
     $$('#cw-body button[data-st]').forEach(b=>b.onclick=()=>{const k=b.dataset.st;if(c.statPoints>0&&S[k]<100){S[k]++;c.statPoints--;this.renderChar();this.hudBars();this.save();}});
     $('#cw-reset').onclick=e=>this.arm(e.currentTarget,`Click again: ${spent} point${spent===1?'':'s'} back`,()=>this.resetStats());},
   /* ---------- Ascension: the first job ---------- */
-  ascend(id){const c=this.ch,n=advanceJob(c,id);c.job=n.job;c.quests.ascension='done';this._gt=null;
+  ascend(id,key='ascension'){const c=this.ch,n=advanceJob(c,id);c.job=n.job;c.quests[key]='done';this._gt=null;
     const w=c.equip&&c.equip.weapon;if(!w||!this.canUse(w,true)){if(w) c.bag.unshift(w);c.equip.weapon=makeGear(WEAPON_OF[this.line()],c.baseLevel||1,0);
       this.log('sys',null,`Ascension gift · ${c.equip.weapon.name}${w?` (your ${w.name} went to your bag)`:''}`);}
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);this.portrait();
@@ -2804,6 +2917,9 @@ const TownScreen={
       if(c.quests.boars>=3) toast('Ascension Trial · return to Elder Fin');this.tracker();}
     this.log('loot',null,`${D.name} defeated · +${m.exp} EXP`);
     const q=this.ch.quests;
+    if(m.kind==='golem'&&q.ascension2==='active'&&(q.golems||0)<3){q.golems=(q.golems||0)+1;this.log('loot',null,`Second Ascension · Magma Golem ${q.golems}/3`);
+      if(q.golems>=3) toast('Second Ascension · return to Elder Fin');}
+    this.chainKill(m,now);
     if(m.kind==='slime'&&q.horizon==='active'&&(q.slimes||0)<5){q.slimes=(q.slimes||0)+1;this.log('loot',null,`Slime Gel ${q.slimes}/5`);
       this.fx.push({x:m.x,y:m.y-m.def.h-18,text:`Slime Gel ${q.slimes}/5`,color:'#a8f0b8',t0:now+120});
       if(q.slimes>=5){toast('Cleaning the Horizon · bring the gel to Elder Fin');this.log('sys',null,'Quest · Cleaning the Horizon: return to Elder Fin in Oakhaven.');}
@@ -2815,7 +2931,7 @@ const TownScreen={
       if(c.baseLevel===10&&c.job.classId==='recruit') setTimeout(()=>{toast('Level 10 · Elder Fin has your Ascension Trial');this.log('sys',null,'Elder Fin in Oakhaven is waiting to set your Ascension Trial.');},1400);
       this.fx.push({x:this.p.x,y:this.p.y-72,text:'LEVEL UP!',color:'#7fe3ff',t0:performance.now(),big:true});AudioFX.sfx('level');toast(`Base Level ${c.baseLevel}!`);this.log('sys',null,`Base Level ${c.baseLevel} · +5 stat points`);}
     while(c.job.jobExp>=jobNeed(c.job.jobLevel||1)&&(c.job.jobLevel||1)<50){c.job.jobExp-=jobNeed(c.job.jobLevel||1);c.job.jobLevel=(c.job.jobLevel||1)+1;c.skillPoints=(c.skillPoints||0)+1;this.log('sys',null,`Job Level ${c.job.jobLevel} · +1 skill point`);}
-    this.hud();this.renderChar();this.save();},
+    this.hud();this.renderChar();this.save();this.questCheck();},
   hurtPlayer(m,now){const c=this.ch,D=m.def,S=this.st(),L=c.baseLevel||1;
     if(Math.random()<Math.max(0,Math.min(.6,.04+(S.AGI||1)*.004+(L-m.lvl)*.01))){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Dodge',color:'#cfe8ff',t0:now,italic:true});AudioFX.sfx('dodge');return;}
     const raw=m.atk[0]+Math.random()*(m.atk[1]-m.atk[0]),dmg=Math.max(1,Math.round(Math.max(raw*.25,raw-this.defence())));   // armour never stops more than 75%
