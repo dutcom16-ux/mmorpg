@@ -2058,6 +2058,7 @@ const TownScreen={
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
     $('#net-pill').onclick=()=>this.netWho();
+    document.addEventListener('visibilitychange',()=>this.netAway(document.hidden));
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
     $('#btn-auto').onclick=()=>this.toggleAuto();
@@ -2289,7 +2290,7 @@ const TownScreen={
   updateMobs(dt,now){
     if(this.mp&&!this.mp.amHost){this.mobFollow(dt,now);return;}
     const pl=[];if(!this.dead&&!this.travelling) pl.push({key:'me',x:this.p.x,y:this.p.y,veil:now<this.veilUntil});
-    if(this.others) for(const o of this.others.values()) if(!o.dead) pl.push({key:o.peer,x:o.x,y:o.y,veil:o.veil});
+    if(this.others) for(const o of this.others.values()) if(!o.dead&&!o.away) pl.push({key:o.peer,x:o.x,y:o.y,veil:o.veil});
     const dist=(P,m)=>Math.hypot(P.x-m.x,(P.y-m.y)*1.3),nearest=(m,r)=>{let b=null,bd=r;for(const P of pl){if(P.veil) continue;const d=dist(P,m);if(d<bd){bd=d;b=P;}}return b;};
     const goHome=m=>{m.hostile=false;m.state='return';m.goal=[m.zone.x+(Math.random()-.5)*m.zone.r*.6,m.zone.y+(Math.random()-.5)*m.zone.r*.4];};
     for(const m of this.mobs){const D=m.def;m.moving=false;
@@ -2351,13 +2352,13 @@ const TownScreen={
     if(now>=(this.pillT||0)){this.pillT=now+1000;this.netPill();}},
   /* one host per map runs the monsters: whoever already claims it (the lowest label wins a tie); with nobody
      claiming, after a moment to hear who is here, the lowest label among the players in the map takes over */
-  elect(now,me){const mp=this.mp;if(!Net.room){mp.amHost=true;return;}if(!me){mp.amHost=false;return;}
-    const claim=[],ready=[me];for(const o of this.others.values()){ready.push(o.peer);if(o.P.h) claim.push(o.peer);}
+  elect(now,me){const mp=this.mp;if(!Net.room){mp.amHost=true;return;}if(!me||mp.away){mp.amHost=false;return;}
+    const claim=[],ready=[me];for(const o of this.others.values()){if(o.P.aw) continue;ready.push(o.peer);if(o.P.h) claim.push(o.peer);}
     if(mp.amHost) claim.push(me);
     const host=claim.length?claim.sort()[0]:(now-mp.joinT>1500?ready.sort()[0]:null),was=mp.amHost;
     mp.amHost=host===me;mp.host=host;if(mp.amHost&&!was) for(const m of this.mobs) m.tgt=null;},
   netPublish(now){const c=this.ch,mp=this.mp,P={v:1,n:c.name,lv:c.baseLevel|0,j:c.job.classId,ap:c.appearance,m:this.mapId,rd:1,
-      x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
+      x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving&&!mp.away?1:0,aw:mp.away?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
       vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,
       mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
     const enc=new TextEncoder();let t=JSON.stringify(P);
@@ -2380,7 +2381,7 @@ const TownScreen={
     if(key!==o.key){o.key=key;o.j=j;try{o.comp=Sprites.compose(j,APPEARANCE.normalize(P.ap||{}),'all');this.pkc=this.pkc||new Map();
       if(!this.pkc.has(key)) this.pkc.set(key,54/this.figureHeight(o.comp));o.pk=this.pkc.get(key);}catch(e){o.comp=null;}}
     const [MW,MH]=this.meta.size,x=+P.x,y=+P.y;if(Number.isFinite(x)&&Number.isFinite(y)){o.tx=Math.max(0,Math.min(MW,x));o.ty=Math.max(0,Math.min(MH,y));}
-    o.dir=(P.d|0)&7;o.mv=!!P.mv;const hp=Math.max(0,Math.min(100,P.hp|0));if(hp<o.hp) o.hurtT=now;o.hp=hp;o.dead=!!P.dd;o.veil=!!P.vl;
+    o.away=!!P.aw;o.dir=(P.d|0)&7;o.mv=!!P.mv&&!o.away;const hp=Math.max(0,Math.min(100,P.hp|0));if(hp<o.hp) o.hurtT=now;o.hp=hp;o.dead=!!P.dd;o.veil=!!P.vl;
     const a=Array.isArray(P.at)?P.at[0]:0;if(o.atS===undefined) o.atS=a;else if(a!==o.atS){o.atS=a;o.atkT=now;}},
   updateRemotes(dt){if(!this.others) return;const k=1-Math.exp(-dt*12);
     for(const o of this.others.values()){const dx=o.tx-o.x,dy=o.ty-o.y,d=Math.hypot(dx,dy);
@@ -2417,8 +2418,14 @@ const TownScreen={
     el.title=on?'Who is online (/who)':'No game server on this link, so you are playing on your own';},
   netWho(){if(!Net.room){this.log('sys',null,'Single-player: this link has no game server. Play on the game\'s online link to meet other players.');return;}
     const L=[`${this.ch.name} (you, Lv ${this.ch.baseLevel}) · ${MAP_NAMES[this.mapId]||this.mapId}`];
-    for(const p of Net.others()){const P=p.presence;if(!P.n) continue;L.push(`${Net.name(P.n)} (Lv ${P.lv|0} ${(JOBS[P.j]||JOBS.recruit).name}) · ${P.m?MAP_NAMES[P.m]||P.m:'choosing a character'}`);}
+    for(const p of Net.others()){const P=p.presence;if(!P.n) continue;L.push(`${Net.name(P.n)} (Lv ${P.lv|0} ${(JOBS[P.j]||JOBS.recruit).name}) · ${P.m?MAP_NAMES[P.m]||P.m:'choosing a character'}${P.aw?' · away':''}`);}
     this.log('sys',null,`${L.length} online: ${L.join(' | ')}${this.mp&&this.mp.amHost&&this.others.size?' · your game runs the monsters here':''}`);},
+  /* a hidden page stops running (browsers pause it), so tell the others right away: the character shows as away,
+     monsters ignore it, and another player's game takes over the monsters until this one is back */
+  netAway(hidden){const mp=this.mp;if(!mp||!this.ch||!Net.room||activeScreen!==this) return;const now=performance.now();
+    mp.away=hidden;if(hidden){mp.amHost=false;mp.host=null;if(this.keys) this.keys.clear();}
+    else{mp.joinT=now;mp.readT=0;mp.pubT=0;this.last=now;}           // back: listen for the current host before claiming
+    mp.lastPub='';this.netPublish(now);if(Net.room.flush) Net.room.flush();},
   netLeave(){Net.set({m:null,rd:0,n:null,h:0,mb:null,mk:null,mh:null,hits:null,vf:null});if(this.others) this.others.clear();if(this.mp) this.mp.lastPub='';},
   hitMob(x,y){let best=null,bd=1e9;for(const m of this.mobs){if(m.state==='dead') continue;const h=m.def.h;
     if(Math.abs(x-m.x)<h*.75&&y>m.y-h-6&&y<m.y+8){const d=Math.abs(x-m.x)+Math.abs(y-(m.y-h/2));if(d<bd){bd=d;best=m;}}}return best;},
@@ -2905,7 +2912,7 @@ const TownScreen={
   drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,
       dead:!!this.dead,veil:now<this.veilUntil,hurtT:this.hurtT,j:this.ch.job.classId,falcon:this.falcon},this.pocc||(this.pocc={}),now);},
   drawRemote(ctx,o,now){if(!o.comp) return;if(o.j==='skywarden'&&!o.falcon) o.falcon=new Falcon();
-    this.drawHero(ctx,{comp:o.comp,pk:o.pk,x:o.x,y:o.y,dir:o.dir,moving:o.moving,walkT:o.walkT,atkT:o.atkT,dead:o.dead,veil:o.veil,hurtT:o.hurtT,j:o.j,falcon:o.falcon},o.occ||(o.occ={}),now);},
+    this.drawHero(ctx,{comp:o.comp,pk:o.pk,x:o.x,y:o.y,dir:o.dir,moving:o.moving,walkT:o.walkT,atkT:o.atkT,dead:o.dead,veil:o.veil||o.away,hurtT:o.hurtT,j:o.j,falcon:o.falcon},o.occ||(o.occ={}),now);},
   drawHero(ctx,h,occ,now){
     const comp=h.comp,m=comp.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,A=m.anim||{},k=h.pk,x=h.x,y=h.y;
     let fr=0,bob=0;const swing=A.attack&&A.attack.length>1?(A.attack[0]===((A.idle||[0])[0])?A.attack.slice(1):A.attack):null;   // skip the standing pose
@@ -3025,7 +3032,7 @@ const TownScreen={
       const bw=38,f=Math.max(0,m.hp/m.maxHp);ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(px-bw/2-1,py-2,bw+2,5);ctx.fillStyle=f>.5?'#6ee07a':f>.25?'#f2c94c':'#ff5d5d';ctx.fillRect(px-bw/2,py-1,bw*f,3);}
     if(this.others) for(const o of this.others.values()){const [px,py]=S(o.x,o.y-60);
       if(o.speech&&now-o.speech.t<4000) this.bubble(ctx,px,py-14,o.speech.text,Math.min(1,(4000-(now-o.speech.t))/400));
-      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#b8ffc8';const t=`${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
+      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=o.away?'#a9b8ad':'#b8ffc8';const t=`${o.n} · Lv ${o.lv}${o.away?' · away':''}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
       if(o.hp<100&&this.mapId!=='town'){const bw=40,f=o.hp/100;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(px-bw/2-1,py+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(px-bw/2,py+5,bw*f,3);}}
     const me=S(this.p.x,this.p.y-60);ctx.font='900 12.5px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#bff4ff';ctx.strokeText(this.ch.name,me[0],me[1]);ctx.fillText(this.ch.name,me[0],me[1]);
     {const mx=this.maxHp(),f=Math.max(0,Math.min(1,this.ch.hp/mx));if(f<.999&&this.mapId!=='town'||now-this.hurtT<3000){const bw=40;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(me[0]-bw/2-1,me[1]+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(me[0]-bw/2,me[1]+5,bw*f,3);}}
@@ -3108,7 +3115,7 @@ function wsRoom(url){return new Promise(done=>{let ws=null,me=null,mine={},snap=
   const R={presence(patch){for(const [k,v] of Object.entries(patch)){if(v===null) delete mine[k];else mine[k]=v;}snap=null;if(!pend) pend=setTimeout(send,60);return Promise.resolve();},
     peers(){return snap||(snap=Object.freeze([Object.freeze({peer:me||'me',isMe:true,sameTab:true,kind:'viewer',by:null,guest:false,presence:Object.freeze({...mine}),updatedAt:Date.now()}),...others.values()]));},
     onPeers(fn){subs.add(fn);return()=>subs.delete(fn);},connected:()=>conn,onConnection(fn){connSubs.add(fn);setTimeout(()=>fn(conn),0);return()=>connSubs.delete(fn);},
-    emit:()=>Promise.resolve(),on:()=>()=>{},kind:'server'};
+    flush(){clearTimeout(pend);send();},emit:()=>Promise.resolve(),on:()=>()=>{},kind:'server'};
   setInterval(()=>{if(!dead) send();},2000);           // keeps the server's copy fresh (it forgets everything when it sleeps)
   open();setTimeout(()=>finish(null),8000);});}
 /* where the game's own server lives: ?server=wss://... , a <meta name="mmo-server"> in the page, or /ws/world on
