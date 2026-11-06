@@ -19,6 +19,20 @@ fs.writeFileSync(path.join(shim, 'worker.mjs'),
 const mod = await import(pathToFileURL(path.join(shim, 'worker.mjs')).href + '?' + Date.now());
 const GameRoom = mod.GameRoom;
 
+/* accounts: the real AccountStore over an in-memory copy of a Durable Object's storage (saved to .wrangler/local) */
+const saveFile = path.join(shim, 'accounts.json');
+const mem = new Map(Object.entries(fs.existsSync(saveFile) ? JSON.parse(fs.readFileSync(saveFile, 'utf8')) : {}));
+let saveT = 0;
+const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => fs.writeFileSync(saveFile, JSON.stringify(Object.fromEntries(mem))), 200); };
+const storage = {
+  async get(k) { if (Array.isArray(k)) { const r = new Map(); for (const x of k) if (mem.has(x)) r.set(x, structuredClone(mem.get(x))); return r; }
+    return mem.has(k) ? structuredClone(mem.get(k)) : undefined; },
+  async put(k, v) { mem.set(k, structuredClone(v)); persist(); },
+  async delete(k) { const r = mem.delete(k); persist(); return r; },
+};
+const accounts = new mod.AccountStore({ storage }, {});
+const env = { ACCOUNTS: { idFromName: () => 'main', get: () => accounts } };
+
 const rooms = new Map();
 function room(name) {
   if (rooms.has(name)) return rooms.get(name);
@@ -39,9 +53,17 @@ function wrap(raw) {
 }
 
 const types = { '.html': 'text/html; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css' };
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/health') { res.end('ok'); return; }
+  if (u.pathname.startsWith('/api/')) {          // the real worker routing (CORS, OPTIONS) and the real AccountStore
+    const chunks = []; for await (const c of req) chunks.push(c);
+    const body = Buffer.concat(chunks);
+    const headers = new Headers(); for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string') headers.set(k, v);
+    headers.set('CF-Connecting-IP', req.socket.remoteAddress || 'local');
+    const r = await mod.default.fetch(new Request('http://localhost' + req.url, { method: req.method, headers, body: ['GET', 'HEAD', 'OPTIONS'].includes(req.method) ? undefined : body }), env);
+    res.writeHead(r.status, Object.fromEntries(r.headers)); res.end(Buffer.from(await r.arrayBuffer())); return;
+  }
   let f = path.join(root, 'public', decodeURIComponent(u.pathname));
   if (!f.startsWith(path.join(root, 'public'))) { res.writeHead(403); res.end(); return; }
   if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, 'index.html');
@@ -57,12 +79,12 @@ server.on('upgrade', (req, sock, head) => {
   wss.handleUpgrade(req, sock, head, raw => {
     const r = room(name), w = wrap(raw);
     // mirror GameRoom.fetch: same id, same hello, same room limit
-    const orig = r.obj.ctx.acceptWebSocket;
     globalThis.WebSocketPair = function () { return { 0: w, 1: w }; };
+    // GameRoom.fetch runs straight through (no awaits), so the stand-in Response is only swapped in for that call
     const Resp = globalThis.Response;
     globalThis.Response = function (body, init) { return { status: init && init.status, body }; };
-    Promise.resolve(r.obj.fetch({ headers: new Map() })).then(resp => {
-      globalThis.Response = Resp;
+    let p; try { p = r.obj.fetch({ headers: new Map() }); } finally { globalThis.Response = Resp; }
+    Promise.resolve(p).then(resp => {
       if (resp.status !== 101) { raw.close(1013, String(resp.body || 'refused')); return; }
       raw.on('message', (data, isBinary) => r.obj.webSocketMessage(w, isBinary ? data : data.toString()));
       raw.on('close', code => { r.sockets.delete(w); r.obj.webSocketClose(w, code); });

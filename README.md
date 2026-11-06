@@ -50,12 +50,27 @@ Everything here fits the **free Workers plan**:
 
 The game sends about 10 messages a second per player. That works out to roughly **50 player-hours a day** for free, for example 5 testers playing 10 hours each. The $5/month Workers Paid plan raises this a lot if you ever need more.
 
+## Accounts on any device
+
+The same server keeps players' accounts and characters, so they can sign in on any phone or computer (on the
+Cloudflare link and the Vercel link alike). `AccountStore` in `server/worker.js`, a second Durable Object:
+
+- `POST /api/register` and `POST /api/login` take the username and a key the browser makes from the password
+  (PBKDF2-SHA-256, 150,000 rounds); the password itself is never sent or stored. The server keeps a salted SHA-256
+  of that key and hands back a sign-in token (stored hashed, valid 60 days).
+- `GET /api/chars` and `POST /api/chars` load and save characters (up to 4 per account); the newer copy wins and
+  deleted characters stay deleted.
+- 8 wrong passwords lock an account for 10 minutes; one network address can create 20 accounts an hour.
+- Accounts that players made on a device before this move online the first time they sign in there.
+
+This runs on the free plan: each save is a small request, sent at most every 8 seconds while someone plays.
+
 ## How multiplayer works
 
 - Each player's game sends a small status packet to the room about 10 times a second: name, map, position, HP, recent attacks and chat. The server passes it on to everyone else.
 - On each map, one player's game runs the monsters and shares their positions; that player is the "host". If the host leaves, the next player takes over within about 2 seconds.
 - Everyone who damages a monster gets the full EXP and drops.
-- Characters, items and passwords stay in each player's own browser. The server never sees passwords and stores nothing permanently.
+- Characters are saved to the player's account on the server (see above); multiplayer itself stores nothing.
 - If the server restarts, games reconnect by themselves. The status pill shows "Reconnecting…" meanwhile.
 
 The game picks its server like this:
@@ -69,7 +84,7 @@ If it finds no server (for example on Vercel or a plain file host), it plays sin
 ## Try it on your own computer
 
 - `npm install`, then `npx wrangler dev`: runs the real Cloudflare setup locally at <http://localhost:8787>.
-- Or `npm i ws`, then `node tools/local-server.mjs`: a small stand-in that runs the same server code without Cloudflare.
+- Or `npm i ws`, then `node tools/local-server.mjs`: a small stand-in that runs the same server code without Cloudflare. It keeps test accounts in `.wrangler/local/accounts.json`.
 
 Because of the `mmo-server` line, a local copy joins the **live** world by default. To test against your local server instead, open <http://localhost:8787/?server=ws://localhost:8787/ws/world> in two browser windows, using a private window for the second player.
 

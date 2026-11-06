@@ -401,6 +401,22 @@ button{font:inherit;color:inherit}
 .buffbar .bf>*:first-child{width:100%;height:100%}
 .buffbar .bf i{position:absolute;right:1px;bottom:0;font:900 9px Nunito,sans-serif;font-style:normal;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
 .buffbar .bf.shield{width:auto;min-width:26px;padding:0 5px;display:grid;place-items:center;background:rgba(255,248,208,.18);font:900 10px Nunito,sans-serif;color:#fff8d0}
+.lwhere{margin:4px 0 0;font-size:12px;color:var(--muted);font-weight:700}
+.skgrid{display:flex;flex-direction:column;gap:8px;padding:6px 0 10px;border-bottom:1px solid rgba(160,220,255,.12)}
+.sgrow{display:flex;flex-direction:column;gap:5px}.sgl{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.sgi{display:flex;flex-wrap:wrap;gap:8px}
+.sg{position:relative;width:52px;height:52px;padding:0;border:0;border-radius:12px;background:none;cursor:pointer;touch-action:none}
+.sg .gi,.sg>svg{width:52px;height:52px;border-radius:12px}
+.sg.off .gi,.sg.off>svg{filter:grayscale(.75) brightness(.7)}.sg.lock .gi,.sg.lock>svg{filter:grayscale(1) brightness(.4)}
+.sg .rk{position:absolute;right:-3px;bottom:-4px;padding:0 4px;border-radius:7px;background:rgba(8,12,28,.9);font:900 10px Nunito,sans-serif;color:#fff;box-shadow:0 0 0 1px rgba(247,213,142,.55)}
+.sg.on .rk{color:#ffe08a}.sg .pv{position:absolute;left:-3px;top:-4px;padding:0 4px;border-radius:7px;background:#3a2a6a;font:900 9px Nunito,sans-serif;color:#e0d4ff}
+.sg .lk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px;font:900 11px Nunito,sans-serif;color:#fff;text-shadow:0 1px 3px #000}
+.sg .ob{position:absolute;right:3px;top:3px;width:9px;height:9px;border-radius:50%;background:#7fe3ff;box-shadow:0 0 0 2px rgba(8,12,28,.9)}
+.sghint{font-size:11.5px;color:var(--muted);font-weight:700}
+.skrow.pick{animation:skpick 1.2s ease-out}@keyframes skpick{0%{background:rgba(127,227,255,.22)}100%{background:transparent}}
+.skrow .ic{touch-action:none}.hslot{touch-action:none}
+.dragghost{position:fixed;left:0;top:0;width:48px;height:48px;z-index:9999;pointer-events:none;opacity:.9;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+.dragghost .gi,.dragghost svg{width:48px;height:48px;border-radius:11px}
 .skgrp{margin:14px 0 4px;font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
 .skrow.unl .ic{filter:grayscale(.85) brightness(.7)}.skrow.locked{opacity:.6}
 .skrow p.now{color:#bfe8ff;font-size:12px;margin:3px 0 0}.skrow p.next{color:var(--dim);font-size:12px;margin:2px 0 0}
@@ -482,6 +498,13 @@ dl dd.main{color:var(--gold)}
   .hotbar-wrap{bottom:8px;gap:5px}.hotbar{gap:4px;padding:5px}
   .hslot{width:34px;height:34px;border-radius:8px}.hslot svg{width:20px;height:20px}
   .hslot.empty{display:none}
+  body.skills-open .hslot.empty,body.dragging-skill .hslot.empty{display:grid}
+  body.skills-open .hslot,body.dragging-skill .hslot{width:30px;height:30px}
+  body.skills-open .hotbar,body.dragging-skill .hotbar{gap:3px}
+  body.skills-open .autobox,body.dragging-skill .autobox{display:none}
+  .skrow{grid-template-columns:40px 1fr;gap:10px}.skrow .ic,.skrow .ic .gi{width:40px;height:40px}
+  .skrow .act{grid-column:1/-1;flex-direction:row;justify-content:flex-end;flex-wrap:wrap}
+  .skrow p.next{display:none}.sg,.sg .gi,.sg>svg{width:46px;height:46px}
   .btn.auto{min-height:34px;padding:4px 8px;font-size:11px}
   .charwin .cols{grid-template-columns:1fr}
   .dlg{grid-template-columns:84px 1fr;gap:10px;padding:12px;bottom:8px}
@@ -625,6 +648,7 @@ dl dd.main{color:var(--gold)}
         <label class="lfield" id="lg-confirm-row" hidden><span>Confirm password</span>
           <input class="name-input" id="lg-pass2" type="password" autocomplete="new-password" maxlength="64" aria-describedby="lg-msg"></label>
         <label class="lremember"><input type="checkbox" id="lg-remember" checked> Keep me signed in on this device</label>
+        <p class="lwhere" id="lg-where"></p>
         <div class="name-msg" id="lg-msg" role="status" aria-live="polite"></div>
         <button class="btn btn-primary btn-lg" id="lg-go" type="submit">Sign in</button>
         <p class="lnote">Accounts and characters are saved in this browser on this device. There is no password recovery, so keep your password somewhere safe.</p>
@@ -1215,9 +1239,10 @@ const Store={
     this.mem=list.filter(c=>c&&c.id&&c.name).map(c=>({...c,appearance:APPEARANCE.normalize(c.appearance)}));
     return this.mem;
   },
-  save(){try{localStorage.setItem(this.key,JSON.stringify(this.mem));}catch(e){}},
-  add(c){this.load().push(c);this.save();},
-  remove(id){this.mem=this.load().filter(c=>c.id!==id);this.save();},
+  saveLocal(){try{localStorage.setItem(this.key,JSON.stringify(this.mem));}catch(e){}},
+  save(){this.saveLocal();Cloud.schedule();},                        // with an online account the server gets a copy too
+  add(c){c.savedAt=Date.now();this.load().push(c);this.saveLocal();Cloud.schedule(300);},
+  remove(id){this.mem=this.load().filter(c=>c.id!==id);this.saveLocal();Cloud.drop(id);},
   lastSelected(v){try{if(v===undefined) return localStorage.getItem(this.key+'.sel');localStorage.setItem(this.key+'.sel',v);}catch(e){return null;}}
 };
 
@@ -1253,6 +1278,48 @@ async function pbkdf2(pw,salt,iter){const enc=new TextEncoder().encode(pw);
     return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,256));}catch(e){}}
   await new Promise(r=>setTimeout(r,30));return pbkdf2js(enc,salt,iter);}
 const b64=u=>btoa(String.fromCharCode(...u)),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+/* ------------------------------- Online accounts -------------------------------
+   When the game's own server is reachable (the Cloudflare Worker that also runs multiplayer), accounts and characters
+   live there, so a player can sign in on any phone or computer. The password never leaves the browser: it is
+   stretched here (PBKDF2-SHA-256, 150,000 rounds, salted with the game's name and the username) and only that key is
+   sent; the server keeps a salted SHA-256 of it. Characters stay cached in this browser and go to the server a few
+   seconds after they change (at most every 8 s), right away when one is created or deleted, and when the page is
+   hidden or closed. Without a server (the claude.ai link, a file on disk) accounts stay on this device as before. */
+const Cloud={base:null,token:null,name:null,key:'mmorpg-online.cloud.v1',sent:{},gone:new Set(),timer:0,busy:false,again:false,
+  init(){if(window.claude&&typeof window.claude.use==='function') return;const u=serverUrl();if(!u) return;
+    try{this.base=new URL(u.replace(/^ws(s?):/,'http$1:')).origin;}catch(e){this.base=null;}
+    document.addEventListener('visibilitychange',()=>{if(document.hidden) this.push(true);});addEventListener('pagehide',()=>this.push(true));},
+  on(){return !!this.base;},
+  hex:u=>[...u].map(b=>b.toString(16).padStart(2,'0')).join(''),
+  async key4(name,pw){return this.hex(await pbkdf2(pw,new TextEncoder().encode('mmorpg-online|'+name.toLowerCase()),150000));},
+  async api(path,body,keep){const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000),b=body===undefined?undefined:JSON.stringify(body);
+    try{const r=await fetch(this.base+'/api/'+path,{method:b===undefined?'GET':'POST',signal:ctl.signal,keepalive:!!keep&&!!b&&b.length<60000,
+        headers:{...(b!==undefined?{'content-type':'application/json'}:{}),...(this.token?{authorization:'Bearer '+this.token}:{})},body:b});
+      let d={};try{d=await r.json();}catch(e){}return {status:r.status,ok:r.ok,...d};}
+    catch(e){return {status:0,ok:false,error:"Can't reach the game server right now."};}finally{clearTimeout(to);}},
+  remember(token,name,low,keep){this.token=token;this.name=name;this.sent={};const v=JSON.stringify({token,name,u:low});
+    try{(keep?localStorage:sessionStorage).setItem(this.key,v);(keep?sessionStorage:localStorage).removeItem(this.key);}catch(e){}},
+  restore(){for(const st of [sessionStorage,localStorage]){try{const s=JSON.parse(st.getItem(this.key)||'null');if(s&&s.token&&s.u){this.token=s.token;this.name=s.name;return s;}}catch(e){}}return null;},
+  forget(){clearTimeout(this.timer);this.timer=0;this.token=null;this.name=null;this.sent={};this.gone.clear();try{localStorage.removeItem(this.key);sessionStorage.removeItem(this.key);}catch(e){}},
+  /* this browser's characters and the server's come together: the newer copy of each wins, deletions stick */
+  async pull(){const r=await this.api('chars');if(!r.ok) return r;const L=Store.load(),gone=r.gone||{};let changed=false;
+    for(const it of r.chars||[]){const c=it.data;if(!c||!c.id) continue;c.savedAt=it.t;const i=L.findIndex(x=>x.id===c.id),n={...c,appearance:APPEARANCE.normalize(c.appearance)};
+      if(i<0||(L[i].savedAt||0)<it.t){if(i<0) L.push(n);else L[i]=n;changed=true;this.sent[c.id]=JSON.stringify(n);}   // took the server's copy
+      else if((L[i].savedAt||0)===it.t) this.sent[c.id]=JSON.stringify(L[i]);else delete this.sent[c.id];}             // ours is newer: it goes up
+    for(let i=L.length-1;i>=0;i--){const g=gone[L[i].id];if(g&&g>=(L[i].savedAt||0)){L.splice(i,1);changed=true;}}
+    if(changed){Store.mem=L;Store.saveLocal();}
+    this.schedule(400);return {ok:true,changed};},
+  schedule(ms=8000){if(!this.token||this.timer) return;this.timer=setTimeout(()=>{this.timer=0;this.push();},ms);},
+  drop(id){if(!this.token) return;this.gone.add(id);clearTimeout(this.timer);this.timer=0;this.push();},
+  async push(leaving){if(!this.token) return;if(this.busy){this.again=true;return;}this.busy=true;
+    try{const put=[];for(const c of Store.load()){const j=JSON.stringify(c);if(this.sent[c.id]!==j) put.push({id:c.id,t:c.savedAt||Date.now(),data:c,j});}
+      const del=[...this.gone];if(!put.length&&!del.length) return;
+      const r=await this.api('chars',{put:put.slice(0,10).map(({id,t,data})=>({id,t,data})),del},leaving);
+      if(r.ok){for(const p of put.slice(0,10)) this.sent[p.id]=p.j;for(const d of del) this.gone.delete(d);if(put.length>10) this.again=true;}
+      else if(r.status===401){this.forget();toast('Signed out: please sign in again to keep saving online',5000);}
+      else if(!leaving){clearTimeout(this.timer);this.timer=0;this.schedule(15000);}}      // the server didn't answer: try again soon
+    finally{this.busy=false;if(this.again){this.again=false;this.schedule(800);}}}
+};
 const Auth={key:'mmorpg-online.accounts.v1',sessKey:'mmorpg-online.session.v1',user:null,ITER:150000,
   all(){try{return JSON.parse(localStorage.getItem(this.key)||'{}')||{};}catch(e){return {};}},
   put(A){try{localStorage.setItem(this.key,JSON.stringify(A));return true;}catch(e){return false;}},
@@ -1260,20 +1327,46 @@ const Auth={key:'mmorpg-online.accounts.v1',sessKey:'mmorpg-online.session.v1',u
     if(!/^[A-Za-z0-9_]+$/.test(n)) return 'Use letters, numbers and _ only.';return '';},
   validPass(p){if(p.length<6) return 'Passwords need at least 6 characters.';if(/^\s|\s$/.test(p)) return 'Passwords can\'t start or end with a space.';return '';},
   same(a,b){if(a.length!==b.length) return false;let d=0;for(let i=0;i<a.length;i++) d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;},
-  async register(name,pw,remember){const A=this.all(),id=name.toLowerCase();if(A[id]) return {ok:false,error:'That username is already taken on this device.'};
+  async register(name,pw,remember){
+    if(Cloud.on()){const low=name.toLowerCase(),r=await Cloud.api('register',{u:name,v:await Cloud.key4(name,pw)});
+      if(r.ok){Cloud.remember(r.token,r.name,low,remember);const claimed=Store.claimLegacy(low);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
+        return {ok:true,id:low,name:r.name,isNew:true,claimed,online:true};}
+      if(r.status) return {ok:false,error:r.error||'Could not create the account.'};
+      // no server right now: fall through to an account on this device (it moves online the first time you sign in with the server up)
+    }
+    const A=this.all(),id=name.toLowerCase();if(A[id]) return {ok:false,error:'That username is already taken on this device.'};
     const salt=crypto.getRandomValues(new Uint8Array(16)),hash=b64(await pbkdf2(pw,salt,this.ITER));
     A[id]={name,salt:b64(salt),iter:this.ITER,hash,created:Date.now()};
     if(!this.put(A)) return {ok:false,error:'Could not save the account: browser storage is full or blocked.'};
     const claimed=Store.claimLegacy(id);this.begin(id,remember);return {ok:true,id,name,isNew:true,claimed};},
-  async login(name,pw,remember){const A=this.all(),id=name.toLowerCase(),rec=A[id];
+  async login(name,pw,remember){
+    if(Cloud.on()){const low=name.toLowerCase(),v=await Cloud.key4(name,pw),r=await Cloud.api('login',{u:name,v});
+      if(r.ok){Cloud.remember(r.token,r.name,low,remember);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();return {ok:true,id:low,name:r.name,online:true};}
+      if(r.code==='nouser'){    // an account made on this device before accounts went online moves to the server now
+        const loc=await this.localLogin(name,pw);if(!loc) return {ok:false,error:'Wrong username or password.'};
+        const g=await Cloud.api('register',{u:loc.name,v});
+        if(g.ok){Cloud.remember(g.token,g.name,low,remember);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
+          return {ok:true,id:low,name:g.name,online:true,moved:Store.load().length};}
+        if(g.status) return {ok:false,error:g.error};}
+      else if(r.status===401){const loc=await this.localLogin(name,pw);if(!loc) return {ok:false,error:r.error};
+        this.begin(low,remember);return {ok:true,id:low,name:loc.name,localOnly:'taken'};}       // someone else owns this name online
+      else if(r.status) return {ok:false,error:r.error||'Could not sign in.'};
+      else{const loc=await this.localLogin(name,pw);if(!loc) return {ok:false,error:r.error};this.begin(low,remember);return {ok:true,id:low,name:loc.name,localOnly:'offline'};}
+      return {ok:false,error:'Wrong username or password.'};}
+    const A=this.all(),id=name.toLowerCase(),rec=A[id];
     const h=b64(await pbkdf2(pw,rec?unb64(rec.salt):new Uint8Array(16),rec?rec.iter:this.ITER));   // same work for unknown names
     if(!rec||!this.same(h,rec.hash)) return {ok:false,error:'Wrong username or password.'};
     rec.last=Date.now();this.put(A);this.begin(id,remember);return {ok:true,id,name:rec.name};},
+  /* the account saved on this device, if this password opens it */
+  async localLogin(name,pw){const rec=this.all()[name.toLowerCase()];if(!rec) return null;
+    const h=b64(await pbkdf2(pw,unb64(rec.salt),rec.iter));return this.same(h,rec.hash)?rec:null;},
   begin(id,remember){this.user=id;const v=JSON.stringify({u:id,t:Date.now()});
     try{(remember?localStorage:sessionStorage).setItem(this.sessKey,v);(remember?sessionStorage:localStorage).removeItem(this.sessKey);}catch(e){}},
-  restore(){for(const st of [sessionStorage,localStorage]){try{const s=JSON.parse(st.getItem(this.sessKey)||'null');if(s&&s.u&&this.all()[s.u]){this.user=s.u;return true;}}catch(e){}}return false;},
-  logout(){this.user=null;try{localStorage.removeItem(this.sessKey);sessionStorage.removeItem(this.sessKey);}catch(e){}},
-  display(){const r=this.all()[this.user];return r?r.name:'';}
+  restore(){if(Cloud.on()){const c=Cloud.restore();if(c){this.user=c.u;return true;}}
+    for(const st of [sessionStorage,localStorage]){try{const s=JSON.parse(st.getItem(this.sessKey)||'null');if(s&&s.u&&this.all()[s.u]){this.user=s.u;return true;}}catch(e){}}return false;},
+  logout(){if(Cloud.token){const t=Cloud.token;Cloud.push(true).finally(()=>{Cloud.token=t;Cloud.api('logout',{},true);Cloud.forget();});}else Cloud.forget();
+    this.user=null;try{localStorage.removeItem(this.sessKey);sessionStorage.removeItem(this.sessKey);}catch(e){}},
+  display(){if(Cloud.token&&Cloud.name) return Cloud.name;const r=this.all()[this.user];return r?r.name:'';}
 };
 
 /* -------------------------------- Jobs --------------------------------- */
@@ -1511,7 +1604,8 @@ const LoginScreen={mode:'in',busy:false,fails:0,lockUntil:0,
       const b=$('#lg-eye');b.textContent=show?'Hide':'Show';b.setAttribute('aria-pressed',show);b.setAttribute('aria-label',show?'Hide password':'Show password');};
     $('#login-form').onsubmit=e=>{e.preventDefault();this.submit();};
     ['#lg-user','#lg-pass','#lg-pass2'].forEach(id=>$(id).addEventListener('input',()=>{if($('#lg-msg').classList.contains('bad')) this.hint();}));},
-  enter(){this.setMode(Object.keys(Auth.all()).length?'in':'up');$('#lg-pass').value='';$('#lg-pass2').value='';
+  enter(){this.setMode(Cloud.on()||Object.keys(Auth.all()).length?'in':'up');
+    const w=$('#lg-where');if(w) w.textContent=Cloud.on()?'Your account works on any phone or computer.':'Accounts on this link are saved in this browser only.';$('#lg-pass').value='';$('#lg-pass2').value='';
     setTimeout(()=>{const u=$('#lg-user');(u.value?$('#lg-pass'):u).focus();},80);},
   setMode(m){this.mode=m;$('#lt-in').setAttribute('aria-selected',m==='in');$('#lt-up').setAttribute('aria-selected',m==='up');$('#lg-confirm-row').hidden=m!=='up';
     $('#lg-pass').setAttribute('autocomplete',m==='up'?'new-password':'current-password');$('#lg-go').textContent=m==='up'?'Create account':'Sign in';this.hint();},
@@ -1526,7 +1620,11 @@ const LoginScreen={mode:'in',busy:false,fails:0,lockUntil:0,
     try{const r=this.mode==='up'?await Auth.register(u,p,remember):await Auth.login(u,p,remember);
       if(!r.ok){if(this.mode==='in'&&++this.fails>=5){this.fails=0;this.lockUntil=Date.now()+30000;}this.msg(r.error,true);AudioFX.sfx('miss');return;}
       this.fails=0;$('#lg-pass').value='';$('#lg-pass2').value='';AudioFX.sfx('quest');Store.useAccount(r.id);
-      toast(r.isNew?`Account created · welcome, ${r.name}!${r.claimed?` Your ${r.claimed} earlier character${r.claimed>1?'s are':' is'} on this account.`:''}`:`Welcome back, ${r.name}`,4200);
+      toast(r.isNew?`Account created · welcome, ${r.name}!${r.claimed?` Your ${r.claimed} earlier character${r.claimed>1?'s are':' is'} on this account.`:''}`
+        :r.moved!=null?`Welcome back, ${r.name} · your account is online now: sign in on any device${r.moved?` (${r.moved} character${r.moved>1?'s':''} saved)`:''}`
+        :r.localOnly==='offline'?`Welcome back, ${r.name} · the game server can't be reached, so this session saves on this device only`
+        :r.localOnly==='taken'?`Welcome back, ${r.name} · that name belongs to another online account, so your characters stay on this device`
+        :`Welcome back, ${r.name}`,5200);
       showScreen(Store.load().length?'screen-select':'screen-create');}
     catch(e){this.msg('Something went wrong: '+e.message,true);}
     finally{this.busy=false;$('#lg-go').disabled=false;}}
@@ -1584,7 +1682,7 @@ const SelectScreen={
     GaleCard.mount(c,this.outfit());
   },
   async del(){const c=this.sel();if(!c) return;
-    if(await confirmBox(`Delete ${c.name}?`,`This permanently removes ${c.name} and their progress from this device.`)){Store.remove(c.id);this.selId=null;this.enter();toast(`${c.name} has been released from Terago.`);}},
+    if(await confirmBox(`Delete ${c.name}?`,`This permanently removes ${c.name} and their progress${Cloud.token?' from your account, on every device':' from this device'}.`)){Store.remove(c.id);this.selId=null;this.enter();toast(`${c.name} has been released from Terago.`);}},
   draw(now){
     const c=this.sel(),ctx=this.stage.begin(),w=this.stage.w,h=this.stage.h;
     const s=this.stage.scaleFor(.52),cx=w/2,cy=h*.8;
@@ -2183,6 +2281,20 @@ const QUEST_CHAIN=[
   {id:'legend',lv:95,from:'elder',title:'Legend of Terago',desc:'Nothing left to ask of you but the summit itself. Reach Base Level 100.',level:100,gold:20000,pots:50}
 ];
 QUEST_CHAIN.forEach(Q=>{if(Q.exp==null) Q.exp=Q.level?0:Math.round(expNeed(Q.lv)*.8/10)*10;if(Q.gold==null) Q.gold=Q.lv*15;if(Q.pots==null) Q.pots=2+Math.floor(Q.lv/10);});
+/* drag on touch screens, where the browser's drag-and-drop doesn't work: press an icon, move a little, carry it,
+   let go over a skill-bar slot (or anywhere else); a quick tap still works as a tap */
+function touchDrag(el,getData,onDrop){el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse') return;
+  const sx=e.clientX,sy=e.clientY,id=e.pointerId;let ghost=null,over=null;
+  const end=()=>{removeEventListener('pointermove',move);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);
+    if(ghost){ghost.remove();document.body.classList.remove('dragging-skill');}if(over) over.classList.remove('over');};
+  const move=ev=>{if(ev.pointerId!==id) return;
+    if(!ghost){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<10) return;ghost=document.createElement('div');ghost.className='dragghost';
+      const ic=el.querySelector('.gi,svg');ghost.innerHTML=ic?ic.outerHTML:'';document.body.appendChild(ghost);document.body.classList.add('dragging-skill');}
+    ev.preventDefault();ghost.style.transform=`translate(${ev.clientX-24}px,${ev.clientY-24}px)`;
+    const t=document.elementFromPoint(ev.clientX,ev.clientY),sl=t&&t.closest('#hotbar .hslot');if(over!==sl){if(over) over.classList.remove('over');over=sl;if(sl) sl.classList.add('over');}};
+  const up=ev=>{if(ev.pointerId!==id) return;const dragged=!!ghost;end();if(!dragged) return;TownScreen._dragT=performance.now();
+    if(ev.type==='pointercancel') return;onDrop(document.elementFromPoint(ev.clientX,ev.clientY),getData());};
+  addEventListener('pointermove',move,{passive:false});addEventListener('pointerup',up);addEventListener('pointercancel',up);});}
 /* a small priority queue for path searches */
 class MinHeap{constructor(){this.h=[];}get size(){return this.h.length;}
   push(f,i){const h=this.h;h.push([f,i]);let k=h.length-1;while(k>0){const p=(k-1)>>1;if(h[p][0]<=h[k][0]) break;[h[p],h[k]]=[h[k],h[p]];k=p;}}
@@ -2286,6 +2398,7 @@ const TownScreen={
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
     $('#net-pill').onclick=()=>this.netWho();
+    {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
     $('#btn-auto').onclick=()=>this.toggleAuto();
@@ -2597,7 +2710,7 @@ const TownScreen={
   /* ---------- hotbar: keys 1-9 and 0 ---------- */
   /* layout lives on the character (c.hotbar): {t:'skill',id} or {t:'item',id}; drag skills from the Skills window,
      draughts from the Inventory, or between slots; right-click a slot to clear it */
-  defaultBar(){const b=Array(10).fill(null);jobSkills(this.ch.job.classId).filter(s=>s.t==='A'&&s.start).slice(0,8).forEach((s,i)=>b[i]={t:'skill',id:s.id});b[9]={t:'item',id:'potion'};return b;},
+  defaultBar(){const b=Array(10).fill(null);b[9]={t:'item',id:'potion'};return b;},   // skills go on the bar only when you put them there
   slots(){const ok=new Set(jobSkills(this.ch.job.classId).filter(s=>s.t==='A'&&this.rank(s.id)>0).map(s=>s.id));
     return this.ch.hotbar.map(e=>!e?null:e.t==='skill'?(ok.has(e.id)?skillById(e.id):null):e.id==='potion'?POTION:null);},
   keyOf(i){return i===9?'0':String(i+1);},
@@ -2607,7 +2720,7 @@ const TownScreen={
       <span class="tip">${s===POTION?`<b>${esc(s.name)}</b>${esc(s.desc)}`:this.skillTip(s)}<br><span style="color:var(--dim)">Drag to move · right-click to clear</span></span></button>`
       :`<button class="hslot empty" data-i="${i}" aria-label="${this.keyOf(i)}: empty"><span class="k">${this.keyOf(i)}</span></button>`).join('');
     el.querySelectorAll('.hslot').forEach(b=>{const i=+b.dataset.i;
-      if(!b.classList.contains('empty')) b.onclick=()=>this.useSlot(i);
+      if(!b.classList.contains('empty')){b.onclick=()=>{if(performance.now()-(this._dragT||0)<350) return;this.useSlot(i);};touchDrag(b,()=>'slot:'+i,(t,d)=>this.barDrop(t,d));}
       b.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','slot:'+i);});
       b.addEventListener('dragover',e=>{e.preventDefault();b.classList.add('over');});
       b.addEventListener('dragleave',()=>b.classList.remove('over'));
@@ -2710,24 +2823,42 @@ const TownScreen={
     return out.join(' · ');},
   skillUnlocked(s){const c=this.ch,J=JOBS[c.job.classId];if(s.job!==c.job.classId) return true;return (c.job.jobLevel||1)>=s.req;},
   renderSkills(){if(this.win!=='skillwin') return;const c=this.ch,J=JOBS[c.job.classId]||JOBS.recruit,L=jobSkills(c.job.classId),pts=c.skillPoints||0;
-    $('#kw-sub').textContent=`${J.name} · Job ${c.job.jobLevel||1} · ${pts} skill point${pts===1?'':'s'}`;
-    const groups=[...new Set(L.map(s=>s.job))];
-    $('#kw-body').innerHTML=groups.map(g=>`<div class="skgrp">${esc((JOBS[g]||JOBS.recruit).name)} skills</div>`+L.filter(s=>s.job===g).map(s=>{
-        const r=this.rank(s.id),open=this.skillUnlocked(s),on=c.hotbar.some(e=>e&&e.t==='skill'&&e.id===s.id),act=s.t==='A';
+    const learned=L.filter(s=>this.rank(s.id)>0).length;
+    $('#kw-sub').textContent=`${J.name} · Job ${c.job.jobLevel||1} · ${pts} skill point${pts===1?'':'s'} · ${learned}/${L.length} learned`;
+    const groups=[...new Set(L.map(s=>s.job))],onBar=id=>c.hotbar.some(e=>e&&e.t==='skill'&&e.id===id);
+    const LOCK='<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>';
+    // every skill at a glance: learned ones bright with their rank, unlearned dim, locked ones show the job level they need
+    const grid=groups.map(g=>`<div class="sgrow"><div class="sgl">${esc((JOBS[g]||JOBS.recruit).name)}</div><div class="sgi">${L.filter(s=>s.job===g).map(s=>{
+        const r=this.rank(s.id),open=this.skillUnlocked(s),st=r?'on':open?'off':'lock';
+        return `<button class="sg ${st}" data-go="${s.id}" ${s.t==='A'&&r?`data-sk="${s.id}" draggable="true"`:''} title="${esc(s.name)}${open?'':` · unlocks at Job Lv ${s.req}`}" aria-label="${esc(s.name)}, ${s.t==='A'?'active':'passive'}, rank ${r} of ${s.max}${open?'':', locked'}">
+          ${skillIcon(s)}<span class="rk">${r}/${s.max}</span>${s.t==='P'?'<span class="pv">P</span>':''}${open?'':`<span class="lk">${LOCK}${s.req}</span>`}${onBar(s.id)?'<span class="ob"></span>':''}</button>`;}).join('')}</div></div>`).join('');
+    $('#kw-body').innerHTML=`<div class="skgrid">${grid}<div class="sghint">Tap a skill for details. Drag a learned skill onto the bar, or drag one off the bar to remove it.</div></div>`+
+      groups.map(g=>`<div class="skgrp">${esc((JOBS[g]||JOBS.recruit).name)} skills</div>`+L.filter(s=>s.job===g).map(s=>{
+        const r=this.rank(s.id),open=this.skillUnlocked(s),on=onBar(s.id),act=s.t==='A';
         const now=r>0?this.describe(s,r):'',next=r<s.max?this.describe(s,r+1):'';
-        return `<div class="skrow ${r?'':'unl'} ${open?'':'locked'}"><div class="ic" ${act&&r?`draggable="true" data-sk="${s.id}" title="Drag to the skill bar"`:''}>${skillIcon(s)}</div>
+        return `<div class="skrow ${r?'':'unl'} ${open?'':'locked'}" id="sk-${s.id}"><div class="ic" ${act&&r?`draggable="true" data-sk="${s.id}" title="Drag to the skill bar"`:''}>${skillIcon(s)}</div>
         <div><b>${esc(s.name)}</b> <span class="meta">${act?'ACTIVE':'PASSIVE'} · RANK ${r}/${s.max}${open?'':` · UNLOCKS AT JOB LV ${s.req}`}</span><p>${esc(s.desc)}</p>
         ${r?`<p class="now">${esc(now)}</p>`:''}${r<s.max?`<p class="next">${r?'Next rank':'Rank 1'}: ${esc(next)}</p>`:''}</div>
         <div class="act"><button class="btn" data-up="${s.id}" ${pts>0&&open&&r<s.max?'':'disabled'} aria-label="${r?'Rank up':'Learn'} ${esc(s.name)}">${r?'Rank up':'Learn'}</button>
-        ${act?`<button class="btn" data-bar="${s.id}" ${on||!r?'disabled':''}>${on?'On the bar':'Add to bar'}</button>`:''}</div></div>`;}).join('')).join('')+
-      `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700;line-height:1.5">Each job level gives a skill point: learn a skill, then raise its rank. Passive skills work on their own. A second job keeps the first job's skills. Drag an active skill onto any slot 1-9 or 0.</div>
+        ${act?(on?`<button class="btn" data-off="${s.id}">Remove from bar</button>`:`<button class="btn" data-bar="${s.id}" ${r?'':'disabled'} title="${r?'':'Learn it first'}">Add to bar</button>`):''}</div></div>`;}).join('')).join('')+
+      `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700;line-height:1.5">Each job level gives a skill point: learn a skill, then raise its rank. Passive skills work on their own. A second job keeps the first job's skills. Put active skills on the bar yourself: Add to bar, or drag them onto a slot 1-9 or 0.</div>
       <div class="resetbar"><span>${this.resetCost()?`Costs ${this.resetCost()} gold`:'Free up to Base Level 20'}</span><button class="btn warn" id="kw-reset" ${this.skillSpent()?'':'disabled'}>Reset skills</button></div>`;
     $('#kw-reset').onclick=e=>{const n=this.skillSpent();this.arm(e.currentTarget,`Click again: ${n} point${n===1?'':'s'} back`,()=>this.resetSkills());};
     $$('#kw-body [data-up]').forEach(b=>b.onclick=()=>{const s=skillById(b.dataset.up),r=this.rank(s.id);
       if((c.skillPoints||0)>0&&r<s.max&&this.skillUnlocked(s)){c.skills[s.id]=r+1;c.skillPoints--;AudioFX.sfx('quest');this.dirtyMods();
-        if(!r&&s.t==='A') this.toBar('skill',s.id);this.renderSkills();this.renderHotbar();this.hudBars();this.renderChar();this.save();}});
+        this.renderSkills();this.renderHotbar();this.hudBars();this.renderChar();this.save();}});
     $$('#kw-body [data-bar]').forEach(b=>b.onclick=()=>this.toBar('skill',b.dataset.bar));
-    $$('#kw-body [data-sk]').forEach(b=>b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','skill:'+b.dataset.sk)));},
+    $$('#kw-body [data-off]').forEach(b=>b.onclick=()=>this.offBar(b.dataset.off));
+    $$('#kw-body [data-go]').forEach(b=>b.onclick=()=>{if(performance.now()-(this._dragT||0)<350) return;const row=$('#sk-'+b.dataset.go);if(!row) return;
+      row.scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});row.classList.remove('pick');void row.offsetWidth;row.classList.add('pick');});
+    $$('#kw-body [data-sk]').forEach(b=>{b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','skill:'+b.dataset.sk));
+      touchDrag(b,()=>'skill:'+b.dataset.sk,(t,d)=>this.barDrop(t,d));});},
+  /* take a skill (or the draught) off the bar */
+  offBar(id){const H=this.ch.hotbar;let n=0;for(let k=0;k<10;k++) if(H[k]&&H[k].id===id){H[k]=null;n++;}if(!n) return;AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();},
+  /* where something dragged was let go: on a slot it goes there; a bar slot let go anywhere off the bar comes off */
+  barDrop(t,data){if(!data) return;const slot=t&&t.closest&&t.closest('#hotbar .hslot');
+    if(slot){this.dropOnBar(+slot.dataset.i,data);return;}
+    const [k,id]=data.split(':');if(k==='slot'&&!(t&&t.closest&&t.closest('#hotbar'))){const H=this.ch.hotbar,i=+id;if(H[i]){H[i]=null;AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();}}},
   /* skill points spent beyond the free starter ranks */
   skillSpent(){const c=this.ch;let n=0;for(const [id,r] of Object.entries(c.skills||{})){const s=skillById(id);n+=Math.max(0,(r|0)-(s&&s.start?1:0));}return n;},
   resetSkills(){const c=this.ch,n=this.skillSpent(),cost=this.resetCost();if(!n) return;
@@ -2822,7 +2953,7 @@ const TownScreen={
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
       baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
-      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot};Store.save();}},
+      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
     this.tracker();this.save();this.questCheck();},
@@ -3110,9 +3241,9 @@ const TownScreen={
   faceTo(dx,dy){return this.comp&&this.comp.meta.attackDiag?(dy>=0?(dx>=0?7:1):(dx>=0?5:3)):dirOf(dx,dy);},
   dropOnBar(i,data){const H=this.ch.hotbar;if(!data) return;const [t,id]=data.split(':');
     if(t==='slot'){const j=+id;if(j===i) return;[H[i],H[j]]=[H[j],H[i]];}
-    else if(t==='skill'||t==='item'){for(let k=0;k<10;k++) if(H[k]&&H[k].t===t&&H[k].id===id) H[k]=null;H[i]={t,id};}
+    else if(t==='skill'||t==='item'){if(t==='skill'&&this.rank(id)<1){toast('Learn it first (Skills, K)');return;}for(let k=0;k<10;k++) if(H[k]&&H[k].t===t&&H[k].id===id) H[k]=null;H[i]={t,id};}
     else return;AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();},
-  toBar(t,id){const H=this.ch.hotbar;if(H.some(e=>e&&e.t===t&&e.id===id)) return;const i=H.findIndex(e=>!e);if(i<0){toast('The skill bar is full: drag onto a slot to replace it');return;}
+  toBar(t,id){const H=this.ch.hotbar;if(H.some(e=>e&&e.t===t&&e.id===id)) return;if(t==='skill'&&this.rank(id)<1){toast('Learn it first');return;}const i=H.findIndex(e=>!e);if(i<0){toast('The skill bar is full: drag onto a slot to replace it');return;}
     H[i]={t,id};AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();},
   drink(now){const c=this.ch;if(!(c.items.potion>0)){this.fx.push({x:this.p.x,y:this.p.y-70,text:'No potions left',color:'#ffcf7a',t0:now});return;}
     if(c.hp>=this.maxHp()) return;c.items.potion--;AudioFX.sfx('potion');this.cds.potion=now+POTION.cd*1000;const h=Math.round(this.maxHp()*.3+40);c.hp=Math.min(this.maxHp(),c.hp+h);
@@ -3131,7 +3262,7 @@ const TownScreen={
   toggleAuto(on){const a=this.ch.auto;a.on=on??!a.on;this.syncAuto();toast(a.on?'AUTO on · hunting nearby monsters':'AUTO off');if(!a.on){this.target=null;this.path=null;}this.save();},
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
-  openWin(id){if(id&&this.win===id) id=null;this.win=id;
+  openWin(id){if(id&&this.win===id) id=null;this.win=id;document.body.classList.toggle('skills-open',id==='skillwin');
     for(const w of ['charwin','invwin','skillwin','questwin','setwin']) $('#'+w).classList.toggle('on',w===id);
     $$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.win===id));
     if(id==='charwin') this.renderChar();else if(id==='invwin') this.renderInv();else if(id==='skillwin') this.renderSkills();
@@ -3367,11 +3498,11 @@ const TownScreen={
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);this.portrait();
     c.skills=c.skills||{};for(const s of SKILLDB[id]||[]) if(s.start) c.skills[s.id]=Math.max(1,c.skills[s.id]|0);this.buffs={};this.dirtyMods();
     const ok=new Set(jobSkills(id).map(s=>s.id));c.hotbar=c.hotbar.map(e=>e&&e.t==='skill'&&!ok.has(e.id)?null:e);
-    for(const s of (SKILLDB[id]||[]).filter(s=>s.start)) this.toBar('skill',s.id);AudioFX.sfx('level');
+    this.renderHotbar();AudioFX.sfx('level');
     c.hp=this.maxHp();this.res=this.maxRes();this.cds={};this.renderHotbar();this.hud();this.tracker();
     this.fx.push({x:this.p.x,y:this.p.y-86,text:`${JOBS[id].name}!`,color:'#f7d58e',t0:performance.now(),big:true});this.wfx.push({k:'ring',x:this.p.x,y:this.p.y,r:60,t0:performance.now(),dur:900,color:'#f7d58e'});
-    toast(`You are now a ${JOBS[id].name}`);this.log('sys',null,`Job change · ${JOBS[id].name} (${JOBS[id].line}). New skills are on your bar; open Skills (K) to learn the rest.`);this.save();
-    return {final:true,pages:[`Then walk as a ${JOBS[id].name}, {name}. Your new skills are on your bar, and the Skills window (K) holds the rest. Amelie at the town hall will want to update her ledger.`]};},
+    toast(`You are now a ${JOBS[id].name}`);this.log('sys',null,`Job change · ${JOBS[id].name} (${JOBS[id].line}). Open Skills (K) to learn your new skills and put them on your bar.`);this.save();
+    return {final:true,pages:[`Then walk as a ${JOBS[id].name}, {name}. Open the Skills window (K) to learn your new skills and put them on your bar. Amelie at the town hall will want to update her ledger.`]};},
   kill(m,now){this.mobDie(m,now);this.reward(m,now);},
   mobDie(m,now){const D=m.def;m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;m.frozen=false;m.stunUntil=0;m.tgt=null;
     m.respawnAt=now+(D.respawn[0]+Math.random()*(D.respawn[1]-D.respawn[0]))*1000;if(this.target===m) this.target=null;if(this.mp) this.mp.dmg.delete(m);},
@@ -3731,10 +3862,12 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
     if(Sprites.heads) for(const g of ['m','f']) Sprites.heads.meta.styles[g].forEach((st,i)=>APPEARANCE.hairStyles[g].push({...st,source:'head',index:i}));
   }
   catch(e){document.body.insertAdjacentHTML('beforeend',`<div class="glass" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:24px;z-index:9;max-width:420px">Couldn't load the Recruit sprites (${esc(e.message)}). Serve this folder over http (e.g. <code>npx serve</code>) or open dist/index.html.</div>`);return;}
-  LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();
-  if(Auth.restore()){Store.useAccount(Auth.user);showScreen(Store.load().length?'screen-select':'screen-create');}
+  Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();
+  if(Auth.restore()){Store.useAccount(Auth.user);showScreen(Store.load().length?'screen-select':'screen-create');
+    if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
+      else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
   else showScreen('screen-login');
-  window.MMO={Store,Sprites,APPEARANCE,JOBS,advanceJob,newCharacter,TownScreen,Auth,Net};
+  window.MMO={Store,Sprites,APPEARANCE,JOBS,advanceJob,newCharacter,TownScreen,Auth,Net,Cloud};
 })();
 </script>
 </body>

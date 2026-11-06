@@ -6,7 +6,7 @@
   "main": "server/worker.js",
   "compatibility_date": "2025-10-01",
   "assets": { "directory": "./public", "binding": "ASSETS" },
-  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
+  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }, { "name": "ACCOUNTS", "class_name": "AccountStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }, { "tag": "v2", "new_sqlite_classes": ["AccountStore"] }],
   "observability": { "enabled": true }
 }
