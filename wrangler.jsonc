@@ -1,0 +1,12 @@
+{
+  // MMORPG ONLINE on Cloudflare: the game's files (public/) plus the multiplayer server (server/worker.js).
+  // Workers Builds runs `npx wrangler deploy` from this folder on every push to main.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mmorpg",
+  "main": "server/worker.js",
+  "compatibility_date": "2025-10-01",
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
+  "observability": { "enabled": true }
+}

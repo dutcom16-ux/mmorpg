@@ -1,0 +1,13 @@
+{
+  "name": "mmorpg",
+  "private": true,
+  "description": "MMORPG ONLINE: browser game + multiplayer server on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "local": "node tools/local-server.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
