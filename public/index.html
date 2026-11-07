@@ -290,8 +290,12 @@ button{font:inherit;color:inherit}
 .chatlog .party{color:#b8ffc8}.chatlog .party .who{color:#7dff9a}
 .chatlog .pchat{color:#bfe3ff}.chatlog .pchat .who{color:#7fc8ff}
 .chat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chat-btns{display:flex;align-items:center;gap:6px;flex:none}
+.chatmin{position:relative;min-width:26px;height:26px;padding:0 5px}.chatmin svg{width:15px;height:15px}
+.chatmin b{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff5d6f;color:#fff;font:900 10px/16px Nunito,sans-serif;text-align:center}
+.chatbox.min .chatlog,.chatbox.min #chat-form{display:none}
 .partybtn{min-height:26px;padding:2px 10px;font-size:11.5px;letter-spacing:.06em}
-.party-frame{display:none;position:absolute;left:14px;top:96px;width:210px;z-index:3;padding:6px 7px}
+.party-frame{display:none;position:absolute;left:14px;bottom:240px;width:210px;z-index:3;padding:6px 7px;overflow-y:auto;scrollbar-width:thin}
 .party-frame.on{display:block}
 .party-frame .ph{font:900 10.5px Nunito,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--aether);padding:1px 3px 4px;display:flex;justify-content:space-between;gap:6px}
 .party-frame .ph span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -518,7 +522,7 @@ dl dd.main{color:var(--gold)}
   .hud-tracker .qgo{min-width:36px;min-height:24px;padding:1px 7px;font-size:10.5px;margin-left:6px}
   .shortcuts{padding:4px 5px}.shortcuts .ib{width:30px;height:30px;border-radius:8px}.shortcuts .ib svg{width:16px;height:16px}.shortcuts .ib kbd{display:none}
   .minimap{padding:5px}.minimap .mm-name{font-size:9px}
-  .party-frame{left:8px;top:68px;width:min(170px,44vw);padding:4px 5px}.pm{padding:3px}.pm .pn b{font-size:11px}.pm .pn small{font-size:9.5px}.pm .fol{width:26px;height:24px}
+  .party-frame{left:8px;width:min(170px,44vw);padding:4px 5px}.pm{padding:3px}.pm .pn b{font-size:11px}.pm .pn small{font-size:9.5px}.pm .fol{width:26px;height:24px}
   .chatbox{left:8px;bottom:62px;width:min(300px,56vw);padding:6px}.chatbox .chatlog{max-height:84px;font-size:11.5px}.chatbox input{padding:5px 8px;font-size:12px}
   .set-row{grid-template-columns:110px 1fr 40px}
   .inv-grid{grid-template-columns:repeat(5,1fr)}
@@ -544,6 +548,8 @@ dl dd.main{color:var(--gold)}
 /* ---------- toast / modal ---------- */
 #toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-20px);z-index:20;padding:12px 18px;font-weight:800;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+#upd{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:21;padding:10px 12px 10px 16px;align-items:center;gap:10px;font-weight:800;font-size:14px;max-width:94vw}
+#upd.on{display:flex}#upd .btn{min-height:34px;padding:5px 14px;font-size:13px}
 #modal{position:fixed;inset:0;z-index:30;background:rgba(3,6,18,.6);display:none;align-items:center;justify-content:center;padding:20px}
 #modal.on{display:flex}
 #modal .box{width:min(420px,100%);padding:24px}
@@ -819,7 +825,8 @@ dl dd.main{color:var(--gold)}
     <div class="pcard glass" id="pcard" role="dialog"></div>
     <div class="chatbox glass" id="chatbox">
       <div class="chat-top"><button class="netpill" id="net-pill" type="button" title="Who's online · party (P)"><i></i><span>Single-player</span></button>
-        <button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button></div>
+        <span class="chat-btns"><button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button>
+        <button class="ib chatmin" id="chat-min" type="button" title="Minimize chat" aria-label="Minimize chat" aria-pressed="false" aria-controls="chatlog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg><b hidden></b></button></span></div>
       <div class="chatlog" id="chatlog" aria-live="polite"></div>
       <form id="chat-form" autocomplete="off"><input id="chat-input" maxlength="120" placeholder="Press Enter to chat · /help" aria-label="Chat message"></form>
     </div>
@@ -883,6 +890,7 @@ dl dd.main{color:var(--gold)}
 </div>
 
 <div id="toast" class="glass" role="status" aria-live="polite"></div>
+<div id="upd" class="glass" role="alert"><span>A new version of the game is out.</span><button class="btn primary" id="upd-go" type="button">Reload</button><button class="btn" id="upd-x" type="button" aria-label="Later">Later</button></div>
 <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="box glass"><h3 id="modal-title"></h3><p id="modal-text"></p><div class="row"><button class="btn" id="modal-no">Cancel</button><button class="btn btn-danger" id="modal-yes">Delete</button></div></div></div>
 
 <script>
@@ -2125,7 +2133,7 @@ const NUM_PAINT={normal:['#ffffff','#d8dde8','#1a1f2e'],skill:['#fff6c0','#ffb02
   lightning:['#fffbe0','#ffd23a','#2a1a4a'],poison:['#ffe6f6','#ff5ab4','#3a0628']};
 /* ------------------------------ settings ------------------------------
    graphics, sound and HUD layout; saved on this device (not on the character) */
-const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,mmZoom:1.8};
+const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8};
   try{return {...D,...JSON.parse(localStorage.getItem('mmorpg-online.settings.v1')||'{}')};}catch(e){return D;}})();
 function saveSettings(){try{localStorage.setItem('mmorpg-online.settings.v1',JSON.stringify(SETTINGS));}catch(e){}}
 /* ------------------------------ sound ------------------------------
@@ -2488,7 +2496,7 @@ const TownScreen={
       const x=v.x+(e.clientX-r.left)/r.width*v.w,y=v.y+(e.clientY-r.top)/r.height*v.h;if(whole) this.bigMap(false);this.walkTo(x,y,null);});
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
-    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};
+    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.placeParty());
     {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
@@ -2508,7 +2516,7 @@ const TownScreen={
       if((k==='+'||k==='=')&&!e.repeat){$('#mm-in').click();return;}
       if((k==='-'||k==='_')&&!e.repeat){$('#mm-out').click();return;}
       if(k==='escape'){e.preventDefault();if(this.aim) this.setAim(null);else if(this.autoGo) this.stopGo('Auto-move stopped');else if($('#bigmap').classList.contains('on')) this.bigMap(false);else if($('#auto-cfg').classList.contains('on')) $('#btn-auto-cfg').click();else if(this.win) this.openWin(null);else this.openWin('setwin');return;}
-      if(k==='enter'){e.preventDefault();$('#chat-input').focus();return;}
+      if(k==='enter'){e.preventDefault();if(SETTINGS.chatMin) this.chatMin(false);$('#chat-input').focus();return;}
       if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){this.keys.add(k);this.path=null;this.goal=null;e.preventDefault();}
       if(k==='e'||k===' '){e.preventDefault();this.interact();}});
     document.addEventListener('keyup',e=>this.keys.delete(e.key.toLowerCase()));
@@ -2535,8 +2543,8 @@ const TownScreen={
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
     this.dlg=null;this.keys.clear();this.dead=null;this.travelling=false;$('#map-fade').classList.remove('on');
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);
-    this.chat=[];$('#chatlog').innerHTML='';this.log('sys',null,'Press Enter to chat · /help for commands');this.pillT=0;
-    if(Net.room) this.log('sys',null,'Online: other players in your map appear with green names. /who lists everyone.');
+    this.chat=[];this.unread=0;$('#chatlog').innerHTML='';this.chatMin(SETTINGS.chatMin);this.log('sys',null,'Press Enter to chat · /help for commands');this.pillT=0;
+    if(Net.room) this.log('sys',null,`Online${Net.kind==='claude'?' (claude.ai world)':''}: other players in your map appear with green names. P opens the Party window with everyone who is online.`);
     let id=c.map&&c.map!=='oakhaven'&&Sprites.isMap(c.map)?c.map:'town';
     if(id!=='town'){try{await Sprites.ensure(id);}catch(e){id='town';}}
     this.loadMap(id);
@@ -3509,11 +3517,17 @@ const TownScreen={
       el.innerHTML=h;el.classList.add('on');
       el.querySelectorAll('.pm').forEach(r=>r.onclick=e=>{if(e.target.closest('.fol')) return;AudioFX.sfx('ui');this.setAlly(r.dataset.id);});
       el.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{e.stopPropagation();AudioFX.sfx('ui');this.setFollow(b.dataset.f);});}
-    {const st=$('#screen-town .hud-status').getBoundingClientRect(),sc=$('#screen-town').getBoundingClientRect(),top=Math.round(st.bottom-sc.top+6)+'px';if(el.style.top!==top) el.style.top=top;}   // just under your portrait, however tall it is
+    this.placeParty();
     rows.forEach((r,i)=>{const row=el.querySelectorAll('.pm')[i];if(!row) return;const sm=row.querySelector('small');if(sm.textContent!==r.where) sm.textContent=r.where;
       const bar=row.querySelector('.hpb i');if(bar) bar.style.width=r.hp+'%';});},
+  /* the party list sits on the left, just above the chat box (minimized or not), and never runs up under your portrait */
+  placeParty(){const el=$('#party-frame');if(!el.classList.contains('on')) return;const sc=$('#screen-town').getBoundingClientRect(),cb=$('#chatbox').getBoundingClientRect(),st=$('#screen-town .hud-status').getBoundingClientRect();
+    const bottom=Math.round(sc.bottom-cb.top+8)+'px',room=Math.max(80,Math.round(cb.top-st.bottom-16))+'px';if(el.style.bottom!==bottom) el.style.bottom=bottom;if(el.style.maxHeight!==room) el.style.maxHeight=room;},
+  chatMin(on){SETTINGS.chatMin=!!on;saveSettings();const b=$('#chat-min');$('#chatbox').classList.toggle('min',!!on);b.setAttribute('aria-pressed',!!on);b.title=on?'Show chat':'Minimize chat';b.setAttribute('aria-label',b.title);
+    b.querySelector('svg').innerHTML=on?'<path d="M6 12h12M12 6v12"/>':'<path d="M6 12h12"/>';if(!on){this.unread=0;const el=$('#chatlog');el.scrollTop=el.scrollHeight;}this.unreadBadge();this.placeParty();},
+  unreadBadge(){const bd=$('#chat-min b');const n=SETTINGS.chatMin?this.unread||0:0;bd.hidden=!n;bd.textContent=n>9?'9+':n;},
   renderParty(){if(this.win!=='partywin') return;const pa=this.party,me=this.pid(),ppl=this.people(),lead=this.isLeader();
-    if(!Net.room){$('#pw-sub').textContent='Single-player';$('#pw-body').innerHTML='<p class="pw-note">Parties need other players: play on the game\'s online link (the Cloudflare or Vercel address) to team up.</p>';return;}
+    if(!Net.room){$('#pw-sub').textContent='Single-player';$('#pw-body').innerHTML=`<p class="pw-note">${Net.kind===null&&Net.tries?'Can\'t reach the game server right now · trying again every few seconds.':'This page has no game server, so you play on your own.'} Parties need other players: play on the game's web link (the Cloudflare or Vercel address) to team up. Build ${BUILD}.</p>`;return;}
     $('#pw-sub').textContent=pa?`${pa.m.length}/${PARTY_MAX} · ${lead?'you lead':'member'}`:'not in a party';
     let h='';
     if(pa){h+=`<div class="pw-sec"><h4>${esc(pa.n)}</h4>`;
@@ -3524,10 +3538,11 @@ const TownScreen={
           (lead?`<button class="btn" data-a="lead" data-id="${esc(id)}" title="Make leader">★</button><button class="btn" data-a="kick" data-id="${esc(id)}" title="Remove from party">✕</button>`:''))+`</div>`;}
       h+=`<div class="row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" data-a="leave">Leave party</button>${this.ally?'<button class="btn" data-a="ally0">Heal / buff myself</button>':''}</div>`;
       h+=`<p class="pw-note">Pick a member with <b>Support</b> (or tap them in the party list or on the map) and your heals and buffs go to them: ${[...ALLY_SKILLS].map(id=>skillById(id).name).join(', ')}. ${[...PARTY_SKILLS].map(id=>skillById(id).name).join(', ')} reach everyone near you, and Sanctuary heals members in it. With AUTO and auto-cast on, you heal members under half HP and keep your buffs on them. <b>Follow</b> walks after them, through portals too. Type <b>/p</b> and a message to talk to the party.</p></div>`;}
-    const others=[...ppl.entries()].filter(([id])=>!(pa&&pa.m.some(x=>x[0]===id)));
-    h+=`<div class="pw-sec"><h4>Online now</h4>`+(others.length?others.map(([id,x])=>{const P=x.P,busy=P.pt&&P.pt.i&&!(pa&&P.pt.i===pa.i);
-        return `<div class="pw-row"><div class="nm"><b>${esc(Net.name(P.n))}</b><small>Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[P.m]||'choosing a character')}${busy?' · in a party':''}</small></div>`+
-          (!pa||lead?`<button class="btn" data-a="inv" data-id="${esc(id)}" data-n="${esc(Net.name(P.n))}">Invite</button>`:'')+`</div>`;}).join(''):'<p class="pw-note">Nobody else is online right now.</p>')+`</div>`;
+    const others=Net.others().filter(p=>p.presence&&p.presence.n&&!(pa&&p.presence.id&&pa.m.some(x=>x[0]===p.presence.id)));
+    h+=`<div class="pw-sec"><h4>Online now</h4>`+(others.length?others.map(p=>{const P=p.presence,id=P.id,busy=P.pt&&P.pt.i&&!(pa&&P.pt.i===pa.i),old=!id||!P.bv||P.bv<BUILD,nw=Updates.newer(P.bv);
+        return `<div class="pw-row"><div class="nm"><b>${esc(Net.name(P.n))}</b><small>Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · ${esc(P.rd&&P.m?MAP_NAMES[P.m]||P.m:'choosing a character')}${busy?' · in a party':''}${old?' · on an older version: they need to reload the page to party':''}${nw?' · on a newer version: reload your page':''}</small></div>`+
+          (!old&&!nw&&(!pa||lead)?`<button class="btn" data-a="inv" data-id="${esc(id)}" data-n="${esc(Net.name(P.n))}">Invite</button>`:'')+`</div>`;}).join(''):'<p class="pw-note">Nobody else is online right now.</p>')+`</div>`;
+    h+=`<p class="pw-note">${Net.kind==='claude'?'You are on the claude.ai version: it is its own world, so you only meet players who opened this same claude.ai page. Players on the web links (Cloudflare or Vercel) are in the other world.':Net.kind==='server'?`Connected to the game server (${esc(Net.where)})${Net.conn===false?' · reconnecting…':''}. The Cloudflare and Vercel links share this world; the claude.ai version is a separate one.`:''} Build ${BUILD}.</p>`;
     if(!pa) h+=`<div class="row" style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" data-a="create">Create a party</button></div>`;
     if(pa&&!lead) h+=`<p class="pw-note">Only the leader (★) can invite.</p>`;
     $('#pw-body').innerHTML=h;
@@ -3574,7 +3589,7 @@ const TownScreen={
     mp.amHost=host===me;mp.host=host;if(mp.amHost&&!was) for(const m of this.mobs) m.tgt=null;},
   netPublish(now){const c=this.ch,mp=this.mp,P={v:1,n:c.name,lv:c.baseLevel|0,j:c.job.classId,ap:c.appearance,m:this.mapId,rd:1,
       x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
-      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,pe:Net.pe,bf:Object.keys(this.buffs||{}).slice(0,12),
+      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,bv:BUILD,pe:Net.pe,bf:Object.keys(this.buffs||{}).slice(0,12),
       pt:this.party?(this.isLeader()?{i:this.party.i,l:this.party.l,n:this.party.n.slice(0,40),s:this.party.s||0,m:this.party.m}:{i:this.party.i,l:this.party.l}):null,
       mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
     const enc=new TextEncoder();let t=JSON.stringify(P);
@@ -3610,11 +3625,11 @@ const TownScreen={
   /* who is online (every map) and the chat lines everyone sends */
   readLobby(peers,now){const seen=new Set(),quiet=now-Net.since<2500;
     for(const p of peers){const P=p.presence;if(!P.n) continue;seen.add(p.peer);let L=Net.lobby.get(p.peer);const nm=Net.name(P.n);
-      if(!L){L={say:0,pe:0,n:nm,map:P.m};Net.lobby.set(p.peer,L);if(!quiet) this.log('sys',null,`${nm} is online${P.m?' · '+(MAP_NAMES[P.m]||P.m):''}`);
+      if(!L){L={say:0,pe:0,n:nm,map:P.m};Net.lobby.set(p.peer,L);if(Updates.newer(P.bv)) Updates.offer();if(!quiet) this.log('sys',null,`${nm} is online${P.m?' · '+(MAP_NAMES[P.m]||P.m):''}`);
         if(Array.isArray(P.say)) for(const e of P.say) if(Array.isArray(e)&&e[0]>L.say) L.say=e[0];
         if(Array.isArray(P.pe)) for(const e of P.pe) if(Array.isArray(e)&&e[0]>L.pe) L.pe=e[0];   // what they sent before we saw them is history
         continue;}
-      L.n=nm;L.map=P.m;
+      L.n=nm;L.map=P.m;if(Updates.newer(P.bv)) Updates.offer();
       if(Array.isArray(P.say)) for(const e of P.say){if(!Array.isArray(e)||!(e[0]>L.say)) continue;L.say=e[0];const txt=String(e[1]||'').slice(0,120);if(!txt) continue;
         if(e[2]){if(this.party&&e[2]===this.party.i){this.log('pchat',nm,txt);AudioFX.sfx('ui');}continue;}   // party chat: only your party sees it
         this.log('party',nm,txt);AudioFX.sfx('ui');const o=this.others.get(p.peer);if(o) o.speech={text:txt,t:now};}
@@ -4047,7 +4062,7 @@ const TownScreen={
     for(const n of this.npcs){const d=Math.hypot(this.p.x-n.x,this.p.y-n.y);if(d<118&&now>=n.nextBark&&d<bd){bd=d;best=n;}}
     if(!best) return;const def=TOWN_NPCS[best.id],line=def.barks[Math.floor(Math.random()*def.barks.length)].replace('{name}',this.ch.name);
     best.bubble={text:line,t:now};best.talkUntil=now+1300;best.nextBark=now+26000+Math.random()*12000;this.nextBarkAt=now+3800;this.log('npc',def.name,line);},
-  log(kind,who,text){this.chat.push({kind,who,text});if(this.chat.length>60) this.chat.shift();const el=$('#chatlog'),stick=el.scrollHeight-el.scrollTop-el.clientHeight<30;
+  log(kind,who,text){this.chat.push({kind,who,text});if(SETTINGS.chatMin&&(kind==='party'||kind==='pchat')){this.unread=(this.unread||0)+1;this.unreadBadge();}if(this.chat.length>60) this.chat.shift();const el=$('#chatlog'),stick=el.scrollHeight-el.scrollTop-el.clientHeight<30;
     el.innerHTML=this.chat.map((l,i)=>`<div class="ln ${l.kind}">${l.who?`<span class="who">[${esc(l.who)}]</span> `:''}${esc(l.text)}</div>`).join('');if(stick) el.scrollTop=el.scrollHeight;},
   /* ---------- dialogue ---------- */
   openDialogue(id){if(this.autoGo&&this.autoGo.npc===id){this.autoGo=null;setTimeout(()=>this.tracker(),0);}const def=TOWN_NPCS[id];const node=def.talk(this.ch);this.path=null;this.goal=null;this.keys.clear();
@@ -4322,7 +4337,7 @@ function wsRoom(url){return new Promise(done=>{let ws=null,me=null,mine={},snap=
     onPeers(fn){subs.add(fn);return()=>subs.delete(fn);},connected:()=>conn,onConnection(fn){connSubs.add(fn);setTimeout(()=>fn(conn),0);return()=>connSubs.delete(fn);},
     emit:()=>Promise.resolve(),on:()=>()=>{},kind:'server'};
   setInterval(()=>{if(!dead) send();},2000);           // keeps the server's copy fresh (it forgets everything when it sleeps)
-  open();setTimeout(()=>finish(null),8000);});}
+  open();setTimeout(()=>finish(null),12000);});}
 /* where the game's own server lives: ?server=wss://... , a <meta name="mmo-server"> in the page, or /ws/world on
    the site the game is served from (a static host without one simply fails to connect) */
 function serverUrl(){const q=new URLSearchParams(location.search).get('server');if(q) return q;
@@ -4331,12 +4346,26 @@ function serverUrl(){const q=new URLSearchParams(location.search).get('server');
   if(v) return abs(v);
   if(/^https?:$/.test(location.protocol)&&!/^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)) return abs('/ws/world');
   return null;}
-const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,pe:[],peN:0,lobby:new Map(),since:0,
-  async init(){let r=null;
-    try{if(/[?&]localmp\b/.test(location.search)&&window.BroadcastChannel) r=localRoom();
-      else if(window.claude&&typeof window.claude.use==='function') r=await window.claude.use('room');
-      else{const u=serverUrl();if(u) r=await wsRoom(u);}}catch(e){r=null;}
-    if(!r) return;this.room=r;this.since=performance.now();
+/* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
+   learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
+const BUILD='2026-11-07e';
+const Updates={shown:false,
+  newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
+  offer(){if(this.shown) return;this.shown=true;$('#upd').classList.add('on');$('#upd-go').onclick=()=>location.reload();$('#upd-x').onclick=()=>$('#upd').classList.remove('on');},
+  async check(){if(window.claude||!/^https?:$/.test(location.protocol)) return;
+    try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const m=/build:\s*(\S+)/.exec(await r.text());if(m&&this.newer(m[1])) this.offer();}catch(e){}},
+  init(){this.check();setInterval(()=>this.check(),5*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden) this.check();});}};
+const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,pe:[],peN:0,lobby:new Map(),since:0,kind:null,where:'',tries:0,
+  /* the claude.ai link has its own room; the hosted links (Cloudflare, Vercel) share the game server. A failed
+     connection is tried again every little while, so a bad moment on a phone network doesn't leave you alone */
+  async init(){if(this.room||this.busy) return;this.busy=true;let r=null,kind=null;
+    try{if(/[?&]localmp\b/.test(location.search)&&window.BroadcastChannel){r=localRoom();kind='local';}
+      else if(window.claude&&typeof window.claude.use==='function'){r=await window.claude.use('room');kind='claude';}
+      else{const u=serverUrl();if(u){kind='server';this.where=u.replace(/^wss?:\/\//,'').split('/')[0];r=await wsRoom(u);}}}catch(e){r=null;}
+    this.busy=false;
+    if(!r){if(kind==='server'){this.tries++;setTimeout(()=>this.init(),Math.min(60000,10000*this.tries));}return;}
+    this.room=r;this.kind=kind;this.since=performance.now();
+    if(this.tries&&activeScreen===TownScreen&&TownScreen.ch){TownScreen.log('sys',null,'Connected to the game server · other players can see you now');toast('Online');}
     try{r.onConnection(c=>{this.conn=c;},()=>{this.room=null;this.conn=false;});}catch(e){}
     this.set({v:1});},
   label(){if(this.me) return this.me;if(!this.room) return null;const p=this.room.peers().find(p=>p.isMe&&p.sameTab);
@@ -4367,7 +4396,7 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
     if(Sprites.heads) for(const g of ['m','f']) Sprites.heads.meta.styles[g].forEach((st,i)=>APPEARANCE.hairStyles[g].push({...st,source:'head',index:i}));
   }
   catch(e){document.body.insertAdjacentHTML('beforeend',`<div class="glass" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:24px;z-index:9;max-width:420px">Couldn't load the Recruit sprites (${esc(e.message)}). Serve this folder over http (e.g. <code>npx serve</code>) or open dist/index.html.</div>`);return;}
-  Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();
+  Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();Updates.init();
   if(Auth.restore()){Store.useAccount(Auth.user);showScreen(Store.load().length?'screen-select':'screen-create');
     if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
       else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
