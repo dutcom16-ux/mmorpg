@@ -3451,6 +3451,9 @@ const TownScreen={
       pa.m=pa.m.filter(([id,n])=>{if(id===me) return true;const x=ppl.get(id);if(!x) return true;               // offline: keeps their place
         const ok=x.P.pt&&x.P.pt.i===pa.i;if(!ok) gone.push(n);return ok;});
       for(const n of gone){this.log('sys',null,`Party · ${n} left`);}if(gone.length) this.partyChanged();
+      // someone I invited who already counts themselves in (their "join" message got lost, e.g. in a reconnect): add them
+      for(const [id,x] of ppl){const T=x.P.pt;if(!T||T.i!==pa.i||T.l!==me||pa.m.some(q=>q[0]===id)||!(pa.inv&&pa.inv[id])||pa.m.length>=PARTY_MAX) continue;
+        pa.m.push([id,Net.name(x.P.n)]);delete pa.inv[id];toast(`${Net.name(x.P.n)} joined the party`);this.log('sys',null,`Party · ${Net.name(x.P.n)} joined`);this.partyChanged();}
       for(const [id,x] of ppl){const T=x.P.pt;if(T&&T.i===pa.i&&T.l===id&&Array.isArray(T.m)&&T.m.some(q=>q[0]===me)&&(+T.s||0)>(pa.s||0)){pa.l=id;pa.m=T.m;this.log('sys',null,`Party · ${x.P.n} leads the party`);this.partyChanged();break;}}
       return;}
     const L=ppl.get(pa.l),T=L&&L.P.pt;
@@ -4348,7 +4351,7 @@ function serverUrl(){const q=new URLSearchParams(location.search).get('server');
   return null;}
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-07e';
+const BUILD='2026-11-07f';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   offer(){if(this.shown) return;this.shown=true;$('#upd').classList.add('on');$('#upd-go').onclick=()=>location.reload();$('#upd-x').onclick=()=>$('#upd').classList.remove('on');},
