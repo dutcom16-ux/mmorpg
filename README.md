@@ -71,6 +71,7 @@ This runs on the free plan: each save is a small request, sent at most every 8 s
 - On each map, one player's game runs the monsters and shares their positions; that player is the "host". If the host leaves, the next player takes over within about 2 seconds.
 - Everyone who damages a monster gets the full EXP and their own drops. Drops land on the ground and only the player they belong to sees them and can pick them up, so there's no loot stealing.
 - Spell effects, cast circles and hit sparks are shared through the same status packet, so everyone sees each other's spells.
+- Parties use the same packet: the leader's packet carries the roster, and invites, heals and buffs travel as small events addressed to one character. Nothing about parties is stored on the server.
 - Characters are saved to the player's account on the server (see above); multiplayer itself stores nothing.
 - If the server restarts, games reconnect by themselves. The status pill shows "Reconnecting…" meanwhile.
 

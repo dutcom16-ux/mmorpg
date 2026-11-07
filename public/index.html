@@ -288,6 +288,28 @@ button{font:inherit;color:inherit}
 .netpill{display:flex;align-items:center;gap:7px;font:900 11px Nunito,sans-serif;letter-spacing:.06em;color:var(--muted);padding:0 2px;cursor:pointer;background:none;border:0;text-align:left}
 .netpill i{width:8px;height:8px;border-radius:50%;background:#6b7590;flex:none}.netpill.on i{background:#6cf2a6;box-shadow:0 0 8px #6cf2a6}.netpill.on{color:#bff4d4}
 .chatlog .party{color:#b8ffc8}.chatlog .party .who{color:#7dff9a}
+.chatlog .pchat{color:#bfe3ff}.chatlog .pchat .who{color:#7fc8ff}
+.chat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.partybtn{min-height:26px;padding:2px 10px;font-size:11.5px;letter-spacing:.06em}
+.party-frame{display:none;position:absolute;left:14px;top:96px;width:210px;z-index:3;padding:6px 7px}
+.party-frame.on{display:block}
+.party-frame .ph{font:900 10.5px Nunito,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--aether);padding:1px 3px 4px;display:flex;justify-content:space-between;gap:6px}
+.party-frame .ph span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm{display:flex;align-items:center;gap:6px;padding:4px 4px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.pm:hover{background:rgba(127,227,255,.08)}.pm.sel{border-color:rgba(125,255,154,.75);background:rgba(125,255,154,.12)}
+.pm .pn{flex:1;min-width:0}.pm .pn b{display:block;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm .pn small{display:block;font-size:10px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm .hpb{height:5px;border-radius:3px;background:rgba(8,12,28,.7);margin-top:2px;overflow:hidden}.pm .hpb i{display:block;height:100%;background:#ff5d6f}
+.pm.off{opacity:.55}.pm .ld{color:var(--gold)}
+.pm .fol{flex:none;width:28px;height:26px;border-radius:8px;border:1px solid rgba(127,227,255,.45);background:rgba(127,227,255,.1);color:#dff8ff;font:900 11px Nunito,sans-serif;cursor:pointer;padding:0}
+.pm .fol.on{border-color:rgba(247,213,142,.85);background:rgba(247,213,142,.22);color:#fff1cf}
+.pcard{display:none;position:absolute;left:50%;top:84px;transform:translateX(-50%);z-index:9;padding:12px 14px;width:min(340px,92vw);text-align:center}
+.pcard.on{display:block}.pcard p{margin:0 0 10px;font-weight:800;font-size:14px}.pcard p small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.pcard .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.pcard .btn{min-height:34px;padding:5px 14px;font-size:13px}
+.pw-sec{margin-top:12px}.pw-sec h4{margin:0 0 6px;font-family:'Cinzel',serif;font-size:13px;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.pw-row{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(160,220,255,.1)}
+.pw-row .nm{flex:1;min-width:0}.pw-row .nm b{font-weight:900}.pw-row .nm small{display:block;color:var(--muted);font-weight:700;font-size:12px}
+.pw-row .btn{min-height:30px;padding:3px 10px;font-size:12px}.pw-note{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.5;margin:6px 0 0}
 .chatbox .chatlog{position:static;width:auto;max-height:150px;overflow-y:auto;pointer-events:auto;padding-right:4px;scrollbar-width:thin}
 .chatbox input{width:100%;border:1px solid var(--line);background:rgba(6,10,26,.6);color:var(--text);border-radius:9px;padding:7px 10px;font:700 13px Nunito,sans-serif}
 .chatbox input:focus{outline:2px solid var(--aether);outline-offset:0}
@@ -496,6 +518,7 @@ dl dd.main{color:var(--gold)}
   .hud-tracker .qgo{min-width:36px;min-height:24px;padding:1px 7px;font-size:10.5px;margin-left:6px}
   .shortcuts{padding:4px 5px}.shortcuts .ib{width:30px;height:30px;border-radius:8px}.shortcuts .ib svg{width:16px;height:16px}.shortcuts .ib kbd{display:none}
   .minimap{padding:5px}.minimap .mm-name{font-size:9px}
+  .party-frame{left:8px;top:68px;width:min(170px,44vw);padding:4px 5px}.pm{padding:3px}.pm .pn b{font-size:11px}.pm .pn small{font-size:9.5px}.pm .fol{width:26px;height:24px}
   .chatbox{left:8px;bottom:62px;width:min(300px,56vw);padding:6px}.chatbox .chatlog{max-height:84px;font-size:11.5px}.chatbox input{padding:5px 8px;font-size:12px}
   .set-row{grid-template-columns:110px 1fr 40px}
   .inv-grid{grid-template-columns:repeat(5,1fr)}
@@ -791,8 +814,12 @@ dl dd.main{color:var(--gold)}
       </div>
       <div class="hud-tracker glass" id="hud-tracker"></div>
     </div>
+    <div class="party-frame glass" id="party-frame" aria-label="Your party"></div>
+    <div class="pcard glass" id="pinvite" role="alertdialog" aria-live="assertive"></div>
+    <div class="pcard glass" id="pcard" role="dialog"></div>
     <div class="chatbox glass" id="chatbox">
-      <button class="netpill" id="net-pill" type="button" title="Who's online"><i></i><span>Single-player</span></button>
+      <div class="chat-top"><button class="netpill" id="net-pill" type="button" title="Who's online · party (P)"><i></i><span>Single-player</span></button>
+        <button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button></div>
       <div class="chatlog" id="chatlog" aria-live="polite"></div>
       <form id="chat-form" autocomplete="off"><input id="chat-input" maxlength="120" placeholder="Press Enter to chat · /help" aria-label="Chat message"></form>
     </div>
@@ -831,6 +858,10 @@ dl dd.main{color:var(--gold)}
     <div class="charwin glass" id="questwin" role="dialog" aria-modal="false" aria-labelledby="qw-title">
       <div class="head"><div><h3 id="qw-title">Quest Journal</h3><div class="sub" id="qw-sub"></div></div><button class="btn x" data-close>Close</button></div>
       <div id="qw-body"></div>
+    </div>
+    <div class="charwin glass" id="partywin" role="dialog" aria-modal="false" aria-labelledby="pw-title">
+      <div class="head"><div><h3 id="pw-title">Party</h3><div class="sub" id="pw-sub"></div></div><button class="btn x" data-close>Close</button></div>
+      <div id="pw-body"></div>
     </div>
     <div class="charwin glass" id="setwin" role="dialog" aria-modal="false" aria-labelledby="sw-title">
       <div class="head"><div><h3 id="sw-title">Settings</h3><div class="sub">Saved on this device</div></div><button class="btn x" data-close>Close</button></div>
@@ -2351,6 +2382,11 @@ class MinHeap{constructor(){this.h=[];}get size(){return this.h.length;}
   pop(){const h=this.h,top=h[0],last=h.pop();if(h.length){h[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<h.length&&h[l][0]<h[m][0]) m=l;if(r<h.length&&h[r][0]<h[m][0]) m=r;if(m===k) break;[h[m],h[k]]=[h[k],h[m]];k=m;}}return top;}}
 /* maps: id -> name / number (the character's saved map uses these ids; 'oakhaven' is the town) */
 const MAP_NUM={town:1,oakhaven:1,fields:2,sky:3,forest:4,fire:5,canyon:6};
+/* parties: up to 8 players. Heals and buffs below can be cast on the party member you pick (tap them in the party
+   list or on the map); the PARTY_SKILLS reach every member near you; Sanctuary heals members standing in it */
+const PARTY_MAX=8,SUPPORT_RANGE=280,PARTY_NEAR=320;
+const ALLY_SKILLS=new Set(['restorativeBeacon','blessing','swiftness','kyrie','impositioManus','aspersio']);
+const PARTY_SKILLS=new Set(['rallyCry','devotionAura','tailwind']);
 /* which maps each map's portals lead to (the portals themselves are in the map files); quest auto-move routes with it */
 const WORLD_LINKS={town:['fields','fire','forest','sky'],fields:['town','sky','forest','fire','canyon'],forest:['fields','town','canyon'],
   sky:['fields','canyon','town','fire'],fire:['town','fields','sky','canyon'],canyon:['sky','fields','forest','fire']};
@@ -2452,7 +2488,7 @@ const TownScreen={
       const x=v.x+(e.clientX-r.left)/r.width*v.w,y=v.y+(e.clientY-r.top)/r.height*v.h;if(whole) this.bigMap(false);this.walkTo(x,y,null);});
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
-    $('#net-pill').onclick=()=>this.netWho();
+    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};
     {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
@@ -2465,7 +2501,7 @@ const TownScreen={
         else if(/^[1-9]$/.test(k)){const b=$$('#dlg-opts button')[+k-1];if(b) b.click();}return;}
       if(e.key==='CapsLock'){e.preventDefault();this.toggleAuto();return;}
       if(/^[0-9]$/.test(k)&&!e.repeat){e.preventDefault();this.useSlot(k==='0'?9:+k-1);return;}
-      const W={c:'charwin',i:'invwin',k:'skillwin',j:'questwin',l:'questwin'};
+      const W={c:'charwin',i:'invwin',k:'skillwin',j:'questwin',l:'questwin',p:'partywin'};
       if(W[k]&&!e.repeat){e.preventDefault();this.openWin(W[k]);return;}
       if(k==='m'&&!e.repeat){e.preventDefault();this.bigMap(!$('#bigmap').classList.contains('on'));return;}
       if(k==='z'&&!e.repeat){e.preventDefault();this.pickNearest();return;}
@@ -2490,6 +2526,7 @@ const TownScreen={
       c.skills={};for(const s of jobSkills(c.job.classId)) if(s.start) c.skills[s.id]=1;c.hotbar=null;c.hp=null;c.sys=2;moved=[c.statPoints,c.skillPoints];}
     c.skills=c.skills||{};
     c.items=c.items||{potion:5};c.auto={on:false,target:true,eat:true,cast:true,pick:false,eatAt:35,...(c.auto||{})};
+    this.party=c.party&&c.party.i&&Array.isArray(c.party.m)?{...c.party,t0:performance.now(),inv:{}}:null;this.follow=null;this.ally=null;this.qAlly=null;this.pendingInv=null;
     this.res=this.maxRes();this.cds={};this.shots=[];this.wfx=[];this.drops=[];this.decals=[];this.queued=null;this.veilUntil=0;this.nextCrit=false;
     c.auto.range=c.auto.range||320;c.skills=c.skills||{};
     if(!Array.isArray(c.hotbar)||c.hotbar.length!==10) c.hotbar=this.defaultBar();
@@ -2607,18 +2644,18 @@ const TownScreen={
       (this.barrier?`<span class="bf shield" title="Shield: ${this.barrier.hp} damage left"><b>${this.barrier.hp}</b></span>`:'');
     if(el._h!==h){el._h=h;el.innerHTML=h;}},
   /* use a skill: cast time first (moving cancels it), then it goes off */
-  begin(s,m,now,at){const r=this.rank(s.id),ct=this.castTime(s,r);
-    if(ct>.05){this.casting={s,m,r,t0:now,until:now+ct*1000,at:at||(m&&s.at==='target'?[m.x,m.y]:null)};this.queued=null;this.path=null;if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
+  begin(s,m,now,at,ally){const r=this.rank(s.id),ct=this.castTime(s,r);
+    if(ct>.05){this.casting={s,m,r,t0:now,until:now+ct*1000,at:at||(m&&s.at==='target'?[m.x,m.y]:null),ally};if(ally){const M=this.allyOk(ally);if(M) this.dir=this.faceTo(M.o.x-this.p.x,M.o.y-this.p.y);}this.queued=null;this.path=null;if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
       if(m) this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);const fx=fxOf(s);AudioFX.cast(fx);
       if(this.mp&&Net.room){const si=FX_ROWS.indexOf(fx)+1,dur=Math.round(ct*1000),send=(x,y,rr)=>this.pushRing('vf',[++Net.seq,'cast',Math.round(x),Math.round(y),rr,dur,s.color||FX_COL[fx],si,0],10);
         send(this.p.x,this.p.y,30);const tp=this.casting.at;if((s.k==='aoe'||s.k==='zone')&&s.at==='target'&&tp) send(tp[0],tp[1],Math.min(160,Math.round(SV(s.r,r))));}
       return;}
-    this.cast(s,m,now,at||null);},
+    this.cast(s,m,now,at||null,ally);},
   tickCast(now,moving){const C=this.casting;if(!C) return false;
     if(moving||this.path||(C.m&&C.m.state==='dead'&&C.s.k==='strike')){this.casting=null;this.fx.push({x:this.p.x,y:this.p.y-70,text:'Cast interrupted',color:'#cfd8ff',t0:now,italic:true});return false;}
-    if(now>=C.until){this.casting=null;this.cast(C.s,C.m,now,C.m&&C.m.state!=='dead'?[C.m.x,C.m.y]:C.at);return false;}
+    if(now>=C.until){this.casting=null;this.cast(C.s,C.m,now,C.m&&C.m.state!=='dead'?[C.m.x,C.m.y]:C.at,C.ally);return false;}
     return true;},
-  cast(s,m,now,at){const r=this.rank(s.id),c=this.ch,cost=this.costOf(s,r);
+  cast(s,m,now,at,ally){const r=this.rank(s.id),c=this.ch,cost=this.costOf(s,r);
     if((this.res||0)<cost){this.fx.push({x:this.p.x,y:this.p.y-70,text:`Not enough ${this.resName()}`,color:'#ffcf7a',t0:now});this.queued=null;return;}
     this.res-=cost;if(s.hpCost) c.hp=Math.max(1,c.hp-Math.round(c.hp*s.hpCost));
     this.cds[s.id]=now+this.cdOf(s,r)*1000;this.queued=null;this.hudBars();
@@ -2626,7 +2663,7 @@ const TownScreen={
       if(this.free(tx,ty)){this.fxN({k:'trail',x0:this.p.x,y0:this.p.y,x:tx,y:ty,t0:now,dur:260,color:s.color});this.p.x=tx;this.p.y=ty;}}
     if(m) this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);else if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
     this.fx.push({x:this.p.x,y:this.p.y-80,text:s.name,color:s.color,t0:now,label:true});
-    if(s.k==='heal'||s.k==='buff'||s.k==='veil'){this.skillEffect(s,m,now,r,at);return;}
+    if(s.k==='heal'||s.k==='buff'||s.k==='veil'){this.skillEffect(s,m,now,r,at,ally);return;}
     AudioFX.sfx(s.mag||s.shot?'spell':'swing');
     this.atk={t0:now,mob:m,hit:false,skill:s,rank:r,at};this.nextSwing=now+this.swingCd()*1000;if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   resName(){return (JOBS[this.ch.job.classId]||JOBS.recruit).resource||'Stamina';},
@@ -2644,10 +2681,11 @@ const TownScreen={
     if(o.mult>0) this.dealHit(m,now,o);
     if(s.splash) for(const q of this.mobs) if(q!==m&&q.state!=='dead'&&Math.hypot(q.x-m.x,(q.y-m.y)*1.3)<=s.splash) this.dealHit(q,now,{...o,knock:o.knock?Math.round(o.knock*.6):0});
     if(s.steal) this.trySteal(m,r,now);},
-  skillEffect(s,m,now,r,at){const c=this.ch;r=r||this.rank(s.id)||1;
+  skillEffect(s,m,now,r,at,ally){const c=this.ch;r=r||this.rank(s.id)||1;
+    if(ally&&(s.k==='heal'||s.k==='buff')&&this.supportEffect(s,r,ally,now)) return;      // on a party member
     if(s.k==='heal'){const h=this.healAmount(s,r);c.hp=Math.min(this.maxHp(),c.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});
       this.sfx(s.fx||'holy',this.p.x,this.p.y,s.fxs||.6,now);this.fxN({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:s.color});this.hudBars();return;}
-    if(s.k==='buff'){this.addBuff(s,r,now);if(s.nextCrit) this.nextCrit=true;this.sfx(fxOf(s),this.p.x,this.p.y,s.fxs||.5,now,0,'self');
+    if(s.k==='buff'){this.addBuff(s,r,now);if(s.nextCrit) this.nextCrit=true;this.sfx(fxOf(s),this.p.x,this.p.y,s.fxs||.5,now,0,'self');if(PARTY_SKILLS.has(s.id)) this.partyBuffNear(s,r,now);
       this.fxN({k:'ring',x:this.p.x,y:this.p.y,r:40,t0:now,dur:600,color:s.color});
       if(s.taunt) for(const o of this.mobs) if(o.state!=='dead'&&Math.hypot(o.x-this.p.x,o.y-this.p.y)<s.taunt){o.hostile=false;this.aggro(o,now);}
       return;}
@@ -2679,6 +2717,7 @@ const TownScreen={
   tickZones(now){if(!this.zones||!this.zones.length) return;
     for(const z of this.zones){if(now<z.next||z.left<=0) continue;z.left--;z.next+=z.every;const s=z.s;
       if(s.heal){const inside=Math.hypot(this.p.x-z.x,(this.p.y-z.y)*1.3)<=z.R;this.sfx(s.fx||'holy',z.x,z.y,s.fxs||.6,now);
+        this.partyHealZone(z,this.healAmount(s,z.r),now);
         if(inside&&this.ch.hp<this.maxHp()){const h=this.healAmount(s,z.r);this.ch.hp=Math.min(this.maxHp(),this.ch.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now});this.hudBars();}
         continue;}
       let px=z.x,py=z.y,R=z.R;
@@ -2799,6 +2838,7 @@ const TownScreen={
     if(s===POTION) return this.drink(now);
     if(this.casting) return;
     const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)){this.fx.push({x:this.p.x,y:this.p.y-70,text:`Not enough ${this.resName()}`,color:'#ffcf7a',t0:now});return;}
+    if(!auto&&ALLY_SKILLS.has(s.id)&&this.ally){if(this.supportCast(s,this.ally,now)) return;if(this.inParty(this.ally)) toast(`${(this.party.m.find(x=>x[0]===this.ally)||[0,'They'])[1]} is out of reach · cast on you`);}
     if(s.k==='heal'||s.k==='buff'||s.k==='veil'||((s.k==='aoe'||s.k==='zone')&&s.at!=='target')) return this.begin(s,null,now);
     if(!auto&&(s.k==='aoe'||s.k==='zone')&&s.at==='target'){this.setAim({s,i});return;}   // ground skill: pick the spot (works with no monster there: pre-cast)
     const R=this.skillRange(s,r);
@@ -2820,7 +2860,7 @@ const TownScreen={
   /* ---------- AUTO: drinks, buffs, heals and attack skills from the bar ---------- */
   autoTick(now){const a=this.ch.auto,c=this.ch;if(!a.on||this.dead||this.dlg||this.travelling) return;
     if(a.eat&&c.hp<this.maxHp()*a.eatAt/100&&now>=(this.cds.potion||0)&&c.items.potion>0) this.drink(now);
-    if(a.cast&&!this.casting&&!this.atk&&now>=(this.autoCastT||0)){const S=this.slots(),T=this.target&&this.target.state!=='dead'?this.target:null;
+    if(a.cast&&!this.casting&&!this.atk&&now>=(this.autoCastT||0)&&!this.autoSupport(now,this.slots())){const S=this.slots(),T=this.target&&this.target.state!=='dead'?this.target:null;
       for(let i=0;i<10;i++){const s=S[i];if(!s||s===POTION||now<(this.cds[s.id]||0)) continue;const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)) continue;
         if(s.k==='heal'){if(c.hp<this.maxHp()*.5){this.autoCastT=now+300;this.useSlot(i,true);break;}continue;}
         if(s.k==='veil') continue;
@@ -2831,7 +2871,8 @@ const TownScreen={
     if(a.pick&&!this.autoGo&&!this.target&&!(this.path&&this.path.length)&&!this.keys.size&&!this.casting&&!this.atk&&now>=(this.autoNext||0)&&!this.mobs.some(o=>o.hostile&&o.state!=='dead'&&(!o.tgt||o.tgt==='me'))){
       const d=this.nearDrop(a.range||320,true);if(d){this.autoNext=now+300;this.pick(d);return;}}
     if(a.target&&!this.autoGo&&!this.target&&!(this.path&&this.path.length)&&!this.keys.size&&!this.casting&&now>=(this.autoNext||0)){this.autoNext=now+400;
-      let best=null,bd=a.range||320;for(const m of this.mobs){if(m.state==='dead'||m.noReach>now) continue;const d=Math.hypot(m.x-this.p.x,m.y-this.p.y)-(m.hostile?120:0);if(d<bd){bd=d;best=m;}}
+      const F=this.follow&&this.member(this.follow),fo=F&&F.o;
+      let best=null,bd=a.range||320;for(const m of this.mobs){if(m.state==='dead'||m.noReach>now) continue;if(fo&&Math.hypot(m.x-fo.x,m.y-fo.y)>240) continue;const d=Math.hypot(m.x-this.p.x,m.y-this.p.y)-(m.hostile?120:0);if(d<bd){bd=d;best=m;}}
       if(best){this.target=best;this.chaseAt=[-1e9,-1e9];}}},
   /* ---------- a monster hits you: HIT vs FLEE, block, DEF or MDEF, shields ---------- */
   hurtPlayer(m,now){const c=this.ch,D=m.def,M=this.mods();
@@ -3058,6 +3099,7 @@ const TownScreen={
       ctx.restore();}},
   /* everything flat on the ground, under the characters: marks, spell circles, your buff ring, loot */
   drawGround(ctx,now){this.drawDecals(ctx,now);
+    {const M=this.ally&&this.allyOk(this.ally);if(M){const o=M.o;ctx.save();ctx.strokeStyle='rgba(125,255,154,.85)';ctx.lineWidth=1.8;ctx.setLineDash([5,4]);ctx.lineDashOffset=-now/70;ctx.beginPath();ctx.ellipse(o.x,o.y,20,8,0,0,7);ctx.stroke();ctx.restore();}}
     if(this.aim&&this.aimAt){const A=this.aim,col=A.s.color||FX_COL[fxOf(A.s)],x=this.aimAt.x,y=this.aimAt.y,far=Math.hypot(x-this.p.x,y-this.p.y)>A.range;
       ctx.save();ctx.setLineDash([6,5]);ctx.lineDashOffset=-now/60;ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(this.p.x,this.p.y,A.range,A.range*.42,0,0,7);ctx.stroke();   // how far you can cast
       ctx.setLineDash([]);ctx.globalCompositeOperation='lighter';ctx.fillStyle=hexA(col,.16+.06*Math.sin(now/150));ctx.beginPath();ctx.ellipse(x,y,A.R,A.R*.42,0,0,7);ctx.fill();
@@ -3173,7 +3215,7 @@ const TownScreen={
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
       baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
-      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,savedAt:Date.now()};Store.save();}},
+      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
     this.tracker();this.save();this.questCheck();},
@@ -3208,12 +3250,13 @@ const TownScreen={
   toWorld(cx,cy){const r=this.stage.c.getBoundingClientRect();return {x:this.cam.x+(cx-r.left)/this.Z,y:this.cam.y+(cy-r.top)/this.Z};},
   hitNpc(x,y){let best=null,bd=1e9;for(const n of this.npcs){if(Math.abs(x-n.x)<17&&y>n.y-54&&y<n.y+6){const d=Math.abs(x-n.x)+Math.abs(y-(n.y-24));if(d<bd){bd=d;best=n;}}}return best;},
   hitWaystone(x,y){const w=this.meta.waystone;return !!w&&Math.hypot(x-w[0],(y-w[1]-12)*1.2)<66;},
-  click(cx,cy){if(this.dlg||this.dead||this.travelling) return;const w=this.toWorld(cx,cy);if(this.autoGo) this.stopGo();this.qAt=null;
+  click(cx,cy){if(this.dlg||this.dead||this.travelling) return;const w=this.toWorld(cx,cy);if(this.autoGo) this.stopGo();this.qAt=null;this.qAlly=null;
     if(this.aim){this.castAt(w.x,w.y);return;}
     const dr=this.hitDrop(w.x,w.y,this.ptrType==='mouse'?18:28);if(dr){this.pick(dr);return;}
     const m=this.hitMob(w.x,w.y);
     if(m){this.target=m;this.path=null;this.chaseAt=[-1e9,-1e9];this.ring={x:m.x,y:m.y,t:performance.now(),hostile:true};return;}
-    this.target=null;
+    const ro=this.hitRemote(w.x,w.y);if(ro&&ro.P&&ro.P.id){if(this.inParty(ro.P.id)) this.setAlly(ro.P.id);else if(Net.room) this.playerCard(ro);return;}
+    this.target=null;if(this.follow){this.follow=null;toast('Stopped following');this.partyFrame(true);}   // walking somewhere yourself stops following
     const n=this.hitNpc(w.x,w.y);
     if(n){if(this.near(n)) return this.openDialogue(n.id);const side=this.p.x<n.x?-1:1;this.walkTo(n.x+side*26,n.y+4,{npc:n.id});return;}
     if(this.hitWaystone(w.x,w.y)){if(this.nearWaystone()) return this.useWaystone();const ws=this.meta.waystone,a=Math.atan2(this.p.y-ws[1]-12,this.p.x-ws[0]);this.walkTo(ws[0]+Math.cos(a)*84,ws[1]+12+Math.sin(a)*84,{waystone:true});return;}
@@ -3238,7 +3281,7 @@ const TownScreen={
     if(K.has('a')||K.has('arrowleft')) vx-=1;if(K.has('d')||K.has('arrowright')) vx+=1;if(K.has('w')||K.has('arrowup')) vy-=1;if(K.has('s')||K.has('arrowdown')) vy+=1;
     const casting=this.tickCast(now,!!(vx||vy));
     if(casting){vx=0;vy=0;this.moving=false;}
-    else if(vx||vy){const l=Math.hypot(vx,vy);vx/=l;vy/=l;if(this.target&&!this.atk){this.target=null;}if(this.autoGo) this.stopGo('Auto-move stopped');}
+    else if(vx||vy){const l=Math.hypot(vx,vy);vx/=l;vy/=l;if(this.target&&!this.atk){this.target=null;}if(this.autoGo) this.stopGo('Auto-move stopped');if(this.follow){this.follow=null;this.qAlly=null;toast('Stopped following');this.partyFrame(true);}}
     else if(!this.atk){
       const T=this.target;
       if(T&&T.state==='dead') this.target=null;
@@ -3247,6 +3290,8 @@ const TownScreen={
         if(this.inReach(T,R)){this.path=null;this.dir=this.faceTo(T.x-this.p.x,T.y-this.p.y);
           if(Q) this.begin(Q.s,T,now);else if(now>=this.nextSwing) this.swing(T,now);}
         else if(!this.path||!this.path.length||Math.hypot(T.x-this.chaseAt[0],T.y-this.chaseAt[1])>14){this.chaseAt=[T.x,T.y];this.approach(T,R);}}
+      if(this.qAlly&&!casting){const Q=this.qAlly,M=this.allyOk(Q.id);if(!M) this.qAlly=null;else if(Math.hypot(M.o.x-this.p.x,M.o.y-this.p.y)<=SUPPORT_RANGE-10){this.path=null;this.qAlly=null;this.begin(Q.s,null,now,null,Q.id);}
+        else if(!this.path||!this.path.length) this.qAlly=null;}
       if(this.qAt&&!casting){const Q=this.qAt;if(Math.hypot(Q.at[0]-this.p.x,Q.at[1]-this.p.y)<=Q.R){this.path=null;this.qAt=null;this.begin(Q.s,null,now,Q.at);}else if(!this.path||!this.path.length) this.qAt=null;}
       if(this.path&&this.path.length&&!this.atk&&!casting){const [tx,ty]=this.path[0],dx=tx-this.p.x,dy=ty-this.p.y,d=Math.hypot(dx,dy);
         if(d<=sp){this.p.x=tx;this.p.y=ty;this.path.shift();if(!this.path.length) this.arrive();}
@@ -3274,7 +3319,7 @@ const TownScreen={
     this.regen(dt,now);
     for(const sh of this.shots){if(sh.done) continue;if(now-sh.t0>=sh.dur){sh.done=true;this.shotHit(sh,now);}}
     this.shots=this.shots.filter(sh=>!sh.done||now-sh.t0<sh.dur+60);
-    this.autoStep(now);this.autoTick(now);this.updateHotbar(now);
+    this.autoStep(now);this.followStep(now);this.autoTick(now);this.updateHotbar(now);
     // health comes back when you're out of the fight (faster in town)
     const c=this.ch,mx=this.maxHp();
     if(c.hp<mx&&now-this.lastHurt>5000){c.hp=Math.min(mx,c.hp+mx*(this.mapId==='town'?.08:.025)*dt);this.hudBars();}
@@ -3340,6 +3385,162 @@ const TownScreen={
     if(d>.4){const st=Math.min(d,Math.max(d*(1-Math.exp(-dt*10)),38*dt));m.x+=dx/d*st;m.y+=dy/d*st;m.moving=true;m.walkT+=dt;m.dir=dirOf(dx,dy);}
     else if(m.sdir!=null) m.dir=m.sdir;}},
   mobStatus(m,now,st,fz,sl){if(st) m.stunUntil=now+st*100;if(fz){m.stunUntil=now+fz*100;m.frozen=true;}if(sl) m.slowUntil=now+sl*100;},   // tenths of a second
+  /* ---------- parties: invites, the roster (kept by the leader), follow, heals and buffs on members (see Net.pe) ----------
+     every player is known by their character id (P.id); the leader publishes the roster in P.pt.m, members publish P.pt.i */
+  pid(){return this.ch&&this.ch.id;},
+  people(){const out=new Map();for(const p of Net.others()){const P=p.presence;if(P&&P.id&&P.n) out.set(P.id,{peer:p.peer,P});}return out;},
+  isLeader(){return !!this.party&&this.party.l===this.pid();},
+  inParty(id){return !!this.party&&id!==this.pid()&&this.party.m.some(x=>x[0]===id);},
+  partySend(type,to,...a){if(!Net.room) return;Net.pe.push([++Net.peN,type,to,...a]);if(Net.pe.length>14) Net.pe.shift();},
+  /* a party member's game: same map -> its figure in this.others; P: what they publish */
+  member(id){const x=this.people().get(id);if(!x) return null;const o=x.P.m===this.mapId&&this.others?this.others.get(x.peer):null;return {id,peer:x.peer,P:x.P,o,here:!!o};},
+  partyCreate(){if(this.party) return this.party;const me=this.pid();
+    this.party={i:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),l:me,n:`${this.ch.name}'s Party`,m:[[me,this.ch.name]],s:Date.now(),t0:performance.now(),inv:{}};
+    this.log('sys',null,`Party created · ${this.party.n}`);this.partyChanged();return this.party;},
+  partyInvite(id,name){if(!Net.room){toast('Parties need the online game');return;}if(id===this.pid()) return;
+    const pa=this.party||this.partyCreate();if(!this.isLeader()){toast('Only the party leader can invite');return;}
+    if(pa.m.some(x=>x[0]===id)){toast(`${name} is already in your party`);return;}if(pa.m.length>=PARTY_MAX){toast(`A party holds ${PARTY_MAX} players`);return;}
+    pa.inv=pa.inv||{};pa.inv[id]=performance.now();this.partySend('inv',id,pa.i,pa.n.slice(0,40));toast(`Invited ${name}`);this.log('sys',null,`Party · invited ${name}`);this.renderParty();},
+  partyAnswer(yes){const v=this.pendingInv;this.pendingInv=null;$('#pinvite').classList.remove('on');if(!v) return;
+    if(!yes){this.partySend('dec',v.from,v.i);return;}
+    if(this.party) this.partyLeave(true);
+    this.party={i:v.i,l:v.from,n:v.n,m:[[v.from,v.name],[this.pid(),this.ch.name]],s:0,t0:performance.now(),inv:{}};this.partySend('acc',v.from,v.i);
+    AudioFX.sfx('quest');toast(`You joined ${v.n}`);this.log('sys',null,`Party · you joined ${v.n} (/p to talk to your party)`);this.partyChanged();},
+  partyLeave(quiet){const pa=this.party;if(!pa) return;const me=this.pid(),ppl=this.people();
+    if(pa.l===me){const next=pa.m.find(x=>x[0]!==me&&ppl.has(x[0]));if(next) this.partySend('lead',next[0],pa.i,JSON.stringify(pa.m.filter(x=>x[0]!==me)).slice(0,600));}
+    this.party=null;this.follow=null;this.ally=null;this.qAlly=null;if(!quiet){toast('You left the party');this.log('sys',null,`Party · you left ${pa.n}`);}this.partyChanged();},
+  partyKick(id){const pa=this.party;if(!this.isLeader()) return;const x=pa.m.find(x=>x[0]===id);if(!x) return;pa.m=pa.m.filter(q=>q[0]!==id);
+    this.partySend('kick',id,pa.i);this.log('sys',null,`Party · ${x[1]} was removed`);this.partyChanged();},
+  partyPromote(id){const pa=this.party;if(!this.isLeader()||!pa.m.some(x=>x[0]===id)) return;
+    this.partySend('lead',id,pa.i,JSON.stringify(pa.m).slice(0,600));pa.l=id;pa.s=0;this.log('sys',null,`Party · ${pa.m.find(x=>x[0]===id)[1]} leads the party now`);this.partyChanged();},
+  partyChanged(){this.save();this.renderParty();this.partyFrame(true);},
+  /* an event someone sent to me */
+  partyEvent(from,L,P,e,now){const t=e[1],pa=this.party,nm=Net.name(P.n);
+    if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
+      this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
+      const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
+      el.classList.add('on');$('#pi-yes').onclick=()=>this.partyAnswer(true);$('#pi-no').onclick=()=>this.partyAnswer(false);this.log('sys',null,`Party · ${nm} invites you (Join or No thanks above)`);return;}
+    if(t==='acc'){if(!pa||pa.l!==this.pid()||pa.i!==e[3]||pa.m.some(x=>x[0]===from)) return;if(pa.m.length>=PARTY_MAX){this.partySend('kick',from,pa.i);return;}
+      pa.m.push([from,nm]);AudioFX.sfx('quest');toast(`${nm} joined the party`);this.log('sys',null,`Party · ${nm} joined`);this.partyChanged();return;}
+    if(t==='dec'){if(pa&&pa.l===this.pid()&&pa.i===e[3]){this.log('sys',null,`Party · ${nm} said no thanks`);if(pa.inv) delete pa.inv[from];}return;}
+    if(!pa||pa.i!==e[3]&&(t==='kick'||t==='lead')) return;
+    if(t==='kick'&&from===pa.l){this.party=null;this.follow=null;this.ally=null;toast('You were removed from the party');this.log('sys',null,`Party · ${nm} removed you`);this.partyChanged();return;}
+    if(t==='lead'&&pa.i===e[3]){let m=null;try{m=JSON.parse(e[4]);}catch(err){}
+      if(Array.isArray(m)) pa.m=m.filter(x=>Array.isArray(x)&&typeof x[0]==='string').slice(0,PARTY_MAX).map(x=>[x[0],Net.name(x[1])]);
+      if(!pa.m.some(x=>x[0]===this.pid())) pa.m.unshift([this.pid(),this.ch.name]);pa.l=this.pid();pa.s=Date.now();toast('You lead the party now');this.log('sys',null,'Party · you are the leader now');this.partyChanged();return;}
+    // support from a party member standing near you on this map
+    if(t!=='h'&&t!=='b') return;if(!P.pt||P.pt.i!==pa.i||P.m!==this.mapId||this.dead||this.travelling) return;
+    if(Math.hypot((+P.x||0)-this.p.x,(+P.y||0)-this.p.y)>SUPPORT_RANGE+PARTY_NEAR) return;
+    if(t==='h'){const c=this.ch,mx=this.maxHp(),h=Math.max(1,Math.min(mx,e[3]|0));if(c.hp>=mx) return;c.hp=Math.min(mx,c.hp+h);
+      this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:'#9dffb8'});
+      if(now>(this.healLogT||0)){this.healLogT=now+4000;this.log('pchat',nm,`healed you for ${h}`);}this.hudBars();return;}
+    const sk=skillById(String(e[3]));if(!sk||sk.k!=='buff'||!(ALLY_SKILLS.has(sk.id)||PARTY_SKILLS.has(sk.id))) return;
+    const r=Math.max(1,Math.min(sk.max||10,e[4]|0));this.addBuff(sk,r,now);this.wfx.push({k:'ring',x:this.p.x,y:this.p.y,r:40,t0:now,dur:600,color:sk.color||'#bff4ff'});
+    this.fx.push({x:this.p.x,y:this.p.y-80,text:sk.name,color:sk.color||'#bff4ff',t0:now,label:true});this.log('pchat',nm,`cast ${sk.name} on you`);},
+  /* the roster, leadership and who left: run from the network tick */
+  partyTick(now){const pa=this.party;if(!pa||!Net.room) return;const me=this.pid(),ppl=this.people();
+    if(pa.l===me){let gone=[];
+      pa.m=pa.m.filter(([id,n])=>{if(id===me) return true;const x=ppl.get(id);if(!x) return true;               // offline: keeps their place
+        const ok=x.P.pt&&x.P.pt.i===pa.i;if(!ok) gone.push(n);return ok;});
+      for(const n of gone){this.log('sys',null,`Party · ${n} left`);}if(gone.length) this.partyChanged();
+      for(const [id,x] of ppl){const T=x.P.pt;if(T&&T.i===pa.i&&T.l===id&&Array.isArray(T.m)&&T.m.some(q=>q[0]===me)&&(+T.s||0)>(pa.s||0)){pa.l=id;pa.m=T.m;this.log('sys',null,`Party · ${x.P.n} leads the party`);this.partyChanged();break;}}
+      return;}
+    const L=ppl.get(pa.l),T=L&&L.P.pt;
+    if(T&&T.i===pa.i&&T.l===pa.l&&Array.isArray(T.m)){pa.seenL=now;
+      if(!T.m.some(x=>x[0]===me)){if(now-pa.t0>8000){this.party=null;this.follow=null;this.ally=null;toast('Your party broke up');this.log('sys',null,`Party · you are no longer in ${pa.n}`);this.partyChanged();}return;}
+      const before=pa.m.map(x=>x[0]).join(),after=T.m.map(x=>x[0]).join();pa.n=Net.name(String(T.n||'').replace(/'s Party$/,''))+"'s Party";
+      if(before!==after){const old=new Set(pa.m.map(x=>x[0]));for(const x of T.m) if(!old.has(x[0])&&x[0]!==me&&now-pa.t0>3000) this.log('sys',null,`Party · ${x[1]} joined`);
+        for(const x of pa.m) if(!T.m.some(q=>q[0]===x[0])) this.log('sys',null,`Party · ${x[1]} left`);pa.m=T.m.map(x=>[String(x[0]),Net.name(x[1])]);this.partyChanged();}
+      return;}
+    for(const [id,x] of ppl){const Q=x.P.pt;if(Q&&Q.i===pa.i&&Q.l===id&&Array.isArray(Q.m)&&Q.m.some(q=>q[0]===me)){pa.l=id;pa.m=Q.m;pa.seenL=now;this.partyChanged();return;}}
+    if(now-(pa.seenL||pa.t0)>7000){   // the leader is gone: the first member still here takes over
+      const next=pa.m.map(x=>x[0]).filter(id=>id!==pa.l&&(id===me||ppl.has(id)&&ppl.get(id).P.pt&&ppl.get(id).P.pt.i===pa.i))[0];
+      if(next===me){pa.l=me;pa.s=Date.now();toast('The leader is away · you lead the party now');this.log('sys',null,'Party · you lead the party now');this.partyChanged();}}},
+  /* ---------- follow a party member (through portals too) ---------- */
+  setFollow(id){if(id&&this.follow===id) id=null;this.follow=id||null;this.followMiss=0;if(id){this.stopGo();const x=this.party&&this.party.m.find(q=>q[0]===id);toast(`Following ${x?x[1]:'them'} · move or click to stop`);}
+    else toast('Stopped following');this.partyFrame(true);this.renderParty();},
+  /* walk toward a map through the portals; true while on the way */
+  routeTo(map){const nx=this.nextMap(this.mapId,map),pt=nx&&(this.meta.portals||[]).find(p=>p.to===nx&&!p.closed);if(!pt) return false;
+    if(!(this.path&&this.path.length)) this.walkTo(pt.x,pt.y,{portal:pt.to});return true;},
+  followStep(now){const id=this.follow;if(!id||this.travelling||this.dlg||this.dead||this.casting||this.atk||now<(this.folT||0)) return;this.folT=now+280;
+    if(!this.inParty(id)){this.follow=null;this.partyFrame(true);return;}
+    const M=this.member(id);if(!M||M.P.dd){if(++this.followMiss>40){this.follow=null;toast('Lost them · stopped following');this.partyFrame(true);}return;}this.followMiss=0;
+    if(M.P.m!==this.mapId){if(MAP_NAMES[M.P.m]){this.target=null;this.routeTo(M.P.m);}return;}
+    const o=M.o;if(!o) return;const d=Math.hypot(o.x-this.p.x,o.y-this.p.y);
+    if(this.target&&this.target.state!=='dead'){if(d<360) return;this.target=null;}       // fighting next to them: finish it first
+    if(d<=58){if(this.path&&!this.goal) this.path=null;return;}
+    const e=this.path&&this.path[this.path.length-1];if(e&&Math.hypot(e[0]-o.tx,e[1]-o.ty)<36) return;
+    const k=Math.min(1,40/Math.max(1,d));this.walkTo(o.tx+(this.p.x-o.tx)*k,o.ty+(this.p.y-o.ty)*k,null);},
+  /* ---------- support: heals and buffs on a party member ---------- */
+  setAlly(id){if(id&&this.ally===id) id=null;this.ally=id||null;const x=id&&this.party&&this.party.m.find(q=>q[0]===id);
+    toast(id?`Support target: ${x?x[1]:'party member'} · your heals and buffs go to them`:'Support target cleared · heals and buffs go to you');this.partyFrame(true);this.renderParty();},
+  allyOk(id){const M=id&&this.inParty(id)&&this.member(id);return M&&M.here&&!M.P.dd?M:null;},
+  /* useSlot for a heal / buff on someone: in reach it starts, otherwise walk closer first */
+  supportCast(s,id,now){const M=this.allyOk(id);if(!M) return false;const o=M.o,d=Math.hypot(o.x-this.p.x,o.y-this.p.y);
+    if(d<=SUPPORT_RANGE){this.path=null;this.begin(s,null,now,null,id);return true;}
+    this.walkTo(o.x,o.y,null);if(this.path){this.qAlly={s,id};return true;}return false;},
+  supportEffect(s,r,id,now){const M=this.allyOk(id);if(!M) return false;const o=M.o,nm=Net.name(M.P.n);
+    if(s.k==='heal'){const h=this.healAmount(s,r);this.partySend('h',id,h,s.id);this.sfx(s.fx||'holy',o.x,o.y,s.fxs||.6,now);this.fxN({k:'heal',x:o.x,y:o.y,t0:now,dur:900,color:s.color});
+      this.fx.push({x:o.x,y:o.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});return true;}
+    this.partySend('b',id,s.id,r);this.sfx(fxOf(s),o.x,o.y,s.fxs||.5,now,0,'self');this.fxN({k:'ring',x:o.x,y:o.y,r:40,t0:now,dur:600,color:s.color});
+    this.fx.push({x:o.x,y:o.y-80,text:`${s.name} → ${nm}`,color:s.color||'#bff4ff',t0:now,label:true});return true;},
+  /* party-wide buffs reach everyone near you; Sanctuary heals members standing in it */
+  partyBuffNear(s,r,now){if(!this.party) return;for(const [id] of this.party.m){const M=id!==this.pid()&&this.allyOk(id);if(!M) continue;
+      if(Math.hypot(M.o.x-this.p.x,M.o.y-this.p.y)<=PARTY_NEAR){this.partySend('b',id,s.id,r);this.fxN({k:'ring',x:M.o.x,y:M.o.y,r:36,t0:now,dur:600,color:s.color});}}},
+  partyHealZone(z,h,now){if(!this.party) return;for(const [id] of this.party.m){const M=id!==this.pid()&&this.allyOk(id);if(!M||(M.P.hp|0)>=100) continue;
+      if(Math.hypot(M.o.x-z.x,(M.o.y-z.y)*1.3)<=z.R) this.partySend('h',id,h,z.s.id);}},
+  /* AUTO with auto-cast: heal members under half HP, keep your support buffs up on members near you */
+  autoSupport(now,S){if(!this.party||this.party.m.length<2) return false;
+    for(let i=0;i<10;i++){const s=S[i];if(!s||s===POTION||!ALLY_SKILLS.has(s.id)||now<(this.cds[s.id]||0)||(this.res||0)<this.costOf(s,this.rank(s.id))) continue;
+      for(const [id] of this.party.m){if(id===this.pid()) continue;const M=this.allyOk(id);if(!M||Math.hypot(M.o.x-this.p.x,M.o.y-this.p.y)>SUPPORT_RANGE) continue;
+        const need=s.k==='heal'?(M.P.hp|0)<50:!(Array.isArray(M.P.bf)&&M.P.bf.includes(s.id));if(!need) continue;
+        this.autoCastT=now+300;this.begin(s,null,now,null,id);return true;}}
+    return false;},
+  /* the party list under your portrait: tap a name to make them your support target, ➜ to follow them */
+  partyFrame(force){const el=$('#party-frame');const pa=this.party;if(!pa||!Net.room){if(el.classList.contains('on')){el.classList.remove('on');el._k='';}return;}
+    const ppl=this.people(),me=this.pid(),rows=pa.m.filter(x=>x[0]!==me).map(([id,n])=>{const x=ppl.get(id),P=x&&x.P;
+      return {id,n,P,hp:P?Math.max(0,Math.min(100,P.hp|0)):0,where:!P?'offline':P.dd?'down':P.m===this.mapId?`Lv ${P.lv|0} ${(JOBS[P.j]||JOBS.recruit).name}`:(MAP_NAMES[P.m]||'choosing a character')};});
+    const key=JSON.stringify([pa.n,pa.l,this.ally,this.follow,rows.map(r=>[r.id,r.n,!!r.P])]);
+    if(force||el._k!==key){el._k=key;   // rebuilt only when who / what is selected changes; HP and places update in place so taps aren't lost
+      let h=`<div class="ph">Party<span>${esc(pa.n)}</span></div>`;
+      for(const r of rows) h+=`<div class="pm${this.ally===r.id?' sel':''}${r.P?'':' off'}" data-id="${esc(r.id)}" title="Tap: heal / buff target"><div class="pn"><b>${r.id===pa.l?'<span class="ld">★</span> ':''}${esc(r.n)}</b><small></small><div class="hpb"${r.P?'':' hidden'}><i></i></div></div>`+
+        `<button class="fol${this.follow===r.id?' on':''}" data-f="${esc(r.id)}" title="Follow" aria-label="Follow ${esc(r.n)}">${this.follow===r.id?'■':'➜'}</button></div>`;
+      if(!rows.length) h+=`<div class="pw-note" style="margin:2px 3px 3px;font-size:11px">Invite players from the Party window (P).</div>`;
+      el.innerHTML=h;el.classList.add('on');
+      el.querySelectorAll('.pm').forEach(r=>r.onclick=e=>{if(e.target.closest('.fol')) return;AudioFX.sfx('ui');this.setAlly(r.dataset.id);});
+      el.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{e.stopPropagation();AudioFX.sfx('ui');this.setFollow(b.dataset.f);});}
+    {const st=$('#screen-town .hud-status').getBoundingClientRect(),sc=$('#screen-town').getBoundingClientRect(),top=Math.round(st.bottom-sc.top+6)+'px';if(el.style.top!==top) el.style.top=top;}   // just under your portrait, however tall it is
+    rows.forEach((r,i)=>{const row=el.querySelectorAll('.pm')[i];if(!row) return;const sm=row.querySelector('small');if(sm.textContent!==r.where) sm.textContent=r.where;
+      const bar=row.querySelector('.hpb i');if(bar) bar.style.width=r.hp+'%';});},
+  renderParty(){if(this.win!=='partywin') return;const pa=this.party,me=this.pid(),ppl=this.people(),lead=this.isLeader();
+    if(!Net.room){$('#pw-sub').textContent='Single-player';$('#pw-body').innerHTML='<p class="pw-note">Parties need other players: play on the game\'s online link (the Cloudflare or Vercel address) to team up.</p>';return;}
+    $('#pw-sub').textContent=pa?`${pa.m.length}/${PARTY_MAX} · ${lead?'you lead':'member'}`:'not in a party';
+    let h='';
+    if(pa){h+=`<div class="pw-sec"><h4>${esc(pa.n)}</h4>`;
+      for(const [id,n] of pa.m){const x=ppl.get(id),P=x&&x.P,mine=id===me;
+        const info=mine?`you · ${MAP_NAMES[this.mapId]||''}`:!P?'offline':`Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[P.m]||'choosing a character')} · HP ${Math.max(0,Math.min(100,P.hp|0))}%`;
+        h+=`<div class="pw-row"><div class="nm"><b>${id===pa.l?'★ ':''}${esc(n)}</b><small>${info}</small></div>`+(mine?'':
+          `<button class="btn" data-a="follow" data-id="${esc(id)}">${this.follow===id?'Stop':'Follow'}</button><button class="btn" data-a="ally" data-id="${esc(id)}">${this.ally===id?'Target ✓':'Support'}</button>`+
+          (lead?`<button class="btn" data-a="lead" data-id="${esc(id)}" title="Make leader">★</button><button class="btn" data-a="kick" data-id="${esc(id)}" title="Remove from party">✕</button>`:''))+`</div>`;}
+      h+=`<div class="row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" data-a="leave">Leave party</button>${this.ally?'<button class="btn" data-a="ally0">Heal / buff myself</button>':''}</div>`;
+      h+=`<p class="pw-note">Pick a member with <b>Support</b> (or tap them in the party list or on the map) and your heals and buffs go to them: ${[...ALLY_SKILLS].map(id=>skillById(id).name).join(', ')}. ${[...PARTY_SKILLS].map(id=>skillById(id).name).join(', ')} reach everyone near you, and Sanctuary heals members in it. With AUTO and auto-cast on, you heal members under half HP and keep your buffs on them. <b>Follow</b> walks after them, through portals too. Type <b>/p</b> and a message to talk to the party.</p></div>`;}
+    const others=[...ppl.entries()].filter(([id])=>!(pa&&pa.m.some(x=>x[0]===id)));
+    h+=`<div class="pw-sec"><h4>Online now</h4>`+(others.length?others.map(([id,x])=>{const P=x.P,busy=P.pt&&P.pt.i&&!(pa&&P.pt.i===pa.i);
+        return `<div class="pw-row"><div class="nm"><b>${esc(Net.name(P.n))}</b><small>Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[P.m]||'choosing a character')}${busy?' · in a party':''}</small></div>`+
+          (!pa||lead?`<button class="btn" data-a="inv" data-id="${esc(id)}" data-n="${esc(Net.name(P.n))}">Invite</button>`:'')+`</div>`;}).join(''):'<p class="pw-note">Nobody else is online right now.</p>')+`</div>`;
+    if(!pa) h+=`<div class="row" style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" data-a="create">Create a party</button></div>`;
+    if(pa&&!lead) h+=`<p class="pw-note">Only the leader (★) can invite.</p>`;
+    $('#pw-body').innerHTML=h;
+    $$('#pw-body [data-a]').forEach(b=>b.onclick=()=>{AudioFX.sfx('ui');const a=b.dataset.a,id=b.dataset.id;
+      if(a==='inv') this.partyInvite(id,b.dataset.n);else if(a==='create'){this.partyCreate();}else if(a==='leave') this.partyLeave();
+      else if(a==='follow') this.setFollow(id);else if(a==='ally') this.setAlly(id);else if(a==='ally0') this.setAlly(null);
+      else if(a==='kick') this.partyKick(id);else if(a==='lead') this.partyPromote(id);this.renderParty();});},
+  /* tap another player on the map: party members become your support target, others get a card with Invite */
+  hitRemote(x,y){if(!this.others) return null;let best=null,bd=1e9;for(const o of this.others.values()){if(Math.abs(x-o.x)>16||y<o.y-58||y>o.y+6) continue;const d=Math.abs(x-o.x)+Math.abs(y-(o.y-26))*.4;if(d<bd){bd=d;best=o;}}return best;},
+  playerCard(o){const P=o.P,id=P.id,el=$('#pcard'),pa=this.party,can=!pa||this.isLeader();
+    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}<button class="btn" id="pc-x">Close</button></div>`;
+    el.classList.add('on');clearTimeout(this.pcT);this.pcT=setTimeout(()=>el.classList.remove('on'),8000);
+    const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};$('#pc-x').onclick=()=>el.classList.remove('on');},
   /* ---------- multiplayer: the others in this map, the map's host, shared monsters, chat (see Net) ---------- */
   netReset(){this.laters=[];this.zones=[];this.dots=[];this.casting=null;this.queued=null;this.others=new Map();this.mp={amHost:!Net.room,joinT:performance.now(),host:null,hits:[],vf:[],mk:[],mh:[],at:[0,0],dmg:new Map(),pubT:0,readT:0,lastSnap:null,lastPub:''};},
   pushRing(key,e,max){const r=this.mp&&this.mp[key];if(!r) return;r.push(e);if(r.length>max) r.shift();},
@@ -3373,10 +3574,11 @@ const TownScreen={
     mp.amHost=host===me;mp.host=host;if(mp.amHost&&!was) for(const m of this.mobs) m.tgt=null;},
   netPublish(now){const c=this.ch,mp=this.mp,P={v:1,n:c.name,lv:c.baseLevel|0,j:c.job.classId,ap:c.appearance,m:this.mapId,rd:1,
       x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
-      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,
+      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,pe:Net.pe,bf:Object.keys(this.buffs||{}).slice(0,12),
+      pt:this.party?(this.isLeader()?{i:this.party.i,l:this.party.l,n:this.party.n.slice(0,40),s:this.party.s||0,m:this.party.m}:{i:this.party.i,l:this.party.l}):null,
       mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
     const enc=new TextEncoder();let t=JSON.stringify(P);
-    for(const k of ['vf','hits','say','mh','mk']) while(enc.encode(t).length>3800&&Array.isArray(P[k])&&P[k].length){P[k]=P[k].slice(1);t=JSON.stringify(P);}   // presence holds 4 KB
+    for(const k of ['vf','hits','say','mh','mk','pe']) while(enc.encode(t).length>3800&&Array.isArray(P[k])&&P[k].length){P[k]=P[k].slice(1);t=JSON.stringify(P);}   // presence holds 4 KB
     if(t===mp.lastPub) return;mp.lastPub=t;Net.set(P);},
   /* host -> everyone: [id, x, y, hp (or tenths of a second to respawn), flags 1 dead 2 hostile 4 stunned 8 frozen 16 slowed, facing] */
   snap(now){return {s:++Net.seq,l:this.mobs.map(m=>{const dead=m.state==='dead';
@@ -3408,12 +3610,18 @@ const TownScreen={
   /* who is online (every map) and the chat lines everyone sends */
   readLobby(peers,now){const seen=new Set(),quiet=now-Net.since<2500;
     for(const p of peers){const P=p.presence;if(!P.n) continue;seen.add(p.peer);let L=Net.lobby.get(p.peer);const nm=Net.name(P.n);
-      if(!L){L={say:0,n:nm,map:P.m};Net.lobby.set(p.peer,L);if(!quiet) this.log('sys',null,`${nm} is online${P.m?' · '+(MAP_NAMES[P.m]||P.m):''}`);
-        if(Array.isArray(P.say)) for(const e of P.say) if(Array.isArray(e)&&e[0]>L.say) L.say=e[0];continue;}
+      if(!L){L={say:0,pe:0,n:nm,map:P.m};Net.lobby.set(p.peer,L);if(!quiet) this.log('sys',null,`${nm} is online${P.m?' · '+(MAP_NAMES[P.m]||P.m):''}`);
+        if(Array.isArray(P.say)) for(const e of P.say) if(Array.isArray(e)&&e[0]>L.say) L.say=e[0];
+        if(Array.isArray(P.pe)) for(const e of P.pe) if(Array.isArray(e)&&e[0]>L.pe) L.pe=e[0];   // what they sent before we saw them is history
+        continue;}
       L.n=nm;L.map=P.m;
       if(Array.isArray(P.say)) for(const e of P.say){if(!Array.isArray(e)||!(e[0]>L.say)) continue;L.say=e[0];const txt=String(e[1]||'').slice(0,120);if(!txt) continue;
-        this.log('party',nm,txt);AudioFX.sfx('ui');const o=this.others.get(p.peer);if(o) o.speech={text:txt,t:now};}}
-    for(const [k,L] of [...Net.lobby]) if(!seen.has(k)){Net.lobby.delete(k);this.log('sys',null,`${L.n} left`);}},
+        if(e[2]){if(this.party&&e[2]===this.party.i){this.log('pchat',nm,txt);AudioFX.sfx('ui');}continue;}   // party chat: only your party sees it
+        this.log('party',nm,txt);AudioFX.sfx('ui');const o=this.others.get(p.peer);if(o) o.speech={text:txt,t:now};}
+      if(Array.isArray(P.pe)&&P.id) for(const e of P.pe){if(!Array.isArray(e)||!(e[0]>L.pe)) continue;L.pe=e[0];if(e[2]===this.pid()) try{this.partyEvent(String(P.id),L,P,e,now);}catch(err){console.error(err);}}}
+    for(const [k,L] of [...Net.lobby]) if(!seen.has(k)){Net.lobby.delete(k);this.log('sys',null,`${L.n} left`);}
+    this.partyTick(now);if(this.pendingInv&&now>this.pendingInv.until) this.partyAnswer(false);
+    if(now>=(this.pfT||0)){this.pfT=now+500;this.partyFrame();if(this.win==='partywin'&&now>=(this.pwT||0)){this.pwT=now+2000;this.renderParty();}}},
   netPill(){const el=$('#net-pill');if(!el) return;const on=!!Net.room,n=on?1+Net.others().filter(p=>p.presence.n).length:1,here=this.others?this.others.size:0;
     el.classList.toggle('on',on&&Net.conn!==false);
     el.querySelector('span').textContent=!on?'Single-player':Net.conn===false?'Reconnecting…':`Online · ${n} player${n===1?'':'s'}${here?` · ${here} here`:''}`;
@@ -3486,10 +3694,10 @@ const TownScreen={
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
   openWin(id){if(id&&this.win===id) id=null;this.win=id;document.body.classList.toggle('skills-open',id==='skillwin');
-    for(const w of ['charwin','invwin','skillwin','questwin','setwin']) $('#'+w).classList.toggle('on',w===id);
+    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin']) $('#'+w).classList.toggle('on',w===id);
     $$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.win===id));
     if(id==='charwin') this.renderChar();else if(id==='invwin') this.renderInv();else if(id==='skillwin') this.renderSkills();
-    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();},
+    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();},
   toggleChar(on){this.openWin(on===false?null:'charwin');},
   /* ---------- equipment: c.equip (worn, one per slot), c.bag (gear you carry); potions and materials stay in c.items ---------- */
   initGear(){const c=this.ch;
@@ -3624,7 +3832,7 @@ const TownScreen={
   /* ---------- quest auto-move: walks you to the quest's NPC, the Waystone or its hunting ground, through portals if it's on another map ---------- */
   destKey(d){return d?[d.map,d.npc||'',d.kind||'',d.waystone?1:0].join('|'):'';},
   destName(d){return d.npc?TOWN_NPCS[d.npc].name:d.waystone?'the Waystone':`${MOB_DEFS[d.kind].name}s · ${MAP_NAMES[d.map]}`;},
-  goQuest(d){if(!d||this.dead||this.travelling) return;if(this.autoGo&&this.destKey(this.autoGo)===this.destKey(d)){this.stopGo('Auto-move stopped');return;}
+  goQuest(d){if(!d||this.dead||this.travelling) return;if(this.follow){this.follow=null;this.partyFrame(true);}if(this.autoGo&&this.destKey(this.autoGo)===this.destKey(d)){this.stopGo('Auto-move stopped');return;}
     this.autoGo={...d};this.goNext=0;this.goFails=0;this.target=null;this.path=null;this.goal=null;this.casting=null;this.queued=null;
     toast(`Auto-move · ${this.destName(d)}`);this.log('sys',null,`Auto-move to ${this.destName(d)} (move or click to stop)`);this.tracker();},
   stopGo(why){if(!this.autoGo) return;this.autoGo=null;if(why) toast(why);this.tracker();},
@@ -3696,13 +3904,19 @@ const TownScreen={
     $$('#sw-body input[data-c]').forEach(i=>i.onchange=()=>{S[i.dataset.c]=i.checked;saveSettings();AudioFX.apply();});
     $('#st-select').onclick=()=>{this.closeDialogue();this.openWin(null);this.save();AudioFX.play(null);this.netLeave();showScreen('screen-select');};
     $('#st-out').onclick=()=>{this.closeDialogue();this.openWin(null);this.save();AudioFX.play(null);this.netLeave();Auth.logout();Store.mem=null;showScreen('screen-login');};
-    $('#st-keys').onclick=()=>toast('WASD / click move · E talk & fight · Z or click loot to pick it up · area skills: press, then click the ground (Esc cancels) · 1-9, 0 skill bar · Caps Lock AUTO · I inventory · K skills · J quests · C stats · M map · +/- map zoom · Enter chat · Esc settings',7000);},
+    $('#st-keys').onclick=()=>toast('WASD / click move · E talk & fight · Z or click loot to pick it up · P party (/p party chat) · area skills: press, then click the ground (Esc cancels) · 1-9, 0 skill bar · Caps Lock AUTO · I inventory · K skills · J quests · C stats · M map · +/- map zoom · Enter chat · Esc settings',7000);},
   /* ---------- quest tracker (minimizable) ---------- */
   trackerMin(on){SETTINGS.trackerMin=on;saveSettings();$('#hud-tracker').classList.toggle('min',on);const b=$('#qt-min');if(b){b.textContent=on?'+':'−';b.setAttribute('aria-expanded',!on);b.title=on?'Show quests':'Minimize quests';}},
   /* ---------- chat ---------- */
   say(t){const c=this.ch,now=performance.now();
     if(t[0]==='/'){const cmd=t.slice(1).split(/\s+/)[0].toLowerCase();
-      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /clear, /stuck (back to this map\'s arrival point), /played');
+      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
+      else if(cmd==='p'){const msg=t.slice(2).trim().slice(0,120);if(!this.party){this.log('sys',null,'You are not in a party (P opens the Party window)');return;}if(!msg) return;
+        this.log('pchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,this.party.i]);if(Net.says.length>5) Net.says.shift();}return;}
+      else if(cmd==='party') this.openWin('partywin');
+      else if(cmd==='leave') this.partyLeave();
+      else if(cmd==='invite'){const q=t.split(/\s+/).slice(1).join(' ').toLowerCase();const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===q);
+        if(hit) this.partyInvite(hit[0],Net.name(hit[1].P.n));else this.log('sys',null,q?`Nobody called "${q}" is online (/who)`:'Usage: /invite name');}
       else if(cmd==='who') this.netWho();
       else if(cmd==='clear'){this.chat=[];this.log('sys',null,'Chat cleared');}
       else if(cmd==='stuck'){const sp=this.meta.spawn;this.p={x:sp[0],y:sp[1]};this.path=null;this.target=null;this.snapCam();this.log('sys',null,'Moved to the arrival point');}
@@ -4011,10 +4225,10 @@ const TownScreen={
       ctx.font='800 11px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=m.hostile?'#ffb0b0':'#f2f2f2';
       const t=`${D.name} · Lv ${m.lvl}`;ctx.strokeText(t,px,py-6);ctx.fillText(t,px,py-6);
       const bw=38,f=Math.max(0,m.hp/m.maxHp);ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(px-bw/2-1,py-2,bw+2,5);ctx.fillStyle=f>.5?'#6ee07a':f>.25?'#f2c94c':'#ff5d5d';ctx.fillRect(px-bw/2,py-1,bw*f,3);}
-    if(this.others) for(const o of this.others.values()){const [px,py]=S(o.x,o.y-60);
+    if(this.others) for(const o of this.others.values()){const [px,py]=S(o.x,o.y-60),mate=o.P&&this.inParty(o.P.id);
       if(o.speech&&now-o.speech.t<4000) this.bubble(ctx,px,py-14,o.speech.text,Math.min(1,(4000-(now-o.speech.t))/400));
-      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#b8ffc8';const t=`${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
-      if(o.hp<100&&this.mapId!=='town'){const bw=40,f=o.hp/100;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(px-bw/2-1,py+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(px-bw/2,py+5,bw*f,3);}}
+      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=mate?'#9fd8ff':'#b8ffc8';const t=`${mate?'◆ ':''}${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
+      if(o.hp<100&&(this.mapId!=='town'||mate)||mate){const bw=40,f=o.hp/100;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(px-bw/2-1,py+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(px-bw/2,py+5,bw*f,3);}}
     for(const d of this.drops||[]){if(now<d.t0+DROP_POP||!(d.kind==='gear'||d===this.hoverDrop||d===this.promptDrop)) continue;const [px,py]=S(d.x,d.y-27);
       ctx.font=`800 ${d.kind==='gear'&&d.g.rar>=2?11.5:11}px Nunito,sans-serif`;ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.88)';ctx.fillStyle=this.dropColor(d);ctx.globalAlpha=d.until-now<DROP_BLINK&&Math.floor(now/170)%2?.45:1;
       const t=this.dropName(d);ctx.strokeText(t,px,py);ctx.fillText(t,px,py);ctx.globalAlpha=1;}
@@ -4117,7 +4331,7 @@ function serverUrl(){const q=new URLSearchParams(location.search).get('server');
   if(v) return abs(v);
   if(/^https?:$/.test(location.protocol)&&!/^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)) return abs('/ws/world');
   return null;}
-const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,lobby:new Map(),since:0,
+const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,pe:[],peN:0,lobby:new Map(),since:0,
   async init(){let r=null;
     try{if(/[?&]localmp\b/.test(location.search)&&window.BroadcastChannel) r=localRoom();
       else if(window.claude&&typeof window.claude.use==='function') r=await window.claude.use('room');
