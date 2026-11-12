@@ -2078,6 +2078,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-12i',date:'2026-11-12',title:'AUTO loot order',
+    new:['AUTO settings \u203a Auto-loot has an Order choice: "Attack, then loot" (pick up after every kill, the default) or "Clear first" (loot once the monsters in range are dead)']},
   {v:'2026-11-12h',date:'2026-11-12',title:'PK, guilds, vault and mail',
     new:['PK modes: Peace, Attack all, One character, Guild. Tap a player outside town to fight; the Peace button by the chat opens the settings (G)','Guilds: found one for 500 gold, invite players, guild chat with /g, the guild name shows over your head','Odo the Vault Keeper stores gear, items and gold (80 spaces) next to Amelie','Mail: gifts and compensation arrive as letters; the envelope button flashes until you read and claim them (N, or Pip)'],
     balance:['Phones and tablets: the whole HUD is 20% smaller','AUTO picks loot up by default'],
@@ -2986,7 +2988,7 @@ const TownScreen={
     c.items=c.items||{potion:5};c.auto={on:false,target:true,eat:true,cast:true,pick:false,eatAt:35,...(c.auto||{})};
     this.party=c.party&&c.party.i&&Array.isArray(c.party.m)?{...c.party,t0:performance.now(),inv:{}}:null;this.follow=null;this.ally=null;this.qAlly=null;this.pendingInv=null;
     this.res=this.maxRes();this.cds={};this.shots=[];this.wfx=[];this.drops=[];this.decals=[];this.queued=null;this.veilUntil=0;this.nextCrit=false;
-    c.auto.range=c.auto.range||320;c.auto={prio:'near',defend:true,skip:[],maxAbove:0,loot:{gold:true,pots:true,mats:true,gear:true,gearMin:0},order:[],off:[],tonic:false,tonicAt:30,elixir:true,...c.auto};c.auto.loot={gold:true,pots:true,mats:true,gear:true,gearMin:0,...c.auto.loot};if(!c.auto.lootV){c.auto.lootV=1;c.auto.pick=true;}   // AUTO picks loot up unless you turn it offc.skills=c.skills||{};
+    c.auto.range=c.auto.range||320;c.auto={prio:'near',defend:true,skip:[],maxAbove:0,lootOrder:'each',loot:{gold:true,pots:true,mats:true,gear:true,gearMin:0},order:[],off:[],tonic:false,tonicAt:30,elixir:true,...c.auto};c.auto.loot={gold:true,pots:true,mats:true,gear:true,gearMin:0,...c.auto.loot};if(!c.auto.lootV){c.auto.lootV=1;c.auto.pick=true;}   // AUTO picks loot up unless you turn it offc.skills=c.skills||{};
     if(!Array.isArray(c.hotbar)||c.hotbar.length!==10) c.hotbar=this.defaultBar();
     this.initGear();this.dirtyMods();
     if(c.hp==null||c.hp<=0) c.hp=this.maxHp();c.hp=Math.min(c.hp,this.maxHp());this.res=this.maxRes();
@@ -3344,7 +3346,8 @@ const TownScreen={
     /* loot between fights: after each kill the wanted loot nearby is picked up before the next monster is chosen, even
        with other monsters on you (only skipped when HP is under 25% and something is still attacking) */
     if(a.pick&&!this.autoGo&&!this.target&&!(this.path&&this.path.length)&&!this.keys.size&&!this.casting&&!this.atk&&now>=(this.autoNext||0)
-      &&!(c.hp<this.maxHp()*.25&&this.mobs.some(o=>o.hostile&&o.state!=='dead'&&(!o.tgt||o.tgt==='me')))){
+      &&!(c.hp<this.maxHp()*.25&&this.mobs.some(o=>o.hostile&&o.state!=='dead'&&(!o.tgt||o.tgt==='me')))
+      &&!(a.lootOrder==='clear'&&(this.mobs.some(o=>o.hostile&&o.state!=='dead'&&(!o.tgt||o.tgt==='me'))||a.target&&this.autoPick(now,this.follow&&(this.member(this.follow)||{}).o)))){   // 'clear': everything in range dies first
       const R=a.range||320,d=this.nearDrop(R,true,d=>this.wantLoot(d));
       if(d){d.tries=(d.tries||0)+1;if(d.tries>4) d.full=now+20000;else{this.autoNext=now+250;this.lootHold=now+1500;this.pick(d);return;}}      // can't get to it: leave it
       else if((this.drops||[]).some(d=>now<d.t0+DROP_POP&&!(d.full>now)&&this.wantLoot(d)&&Math.hypot(d.x-this.p.x,d.y-this.p.y)<R)){this.autoNext=now+100;return;}}   // loot is still popping out: wait for it
@@ -3352,7 +3355,7 @@ const TownScreen={
       const F=this.follow&&this.member(this.follow),fo=F&&F.o;
       const best=this.autoPick(now,fo);if(best){this.target=best;this.chaseAt=[-1e9,-1e9];}}},
   /* AUTO just killed something and loot it wants is on the ground (or still popping out): pick that up first */
-  lootPending(now){const a=this.ch.auto;if(!a.pick||!(now<(this.lootHold||0))) return false;const R=a.range||320;
+  lootPending(now){const a=this.ch.auto;if(!a.pick||a.lootOrder==='clear'||!(now<(this.lootHold||0))) return false;const R=a.range||320;
     return (this.drops||[]).some(d=>!(d.full>now)&&this.wantLoot(d)&&Math.hypot(d.x-this.p.x,d.y-this.p.y)<R);},
   /* which monster AUTO goes for. Monsters already hitting you come first unless "fight back first" is off. */
   autoPick(now,fo){const a=this.ch.auto,R=a.range||320,L=this.ch.baseLevel||1,skip=a.skip||[],qk=a.prio==='quest'?this.questKinds(now):[];
@@ -3385,6 +3388,7 @@ const TownScreen={
       <div class="aw-hint" style="margin:8px 0 4px">Hunt these monsters (on this map):</div>
       <div class="aw-grid">${kinds.length?kinds.map(k=>`<label><input type="checkbox" data-kind="${k}" ${(a.skip||[]).includes(k)?'':'checked'}> ${esc(MOB_DEFS[k].name)} <small style="color:var(--muted)">Lv ${MOB_DEFS[k].lvl}</small></label>`).join(''):'<span class="aw-hint">No monsters on this map.</span>'}</div></div>
     <div class="aw-sec"><h4>Auto-loot</h4><div class="aw-row" style="margin-top:0"><label><input type="checkbox" id="ac-pick2" ${a.pick?'checked':''}> Pick up loot while AUTO is on</label></div>
+      <div class="aw-row">Order <select id="aw-order" aria-label="Loot order">${opt('each','Attack, then loot: pick up after every kill',a.lootOrder||'each')}${opt('clear','Clear first: loot once the monsters in range are dead',a.lootOrder||'each')}</select></div>
       <div class="aw-grid"><label><input type="checkbox" data-loot="gold" ${l.gold!==false?'checked':''}> Gold</label><label><input type="checkbox" data-loot="pots" ${l.pots!==false?'checked':''}> Potions</label>
         <label><input type="checkbox" data-loot="mats" ${l.mats!==false?'checked':''}> Monster materials</label><label><input type="checkbox" data-loot="gear" ${l.gear!==false?'checked':''}> Gear</label></div>
       <div class="aw-row">Only gear that is <select id="aw-gmin" aria-label="Minimum gear rarity">${RARITY.map((r,i)=>opt(i,r.name+(i<4?' or better':''),l.gearMin||0)).join('')}</select></div>
@@ -3402,6 +3406,7 @@ const TownScreen={
     B.querySelector('#aw-above').onchange=e=>{a.maxAbove=+e.target.value;save();};
     B.querySelectorAll('[data-kind]').forEach(x=>x.onchange=()=>{const k=x.dataset.kind;a.skip=(a.skip||[]).filter(y=>y!==k);if(!x.checked) a.skip.push(k);if(this.target&&a.skip.includes(this.target.kind)&&a.on) this.target=null;save();});
     B.querySelector('#ac-pick2').onchange=e=>{a.pick=e.target.checked;save();};
+    B.querySelector('#aw-order').onchange=e=>{a.lootOrder=e.target.value;this.lootHold=0;save();};
     B.querySelectorAll('[data-loot]').forEach(x=>x.onchange=()=>{l[x.dataset.loot]=x.checked;save();});B.querySelector('#aw-gmin').onchange=e=>{l.gearMin=+e.target.value;save();};
     B.querySelector('#aw-eat').onchange=e=>{a.eat=e.target.checked;save();};B.querySelector('#aw-eatat').onchange=e=>{a.eatAt=+e.target.value;save();};
     B.querySelector('#aw-elixir').onchange=e=>{a.elixir=e.target.checked;save();};B.querySelector('#aw-tonic').onchange=e=>{a.tonic=e.target.checked;save();};B.querySelector('#aw-tonicat').onchange=e=>{a.tonicAt=+e.target.value;save();};
@@ -5260,7 +5265,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12h';
+const BUILD='2026-11-12i';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
