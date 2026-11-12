@@ -1,1 +1,1 @@
-build: 2026-11-12j (Mythic set letter for every character)
+build: 2026-11-13a (Slime Queen and Lava Dragon Golem bosses, numbers on every bar, mana potions)
