@@ -1,1 +1,1 @@
-build: 2026-11-12g (phone layout: centred menu icons, full skill bar, smaller windows, party under HP)
+build: 2026-11-12h (PK, guilds, vault, mail, smaller phone HUD, AUTO loot fix)
