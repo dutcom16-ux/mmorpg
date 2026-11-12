@@ -2087,6 +2087,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13b',date:'2026-11-13',title:'Tougher bosses',
+    balance:['The Slime Queen and the Lava Dragon Golem have 50% more health (the Slime King, at 30% of the Queen\'s, grows with her)']},
   {v:'2026-11-13a',date:'2026-11-13',title:'Two bosses, numbers on every bar, mana',
     new:["Queen's Marsh (Map 7, from the south-east of Whispering Fields): the Slime Queen, Lv 14. She spits, jump-slams and lashes with vines, calls one Slime King to fight beside her, and heals when she is hurt (a stun interrupts it)",'Molten Citadel (Map 8, from the north-east of Scorched Badlands): the Lava Dragon Golem, Lv 36. Molten Cleave, Volcanic Slam, Inferno Breath, a brood of baby imps, drakes and obsidian golems, and Molten Core Regeneration','Both bosses fight inside a marked arena in the middle of their map and drop Rare to Legendary gear. The Citadel\'s arena hides what happens inside from anyone standing outside','Every bar shows its numbers: your HP, MP, EXP and Job EXP, the bars over monsters and other players, and the party frames','Mana Potion and Greater Mana Potion at the potion shop'],
     balance:['One skill resource for every job: Mana (MP). Skills need enough mana to cast','Red warning marks on the ground show where a boss attack will land; step out before it fills']},
@@ -2785,7 +2787,7 @@ const ENC={
 const ACT_GAP=.35;      // seconds between two actions of the same boss or summon
 const BOSS_LOOT={slimequeen:{gold:400,gear:2,rar:[.55,.33,.12],potions:5},lavagolem:{gold:1500,gear:3,rar:[.4,.4,.2],potions:8}};   // rar: chances of Rare, Epic, Legendary
 Object.assign(MOB_DEFS,{
-  slimequeen:{el:'water',name:'Slime Queen',lvl:14,hp:20,atk:1.5,exp:70,speed:[30,38],sight:0,reach:30,cd:9,h:84,respawn:[300,300],barks:['Who tramples my garden?','Kneel before the crown of dew!','*regal squelch*'],
+  slimequeen:{el:'water',name:'Slime Queen',lvl:14,hp:30,atk:1.5,exp:70,speed:[30,38],sight:0,reach:30,cd:9,h:84,respawn:[300,300],barks:['Who tramples my garden?','Kneel before the crown of dew!','*regal squelch*'],
     sheet:'slimeboss',set:'queen',hop:true,body:27,keep:[52,170],
     heal:{every:18,below:.75,channel:2,amount:.10,name:'Royal Jelly',color:'#7dff9a'},
     summon:{first:6,cd:22,name:'Summon Slime King',spots:{slimeking:'side'}},
@@ -2801,7 +2803,7 @@ Object.assign(MOB_DEFS,{
       {id:'spit',kind:'proj',range:[60,340],cd:4.5,windup:.5,recover:.5,dmg:.85,mag:true,speed:195,pr:10,life:2.2,color:'#a8ff5a',from:[30,-24],anim:{set:'kingAtk',row:1,flip:true,seq:[[0,0],[1,.1],[2,.3],[3,.44],[5,.62]]}},
       {id:'beam',kind:'beam',range:[60,360],cd:9,windup:.9,track:.5,active:.35,recover:.6,dmg:1.5,mag:true,len:380,wd:22,major:true,color:'#7fd0ff',from:[4,-52],anim:{set:'kingAtk',row:2,flip:true,seq:[[0,0],[1,.2],[2,.5],[5,1.4]]}},
       {id:'spin',kind:'spin',range:[0,70],cd:7,windup:.45,active:1.6,tick:.4,recover:.6,dmg:.55,r:58,major:true,drift:.5,color:'#ffe27a',anim:{set:'kingAtk',row:3,loop:[2,3,.45,2.05],seq:[[0,0],[1,.15],[2,.45],[4,2.05],[5,2.4]]}}]},
-  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:36,hp:32,atk:1.5,exp:160,speed:[30,42],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
+  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:36,hp:48,atk:1.5,exp:160,speed:[30,42],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
     sheet:'lavaboss',set:'lava',walkFps:6,body:40,keep:[0,74],
     heal:{every:20,below:.70,channel:2.5,amount:.10,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
     summon:{first:6,cd:24,name:'Call of the Molten Brood',spots:{babygolem:[-44,16],babyimp:[5,22],babydrake:[50,16]}},
@@ -5578,7 +5580,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13a';
+const BUILD='2026-11-13b';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

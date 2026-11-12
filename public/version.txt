@@ -1,1 +1,1 @@
-build: 2026-11-13a (Slime Queen and Lava Dragon Golem bosses, numbers on every bar, mana potions)
+build: 2026-11-13b (bosses have 50% more health)
