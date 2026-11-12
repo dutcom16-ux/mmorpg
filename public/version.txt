@@ -1,1 +1,1 @@
-build: 2026-11-12e (sign-in with patch notes, loading screen, sharper icons)
+build: 2026-11-12f (mobile browser detection)

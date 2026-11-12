@@ -1982,6 +1982,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-12f',date:'2026-11-12',title:'Mobile browser detection',
+    new:['The game detects whether it runs in a phone, tablet or desktop browser and picks the touch or desktop layout by itself','Settings \u203a Device shows what was detected and lets you choose Auto, Mobile or Desktop'],
+    fixes:['The layout now follows changes while you play: turning the screen, or plugging a mouse into a tablet']},
   {v:'2026-11-12e',date:'2026-11-12',title:'Sign-in, loading and sharper icons',
     new:['Patch notes on the sign-in screen, with every earlier release one tap away','A new loading screen: real progress, a status line only while that step runs, and a Retry button if something fails','Sharper item, skill and equipment icons; wings and potions get proper filled icons'],
     fixes:['The story intro and its Skip button are gone: entering the world goes straight in','Sign-in shows at once instead of waiting for all the art to download']},
@@ -2880,7 +2883,7 @@ const TownScreen={
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
     this.dlg=null;this.keys.clear();this.dead=null;this.travelling=false;$('#map-fade').classList.remove('on');
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);
-    if(IS_TOUCH&&!SETTINGS.touchInit){SETTINGS.touchInit=true;SETTINGS.chatMin=true;saveSettings();}
+    if(Device.mobile&&!SETTINGS.touchInit){SETTINGS.touchInit=true;SETTINGS.chatMin=true;saveSettings();}
     this.chat=[];this.unread=0;$('#chatlog').innerHTML='';this.chatMin(SETTINGS.chatMin);this.log('sys',null,'Press Enter to chat · /help for commands');this.pillT=0;
     if(Net.room) this.log('sys',null,`Online${Net.kind==='claude'?' (claude.ai world)':''}: other players in your map appear with green names. P opens the Party window with everyone who is online.`);
     let id=c.map&&c.map!=='oakhaven'&&Sprites.isMap(c.map)?c.map:'town';
@@ -4389,11 +4392,14 @@ const TownScreen={
     $('#sw-body').innerHTML=`<div class="set-sec"><h4>Game</h4><div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="st-select">Character Select</button><button class="btn" id="st-keys">Keyboard shortcuts</button><button class="btn" id="st-out">Sign out</button></div>
         <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:8px">Signed in as <b style="color:#fff">${esc(Auth.display())}</b></div></div>
+      <div class="set-sec"><h4>Device</h4>
+        <div class="set-row"><label for="st-layout">Layout</label><select id="st-layout"><option value="auto">Auto (detect)</option><option value="mobile">Mobile (touch)</option><option value="desktop">Desktop</option></select><span></span></div>
+        <div id="st-device" style="font-size:12px;color:var(--muted);font-weight:700;margin-top:6px">Detected: <b style="color:#fff">${esc(Device.label())}</b> · ${esc(Device.why)}. Using the <b style="color:#fff">${Device.mobile?'touch':'desktop'}</b> layout${S.layout&&S.layout!=='auto'?' (your choice)':''}.</div></div>
       <div class="set-sec"><h4>Graphics</h4>${rng('zoom','Camera zoom',70,140,5)}
         <div class="set-row"><label for="st-res">Resolution</label><select id="st-res"><option value="sharp">Sharp (full)</option><option value="balanced">Balanced</option><option value="performance">Performance</option></select><span></span></div>
         ${chk('numbers','Show damage numbers')}${chk('names','Show names and health bars')}${chk('lowfx','Reduced effects (fewer particles)')}</div>
       <div class="set-sec"><h4>Sound</h4>${rng('master','Master volume',0,100,5)}${rng('music','Music',0,100,5)}${rng('sfx','Effects',0,100,5)}${chk('mute','Mute all sound')}</div>`;
-    $('#st-res').value=S.res;
+    $('#st-res').value=S.res;$('#st-layout').value=S.layout||'auto';$('#st-layout').onchange=e=>{S.layout=e.target.value;saveSettings();Device.apply();this.renderSettings();};
     $('#st-res').onchange=e=>{S.res=e.target.value;saveSettings();this.stage.resize();};
     $$('#sw-body input[type=range]').forEach(i=>i.oninput=()=>{S[i.dataset.k]=+i.value;i.nextElementSibling.textContent=i.value+'%';saveSettings();AudioFX.apply();});
     $$('#sw-body input[data-c]').forEach(i=>i.onchange=()=>{S[i.dataset.c]=i.checked;saveSettings();AudioFX.apply();});
@@ -4798,7 +4804,7 @@ const TownScreen={
     for(const f of this.fx){const e=(now-f.t0)/1000;if(e<0) continue;if(f.dmg!==undefined||f.miss){if(SETTINGS.numbers||f.sty==='heal'||f.sty==='recv') this.drawNum(ctx,f,now,S);continue;}if(!SETTINGS.numbers&&!f.big&&!f.label&&/^[-+]?\d+!?$/.test(f.text)) continue;const [px,py]=S(f.x,f.y-e*26);ctx.globalAlpha=Math.min(1,(1-e)*2);
       ctx.font=`${f.italic?'italic ':''}900 ${f.big?17:14}px Nunito,sans-serif`;ctx.lineWidth=3.2;ctx.strokeStyle='rgba(8,12,28,.9)';ctx.fillStyle=f.color;ctx.strokeText(f.text,px,py);ctx.fillText(f.text,px,py);ctx.globalAlpha=1;}
     // prompt
-    const pr=$('#town-prompt'),touch=matchMedia('(pointer: coarse)').matches;
+    const pr=$('#town-prompt'),touch=Device.mobile;
     if(this.aim&&!this.dlg){const html=touch?`Tap the ground to cast <b style="color:${this.aim.s.color||'#bff4ff'}">${esc(this.aim.s.name)}</b> · tap the skill again to cancel`:`<kbd>Click</kbd>the ground to cast <b style="color:${this.aim.s.color||'#bff4ff'}">${esc(this.aim.s.name)}</b> · Esc or right-click cancels`;
       if(pr.dataset.h!==html){pr.innerHTML=html;pr.dataset.h=html;}pr.classList.remove('act');pr.style.display='block';this.promptDrop=null;}
     else if(!this.dlg&&(near||this.nearWaystone())){const who=near?TOWN_NPCS[near.id].name:'the Waystone';const html=touch?`Tap ${esc(who)} to ${near?'talk':'touch it'}`:`<kbd>E</kbd>${near?'Talk to':'Touch'} ${esc(who)}`;
@@ -4917,9 +4923,35 @@ function craftWings(tier,lvl,rar){const g=craftGear('wings',lvl,rar);g.name=GEAR
 const recipeKey=(r,line)=>'pv'+r.id+(r.weapon?line:'');
 function recipePreview(r,line){const k=recipeKey(r,line);return RECIPE_PV[k]||(RECIPE_PV[k]=r.make(line));}
 const RECIPE_PV={};
-/* phones and tablets: a touch-first layout (html.mobile) */
-const IS_TOUCH=(()=>{try{return matchMedia('(pointer: coarse)').matches||/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));}catch(e){return false;}})();
-document.documentElement.classList.toggle('mobile',IS_TOUCH);
+/* ---------- device detection ----------
+   Works out whether the game runs in a phone, tablet or desktop browser and switches the touch layout (html.mobile,
+   plus html.phone / html.tablet) to match. Several signals, in order of trust: the browser's own "mobile" flag
+   (User-Agent Client Hints), the user-agent string, iPadOS pretending to be a Mac (touch points), then the pointer
+   type and screen size. It is checked again when the screen turns, the window resizes or the pointer type changes
+   (a mouse plugged into a tablet, a phone preview switched on), and Settings can override it (Auto / Mobile / Desktop). */
+const Device={type:'desktop',mobile:false,os:'',browser:'',why:'',
+  read(){const n=navigator,ua=n.userAgent||'',mm=q=>{try{return matchMedia(q).matches;}catch(e){return false;}};
+    const coarse=mm('(pointer: coarse)'),noHover=mm('(hover: none)'),touch=(n.maxTouchPoints||0)>0||'ontouchstart' in window,short=Math.min(screen.width||9999,screen.height||9999);
+    const ipados=/Mac/.test(n.platform||ua)&&(n.maxTouchPoints||0)>1;
+    const os=/Android/i.test(ua)?'Android':/iPhone|iPod/.test(ua)?'iOS':/iPad/.test(ua)||ipados?'iPadOS':/Windows/i.test(ua)?'Windows':/Mac/i.test(ua)?'macOS':/CrOS/.test(ua)?'ChromeOS':/Linux/i.test(ua)?'Linux':'';
+    const browser=/SamsungBrowser/i.test(ua)?'Samsung Internet':/EdgA?\/|EdgiOS/i.test(ua)?'Edge':/OPR\/|OPT\//i.test(ua)?'Opera':/Firefox|FxiOS/i.test(ua)?'Firefox':/CriOS|Chrome\//i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':'';
+    let type='desktop',why='a mouse or trackpad and no phone or tablet signature';
+    if(/iPad|Tablet|Silk|Kindle|PlayBook/i.test(ua)||ipados||(/Android/i.test(ua)&&!/Mobile/i.test(ua))){type='tablet';why='the browser identifies as a tablet';}
+    else if((n.userAgentData&&n.userAgentData.mobile)||/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile/i.test(ua)){type='phone';why='the browser identifies as a phone';}
+    else if(coarse&&noHover&&touch){type=short<600?'phone':'tablet';why='a touch screen with no mouse';}
+    return {type,os,browser,why,coarse,touch};},
+  /* detect, apply the layout, tell the game when it changed */
+  apply(first){const d=this.read(),pref=SETTINGS.layout||'auto',mobile=pref==='auto'?d.type!=='desktop':pref==='mobile',was=this.mobile,wasT=this.type;
+    Object.assign(this,d,{mobile,pref});const h=document.documentElement;h.classList.toggle('mobile',mobile);h.classList.toggle('phone',mobile&&d.type!=='tablet');h.classList.toggle('tablet',mobile&&d.type==='tablet');h.dataset.device=d.type;
+    if(first||(was===mobile&&wasT===d.type)) return;
+    window.dispatchEvent(new Event('resize'));try{if(activeScreen===TownScreen&&TownScreen.ch){TownScreen.placeParty();TownScreen.renderHotbar();if(TownScreen.win==='setwin') TownScreen.renderSettings();}}catch(e){}
+    if(was!==mobile) toast(mobile?'Touch layout on':'Desktop layout on');},
+  label(){return `${{phone:'Phone',tablet:'Tablet',desktop:'Desktop'}[this.type]}${this.browser||this.os?' · '+[this.browser,this.os].filter(Boolean).join(' on '):''}`;},
+  init(){this.apply(true);let t=0;const re=()=>{clearTimeout(t);t=setTimeout(()=>this.apply(),200);};
+    addEventListener('resize',re);addEventListener('orientationchange',re);
+    for(const q of ['(pointer: coarse)','(hover: none)']) try{matchMedia(q).addEventListener('change',re);}catch(e){}
+    if(this.mobile&&!SETTINGS.deviceSeen){SETTINGS.deviceSeen=true;saveSettings();setTimeout(()=>toast(`${this.type==='tablet'?'Tablet':'Mobile'} browser detected · touch layout on (change it in Settings)`,5200),1200);}}};
+Device.init();
 /* full screen: the buttons show the current state; Esc (or the button) leaves it. Hidden where the browser can't (iPhone: add to Home Screen instead) */
 const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenElement);},
   ok(){return !!(document.fullscreenEnabled||document.webkitFullscreenEnabled);},
@@ -4932,7 +4964,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12e';
+const BUILD='2026-11-12f';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
@@ -4985,7 +5017,7 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
     if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
       else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
   else showScreen('screen-login');
-  window.MMO={Store,Sprites,APPEARANCE,JOBS,advanceJob,newCharacter,TownScreen,Auth,Net,Cloud};
+  window.MMO={Store,Sprites,APPEARANCE,JOBS,advanceJob,newCharacter,TownScreen,Auth,Net,Cloud,Device};
 })();
 </script>
 </body>
