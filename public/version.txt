@@ -1,1 +1,1 @@
-build: 2026-11-12c (shops, crafting, wings, drag-and-drop equipment, AUTO settings)
+build: 2026-11-12d (attack patterns, walking, retro damage numbers, sound effects)

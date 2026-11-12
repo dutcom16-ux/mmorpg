@@ -2020,6 +2020,15 @@ const QUEST_INFO={
    reach, cd (s between hits), h (height on the map), barks: dark red lines in the chat when they turn on you */
 const dirOf=(dx,dy)=>[6,7,0,1,2,3,4,5][((Math.round(Math.atan2(dy,dx)/(Math.PI/4))%8)+8)%8];   // screen vector -> sprite row
 const ATK_T=.5;                                                        // one sword swing (s)
+/* basic-attack patterns. magic: wind-up with a charge at the hand, release, recovery (Elementalist line, Channeler,
+   Hierophant only). bow: aim and draw with the arrow nocked, release from the bow, recovery (Wayfinder line). melee:
+   wind-up, contact, recovery (everyone else, Arbiter included). Damage: projectiles on impact, melee only at contact
+   and only if the target is still within reach. */
+const MAGIC_STYLE=new Set(['channeler','hierophant']);
+function attackStyleOf(id){const L=lineOf(id);if(L==='Ranged') return 'bow';if(L==='Magic'||MAGIC_STYLE.has(id)) return 'magic';return 'melee';}
+const STRIDE=104;                       // px of ground per walk-animation second at normal speed: the walk cycle follows distance, not time
+const dirVec=r=>{const a=((r+2)%8)*Math.PI/4;return [Math.cos(a),Math.sin(a)];};   // sprite row -> screen vector
+const handAt=(x,y,dir)=>{const [vx,vy]=dirVec(dir);return [x+vx*12,y-31+vy*5];};    // where a bow or casting hand is, facing dir
 const ATK_HIT=.56;                                                     // the blow lands as the slash frame starts
 const MOB_SLOTS=[[-22,2],[22,2],[-15,-13],[15,-13],[-12,14],[12,14]];  // where attackers stand around you
 const expNeed=l=>Math.round(20*Math.pow(l,1.35)),jobNeed=l=>Math.round(18*Math.pow(l,1.35));
@@ -2226,6 +2235,56 @@ const EL_NUM={neutral:'skill',fire:'fire',water:'water',wind:'wind',earth:'skill
 const NUM_PAINT={normal:['#ffffff','#d8dde8','#1a1f2e'],skill:['#fff6c0','#ffb02a','#3a1a04'],crit:['#fff3a0','#ff9a1a','#5a0808'],
   water:['#eaffff','#3ec8ff','#062a4a'],fire:['#fff3a0','#ff8a1a','#4a1404'],arcane:['#ffe6ff','#ff5ae0','#3a0638'],wind:['#eafcff','#58b8ff','#082a4a'],
   lightning:['#fffbe0','#ffd23a','#2a1a4a'],poison:['#ffe6f6','#ff5ab4','#3a0628']};
+/* ---------- retro damage numerals ----------
+   6x8 pixel glyphs (M is 7 wide, I 4), drawn at 3 px per pixel with a one-pixel dark outline and a soft drop shadow.
+   One row per colour style. The same atlas is used in game and exported as the sprite sheet (numSheet). */
+const NUM_GLYPHS={
+  '0':['.####.','##..##','##..##','##..##','##..##','##..##','##..##','.####.'],
+  '1':['..##..','.###..','####..','..##..','..##..','..##..','..##..','######'],
+  '2':['.####.','##..##','....##','...##.','..##..','.##...','##....','######'],
+  '3':['.####.','##..##','....##','..###.','....##','....##','##..##','.####.'],
+  '4':['...##.','..###.','.####.','##.##.','######','...##.','...##.','...##.'],
+  '5':['######','##....','##....','#####.','....##','....##','##..##','.####.'],
+  '6':['.####.','##....','##....','#####.','##..##','##..##','##..##','.####.'],
+  '7':['######','....##','....##','...##.','..##..','..##..','..##..','..##..'],
+  '8':['.####.','##..##','##..##','.####.','##..##','##..##','##..##','.####.'],
+  '9':['.####.','##..##','##..##','##..##','.#####','....##','....##','.####.'],
+  '+':['......','..##..','..##..','######','######','..##..','..##..','......'],
+  '-':['......','......','......','######','######','......','......','......'],
+  'M':['##...##','###.###','#######','##.#.##','##...##','##...##','##...##','##...##'],
+  'I':['####','.##.','.##.','.##.','.##.','.##.','.##.','####'],
+  'S':['.####.','##..##','##....','.####.','....##','....##','##..##','.####.']};
+/* fill top, fill bottom, outline. crit: yellow with a red outline and a red lower band (the accent) */
+const NUM_STYLE_PAINT={normal:['#ffffff','#d6dbe6','#161a26'],crit:['#fff8b0','#ffd21f','#6a0707',  '#ff3a2a'],recv:['#ffd2cc','#ff3b30','#3a0404'],
+  heal:['#eaffea','#3fe46a','#05300f'],miss:['#ffffff','#b8ccff','#18203a'],skill:['#fff6c0','#ffb02a','#3a1a04'],
+  water:['#eaffff','#3ec8ff','#062a4a'],fire:['#fff3a0','#ff8a1a','#4a1404'],arcane:['#ffe6ff','#ff5ae0','#3a0638'],wind:['#eafcff','#58b8ff','#082a4a'],
+  lightning:['#fffbe0','#ffd23a','#2a1a4a'],poison:['#ffe6f6','#ff5ab4','#3a0628']};
+const NUM_U=3,NUM_CH=(8+3)*NUM_U;          // px per glyph pixel; cell height: 8 rows + outline above/below + shadow
+let NUM_ATLAS=null;
+function numAtlas(){if(NUM_ATLAS) return NUM_ATLAS;const U=NUM_U,keys=Object.keys(NUM_GLYPHS),styles=Object.keys(NUM_STYLE_PAINT),met={};let X=0;
+  for(const k of keys){const w=NUM_GLYPHS[k][0].length;met[k]={x:X,w:(w+3)*U};X+=(w+3)*U+2;}
+  const cv=makeCanvas(X,NUM_CH*styles.length),c=cv.getContext('2d'),rows={};
+  styles.forEach((st,ri)=>{const P=NUM_STYLE_PAINT[st],y0=ri*NUM_CH;rows[st]=y0;
+    for(const k of keys){const G=NUM_GLYPHS[k],gw=G[0].length,ox=met[k].x+U,oy=y0+U,on=(x,y)=>y>=0&&y<8&&x>=0&&x<gw&&G[y][x]==='#';
+      const px=(x,y,col)=>{c.fillStyle=col;c.fillRect(ox+x*U,oy+y*U,U,U);};
+      for(let y=-1;y<=8;y++) for(let x=-1;x<=gw;x++){if(on(x,y)) continue;let o=false;for(let dy=-1;dy<=1&&!o;dy++) for(let dx=-1;dx<=1;dx++) if(on(x+dx,y+dy)){o=true;break;}
+        if(o){c.globalAlpha=.4;px(x+1,y+1,'#000');c.globalAlpha=1;}}                             // soft shadow, one pixel down-right
+      for(let y=-1;y<=8;y++) for(let x=-1;x<=gw;x++){if(on(x,y)) continue;let o=false;for(let dy=-1;dy<=1&&!o;dy++) for(let dx=-1;dx<=1;dx++) if(on(x+dx,y+dy)){o=true;break;}
+        if(o) px(x,y,P[2]);}                                                                      // thick dark outline
+      for(let y=0;y<8;y++) for(let x=0;x<gw;x++) if(on(x,y)){const t=y/7;px(x,y,P[3]&&y>=6?P[3]:t<.45?P[0]:P[1]);if(y===0||!on(x,y-1)){c.globalAlpha=.55;c.fillStyle='#fff';c.fillRect(ox+x*U,oy+y*U,U,1);c.globalAlpha=1;}}}});
+  return NUM_ATLAS={canvas:cv,met,rows,styles};}
+/* the deliverable sheet: uniform cells, one labelled row per colour style, labels outside the cells, transparent */
+function numSheet(){const A=numAtlas(),keys=['0','1','2','3','4','5','6','7','8','9','+','-','MISS'],CW=Math.max(...Object.values(A.met).map(m=>m.w)),PAD=8,LW=110;
+  const mW=['M','I','S','S'].reduce((a,k)=>a+A.met[k].w-NUM_U,0)+NUM_U,cellW=k=>k==='MISS'?mW:CW,W=LW+keys.reduce((a,k)=>a+cellW(k)+PAD,0)+PAD,rows=['normal','crit','recv','heal','miss','skill','fire','water','wind','lightning','arcane','poison'];
+  const cv=makeCanvas(W,PAD+rows.length*(NUM_CH+PAD)+20),c=cv.getContext('2d');c.font='800 13px Nunito,sans-serif';c.textBaseline='middle';
+  const label={normal:'Normal',crit:'Critical',recv:'Received',heal:'Healing',miss:'Miss',skill:'Skill',fire:'Fire',water:'Water',wind:'Wind',lightning:'Lightning',arcane:'Arcane',poison:'Poison'};
+  let x=LW+PAD;c.fillStyle='#8a93a8';c.textAlign='center';for(const k of keys){c.fillText(k,x+cellW(k)/2,10);x+=cellW(k)+PAD;}
+  rows.forEach((st,i)=>{const y=20+PAD+i*(NUM_CH+PAD);c.textAlign='left';c.fillStyle='#8a93a8';c.fillText(label[st],6,y+NUM_CH/2);let x=LW+PAD;
+    for(const k of keys){if(k==='MISS'){let xx=x;for(const ch of 'MISS'){const m=A.met[ch];c.drawImage(A.canvas,m.x,A.rows[st],m.w,NUM_CH,xx,y,m.w,NUM_CH);xx+=m.w-NUM_U;}}
+      else{const m=A.met[k];c.drawImage(A.canvas,m.x,A.rows[st],m.w,NUM_CH,x+(CW-m.w)/2,y,m.w,NUM_CH);}x+=cellW(k)+PAD;}});
+  return cv;}
+/* how long each kind lives (s) and how high it floats (px) */
+const NUM_ANIM={normal:[.8,26],crit:[1,30],recv:[.85,24],heal:[1,18],miss:[.65,12]};
 /* ------------------------------ settings ------------------------------
    graphics, sound and HUD layout; saved on this device (not on the character) */
 const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8,touchInit:false};
@@ -2234,10 +2293,28 @@ function saveSettings(){try{localStorage.setItem('mmorpg-online.settings.v1',JSO
 /* ------------------------------ sound ------------------------------
    everything is synthesised with Web Audio (no sound files): short effects for combat and the interface, and a soft
    generated tune per map (pad chords, a bass note and a plucked melody in the map's own scale) */
-const AudioFX={ctx:null,want:null,mood:null,timer:null,
+/* recorded-style effects synthesized offline by tools/sfx/make_sfx.py (48 kHz WAVs in assets/sfx/wav, MP3 copies for the game).
+   They load in the background after your first click; until one has loaded, the in-browser synth below plays instead. */
+const SFX_NAMES=['sword_slash_light','sword_slash_heavy','sword_slash_double','sword_crit','bow_draw','bow_release','arrow_fly','arrow_impact',
+  'dagger_stab','dual_blade_combo','shadow_strike','poison_hit','fire_cast','fireball_launch','fire_explode','frost_cast','ice_spike','ice_shatter',
+  'lightning_charge','thunder_strike','holy_bells','holy_chimes','holy_flourish','buff_pulse','hit_physical','shield_block','dodge_swoosh','defeat'];
+const SFX_FILES={"arrow_fly": "a/sfx_arrow_fly.mp3", "arrow_impact": "a/sfx_arrow_impact.mp3", "bow_draw": "a/sfx_bow_draw.mp3", "bow_release": "a/sfx_bow_release.mp3", "buff_pulse": "a/sfx_buff_pulse.mp3", "dagger_stab": "a/sfx_dagger_stab.mp3", "defeat": "a/sfx_defeat.mp3", "dodge_swoosh": "a/sfx_dodge_swoosh.mp3", "dual_blade_combo": "a/sfx_dual_blade_combo.mp3", "fire_cast": "a/sfx_fire_cast.mp3", "fire_explode": "a/sfx_fire_explode.mp3", "fireball_launch": "a/sfx_fireball_launch.mp3", "frost_cast": "a/sfx_frost_cast.mp3", "hit_physical": "a/sfx_hit_physical.mp3", "holy_bells": "a/sfx_holy_bells.mp3", "holy_chimes": "a/sfx_holy_chimes.mp3", "holy_flourish": "a/sfx_holy_flourish.mp3", "ice_shatter": "a/sfx_ice_shatter.mp3", "ice_spike": "a/sfx_ice_spike.mp3", "lightning_charge": "a/sfx_lightning_charge.mp3", "poison_hit": "a/sfx_poison_hit.mp3", "shadow_strike": "a/sfx_shadow_strike.mp3", "shield_block": "a/sfx_shield_block.mp3", "sword_crit": "a/sfx_sword_crit.mp3", "sword_slash_double": "a/sfx_sword_slash_double.mp3", "sword_slash_heavy": "a/sfx_sword_slash_heavy.mp3", "sword_slash_light": "a/sfx_sword_slash_light.mp3", "thunder_strike": "a/sfx_thunder_strike.mp3"};
+const sfxUrl=n=>SFX_FILES&&SFX_FILES[n]||'assets/sfx/'+n+'.mp3';
+/* generic game sounds -> sample, volume, playback rate */
+const SFX_MAP={hit:['hit_physical',.9],crit:['sword_crit',.85],miss:['dodge_swoosh',.45],dodge:['dodge_swoosh',.75],block:['shield_block',.85],
+  hurt:['hit_physical',.85,.8],death:['defeat',.85],shoot:['bow_release',.85],swing:['sword_slash_light',.8]};
+const EL_SMP={fire:'fire_explode',ice:'ice_shatter',lightning:'thunder_strike',holy:'holy_bells',shadow:'shadow_strike',poison:'poison_hit'};
+const CAST_SMP={fire:'fire_cast',ice:'frost_cast',lightning:'lightning_charge',holy:'holy_chimes',meteor:'fire_cast'};
+const AudioFX={ctx:null,want:null,mood:null,timer:null,buf:{},loading:false,
   init(){if(this.ctx) return;const C=window.AudioContext||window.webkitAudioContext;if(!C) return;
     const x=this.ctx=new C();this.master=x.createGain();this.master.connect(x.destination);
-    this.mg=x.createGain();this.mg.connect(this.master);this.sg=x.createGain();this.sg.connect(this.master);this.apply();},
+    this.mg=x.createGain();this.mg.connect(this.master);this.sg=x.createGain();this.sg.connect(this.master);this.apply();this.load();},
+  load(){if(this.loading||!this.ctx) return;this.loading=true;const x=this.ctx;
+    for(const n of SFX_NAMES) fetch(sfxUrl(n)).then(r=>{if(!r.ok) throw new Error(r.status);return r.arrayBuffer();})
+      .then(b=>new Promise((res,rej)=>x.decodeAudioData(b,res,rej))).then(ab=>{this.buf[n]=ab;}).catch(()=>{});},
+  /* play a sample: true when it was handled (played, or held back by the gate), false when it isn't loaded (use the synth) */
+  smp(n,vol=1,o={}){const b=this.buf[n];if(!b) return false;if(!this.ok()||!this.gate('s.'+n,o.gap||40)) return true;const x=this.ctx,src=x.createBufferSource();src.buffer=b;
+    src.playbackRate.value=(o.rate||1)*(1+(Math.random()-.5)*.05);const g=x.createGain();g.gain.value=.6*vol;src.connect(g);g.connect(this.sg);src.start(x.currentTime+(o.at||0));return true;},
   unlock(){this.init();if(!this.ctx) return;if(this.ctx.state==='suspended') this.ctx.resume().then(()=>this.want&&this.play(this.want,true));else if(this.want&&!this.mood) this.play(this.want,true);},
   apply(){if(!this.ctx) return;const t=this.ctx.currentTime,S=SETTINGS,m=S.mute?0:S.master/100;
     this.master.gain.setTargetAtTime(m,t,.05);this.mg.gain.setTargetAtTime(S.music/100*.55,t,.05);this.sg.gain.setTargetAtTime(S.sfx/100,t,.05);},
@@ -2253,7 +2330,7 @@ const AudioFX={ctx:null,want:null,mood:null,timer:null,
   /* the same sound can't stack more than every few ms, and only so many play at once */
   gate(n,gap){const t=performance.now();if(t-(this.last[n]||0)<gap) return false;this.last[n]=t;this.win=this.win.filter(q=>t-q<160);if(this.win.length>=8) return false;this.win.push(t);return true;},
   last:{},win:[],
-  sfx(n,vol=1){if(!this.ok()||!this.gate(n,45)) return;const T=(f,d,ty,v,o)=>this.tone(f,d,ty,v*vol,o),N=(d,v,o)=>this.noise(d,v*vol,o);
+  sfx(n,vol=1){if(!this.ok()||!this.gate(n,45)) return;{const M=SFX_MAP[n];if(M&&this.buf[M[0]]){this.smp(M[0],vol*M[1],{rate:M[2]});return;}}const T=(f,d,ty,v,o)=>this.tone(f,d,ty,v*vol,o),N=(d,v,o)=>this.noise(d,v*vol,o);
     switch(n){
       case 'swing':N(.13,.22,{f:2200,to:500,q:.8});break;
       case 'hit':T(150,.13,'sine',.34,{to:60});N(.05,.18,{f:3000,q:.6});break;
@@ -2277,7 +2354,8 @@ const AudioFX={ctx:null,want:null,mood:null,timer:null,
       case 'ui':T(1200,.04,'triangle',.06);break;
       case 'quest':[784,988,1175].forEach((f,i)=>T(f,.35,'triangle',.11,{at:i*.1}));break;}},
   /* a spell landing, one sound per element (synthesized here: no recordings); v: 'fall' bolt from the sky, 'zap' lightning strike, 'self' a buff */
-  el(fx,v,vol=1){if(!this.ok()||!this.gate('el.'+fx+(v||''),fx==='holy'?160:70)) return;const T=(f,d,ty,vv,o={})=>this.tone(f,d,ty,vv*vol,o),N=(d,vv,o={})=>this.noise(d,vv*vol,o),R=Math.random;
+  el(fx,v,vol=1){if(!this.ok()||!this.gate('el.'+fx+(v||''),fx==='holy'?160:70)) return;
+    {const n=v==='self'?'buff_pulse':fx==='ice'&&v==='fall'?'ice_spike':EL_SMP[fx];if(n&&this.smp(n,vol*.85)) return;}const T=(f,d,ty,vv,o={})=>this.tone(f,d,ty,vv*vol,o),N=(d,vv,o={})=>this.noise(d,vv*vol,o),R=Math.random;
     if(v==='self'){const b={fire:392,ice:523,lightning:587,wind:659,earth:262,holy:784,shadow:330,poison:349,arcane:440}[fx]||440;
       [1,1.26,1.5,2].forEach((m,i)=>T(b*m,.42,'triangle',.07,{at:i*.055}));T(b/2,.6,'sine',.08,{a:.05});N(.45,.05,{f:1800,to:6000,q:2});return;}
     let o=0;if(v==='fall'){T(1500,.16,'sine',.04,{to:500});N(.16,.05,{f:3000,to:900,q:2});o=.11;}
@@ -2293,7 +2371,7 @@ const AudioFX={ctx:null,want:null,mood:null,timer:null,
       case 'arcane':T(523,.42,'sine',.1,{to:1046});T(784,.4,'sine',.07,{to:1568,at:.05});N(.3,.05,{f:5000,q:4});break;
       case 'meteor':T(2000,.42,'sine',.05,{to:300});N(.42,.1,{f:3200,to:600,q:2});T(70,.85,'sine',.45,{to:30,at:.42});N(.95,.42,{type:'lowpass',f:760,to:80,at:.42});for(let i=0;i<4;i++) N(.03,.12,{f:2500+R()*3000,q:4,at:.5+i*.06});break;}},
   /* the hum while a spell charges, pitched to its element */
-  cast(fx){if(!this.ok()||!this.gate('cast',120)) return;const b={fire:220,ice:330,lightning:294,wind:262,earth:147,holy:392,shadow:165,poison:196,arcane:247,meteor:220}[fx]||247;
+  cast(fx){if(!this.ok()||!this.gate('cast',120)) return;if(CAST_SMP[fx]&&this.smp(CAST_SMP[fx],.6)) return;const b={fire:220,ice:330,lightning:294,wind:262,earth:147,holy:392,shadow:165,poison:196,arcane:247,meteor:220}[fx]||247;
     this.tone(b,.7,'sine',.09,{to:b*2,a:.25});this.tone(b*1.5,.7,'triangle',.04,{to:b*3,a:.3});this.noise(.6,.04,{f:1500,to:6000,q:3});},
   MOODS:{town:{root:60,scale:[0,2,4,7,9,12],prog:[[0,4,7],[9,12,16],[5,9,12],[7,11,14]],bpm:72,wave:'triangle'},
     fields:{root:62,scale:[0,2,4,7,9,12],prog:[[0,4,7],[5,9,12],[7,11,14],[0,4,7]],bpm:84,wave:'triangle'},
@@ -2760,6 +2838,10 @@ const TownScreen={
   matk(){const S=this.st(),M=this.mods(),I=S.INT,ln=this.line(),b=this.lvlAtk()+Math.floor(S.LUK/5)+(M.matk||0)+(ln==='Magic'||ln==='Support'?this.gear().atk:0),k=1+(M.matkPct||0);
     return [Math.round((I+Math.floor(I/7)**2+b)*k),Math.round((I+Math.floor(I/5)**2+b)*k)];},
   magicLine(){const ln=this.line();return ln==='Magic'||ln==='Support';},
+  atkStyle(){return attackStyleOf(this.ch.job.classId);},
+  /* the whoosh of a basic melee swing: daggers stab, heavy jobs and the Arbiter's mace sweep, swords mostly quick slashes */
+  meleeSound(){const j=this.ch.job.classId;if(this.line()==='Stealth'){if(!AudioFX.smp('dagger_stab',.85)) AudioFX.sfx('swing');return;}
+    const heavy=j==='arbiter'||j==='juggernaut'||j==='bulwark'||Math.random()<.22;if(!AudioFX.smp(heavy?'sword_slash_heavy':'sword_slash_light',.8,{rate:j==='arbiter'?.86:1})) AudioFX.sfx('swing');},
   attackPower(){if(this.magicLine()){const [a,b]=this.matk();return Math.round((a+b)/2);}return this.atkPower();},
   hitRate(){const S=this.st(),L=this.ch.baseLevel||1;return 175+L+S.DEX+Math.floor(S.LUK/3)+(this.mods().hit||0);},
   flee(){const S=this.st(),L=this.ch.baseLevel||1;return 100+L+S.AGI+Math.floor(S.LUK/5)+(this.mods().flee||0);},
@@ -2774,7 +2856,7 @@ const TownScreen={
   maxRes(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
     return Math.floor((40+(L-1)*3+t*20)*(SP_MOD[this.line()]||1)*(1+S.INT/100)*(1+(M.spPct||0)));},
   line(){return lineOf(this.ch.job.classId);},
-  reach(){const R=LINES[this.line()].reach;return R>40?R+(this.mods().range||0):R;},
+  reach(){const st=this.atkStyle(),R=st==='melee'?Math.min(32,LINES[this.line()].reach):LINES[this.line()].reach;return R>40?R+(this.mods().range||0):R;},
   swingCd(){const S=this.st(),M=this.mods();return Math.max(.25,(ASPD_BASE[this.line()]||.95)*Math.max(.35,1-S.AGI*.004-S.DEX*.001)/(1+(M.aspd||0))/ASPD_BOOST);},
   aspd(){return Math.min(190,Math.round(200-this.swingCd()*50));},
   castMul(){const S=this.st(),M=this.mods();return Math.max(0,1-(S.DEX*2+S.INT)/530)*Math.max(.2,1-(M.castPct||0))*CAST_SCALE;},
@@ -2819,7 +2901,7 @@ const TownScreen={
     if(m) this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);else if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
     this.fx.push({x:this.p.x,y:this.p.y-80,text:s.name,color:s.color,t0:now,label:true});
     if(s.k==='heal'||s.k==='buff'||s.k==='veil'){this.skillEffect(s,m,now,r,at,ally);return;}
-    AudioFX.sfx(s.mag||s.shot?'spell':'swing');
+    if(s.mag||s.shot) AudioFX.sfx('spell');else this.meleeSound();
     this.atk={t0:now,mob:m,hit:false,skill:s,rank:r,at,dur:Math.min(ATK_T,this.swingCd())};this.nextSwing=now+this.swingCd()*1000;if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   resName(){return (JOBS[this.ch.job.classId]||JOBS.recruit).resource||'Stamina';},
   /* do something a little later (multi-hit skills, falcon strikes): runs from the game loop, dropped on map change */
@@ -2838,8 +2920,8 @@ const TownScreen={
     if(s.steal) this.trySteal(m,r,now);},
   skillEffect(s,m,now,r,at,ally){const c=this.ch;r=r||this.rank(s.id)||1;
     if(ally&&(s.k==='heal'||s.k==='buff')&&this.supportEffect(s,r,ally,now)) return;      // on a party member
-    if(s.k==='heal'){const h=this.healAmount(s,r);c.hp=Math.min(this.maxHp(),c.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});
-      this.sfx(s.fx||'holy',this.p.x,this.p.y,s.fxs||.6,now);this.fxN({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:s.color});this.hudBars();return;}
+    if(s.k==='heal'){const h=this.healAmount(s,r);c.hp=Math.min(this.maxHp(),c.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});
+      this.sfx(s.fx||'holy',this.p.x,this.p.y,s.fxs||.6,now,0,'','holy_flourish');this.fxN({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:s.color});this.hudBars();return;}
     if(s.k==='buff'){this.addBuff(s,r,now);if(s.nextCrit) this.nextCrit=true;this.sfx(fxOf(s),this.p.x,this.p.y,s.fxs||.5,now,0,'self');if(PARTY_SKILLS.has(s.id)) this.partyBuffNear(s,r,now);
       this.fxN({k:'ring',x:this.p.x,y:this.p.y,r:40,t0:now,dur:600,color:s.color});
       if(s.taunt) for(const o of this.mobs) if(o.state!=='dead'&&Math.hypot(o.x-this.p.x,o.y-this.p.y)<s.taunt){o.hostile=false;this.aggro(o,now);}
@@ -2871,9 +2953,9 @@ const TownScreen={
   /* zones keep hitting (or healing) every few hundred ms */
   tickZones(now){if(!this.zones||!this.zones.length) return;
     for(const z of this.zones){if(now<z.next||z.left<=0) continue;z.left--;z.next+=z.every;const s=z.s;
-      if(s.heal){const inside=Math.hypot(this.p.x-z.x,(this.p.y-z.y)*1.3)<=z.R;this.sfx(s.fx||'holy',z.x,z.y,s.fxs||.6,now);
+      if(s.heal){const inside=Math.hypot(this.p.x-z.x,(this.p.y-z.y)*1.3)<=z.R;this.sfx(s.fx||'holy',z.x,z.y,s.fxs||.6,now,0,'','holy_flourish');
         this.partyHealZone(z,this.healAmount(s,z.r),now);
-        if(inside&&this.ch.hp<this.maxHp()){const h=this.healAmount(s,z.r);this.ch.hp=Math.min(this.maxHp(),this.ch.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now});this.hudBars();}
+        if(inside&&this.ch.hp<this.maxHp()){const h=this.healAmount(s,z.r);this.ch.hp=Math.min(this.maxHp(),this.ch.hp+h);this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});this.hudBars();}
         continue;}
       let px=z.x,py=z.y,R=z.R;
       if(s.meteor){const a=Math.random()*6.283,d=Math.sqrt(Math.random())*z.R*.8;px=z.x+Math.cos(a)*d;py=z.y+Math.sin(a)*d*.7;R=Math.max(40,z.R*.55);}
@@ -2906,7 +2988,7 @@ const TownScreen={
     const fixed=o.fixed!=null;let crit=false;
     if(!fixed&&!o.noCrit&&!o.mag) crit=!!this.nextCrit||Math.random()*100<this.critRate()+(o.critB||0);
     if(!fixed&&!o.mag&&!o.noMiss&&!crit){const hc=Math.max(5,Math.min(100,this.hitRate()+(o.hitB||0)-this.mobFlee(m)));
-      if(Math.random()*100>=hc){this.fx.push({x:m.x,y:m.y-m.def.h-4,text:'Miss',color:'#cfd8ff',t0:now,italic:true});AudioFX.sfx('miss');return {miss:true};}}
+      if(Math.random()*100>=hc){this.fx.push({x:m.x,y:m.y-m.def.h-4,miss:true,sty:'miss',t0:now});AudioFX.sfx('miss');return {miss:true};}}
     if(crit) this.nextCrit=false;
     let d;if(fixed) d=o.fixed;else if(o.mag){const [a,b]=this.matk();d=(a+Math.random()*(b-a))*(o.mult??1);}else d=this.atkPower()*(.9+Math.random()*.2)*(o.mult??1);
     const em=elemMod(el,m.def.el);d*=em;if(el==='fire'&&M.fireDmg) d*=1+M.fireDmg;
@@ -2919,7 +3001,7 @@ const TownScreen={
     const dmg=Math.max(1,Math.round(d));m.hp-=dmg;m.hitT=now;
     const sty=crit?'crit':o.num||(o.src==='basic'?'normal':EL_NUM[el]||'skill');
     this.numFx(m.x+(Math.random()-.5)*12,m.y-m.def.h-4,dmg,sty,now,{weak:em>1,resist:em<1});if(o.src!=='dot') this.impact(m,sty,now);
-    if(o.src!=='dot') AudioFX.sfx(crit?'crit':'hit');
+    if(o.src!=='dot'){if(!crit&&o.arrow){if(!AudioFX.smp('arrow_impact',.9)) AudioFX.sfx('hit');}else if(!crit&&sty==='poison'){if(!AudioFX.smp('poison_hit',.55)) AudioFX.sfx('hit');}else AudioFX.sfx(crit?'crit':'hit');}
     let st=0,fz=0,sl=0,bl=0,bk=0;
     for(const [k,[p,dur]] of Object.entries(stv)){if(!(Math.random()*100<p)) continue;
       if(k==='stun') st=Math.max(st,dur*10);else if(k==='freeze') fz=Math.max(fz,dur*10);else if(k==='slow') sl=Math.max(sl,dur*10);
@@ -2938,14 +3020,17 @@ const TownScreen={
   /* kept for old callers: a plain hit with this many times the attack */
   strike(m,now,mult=1){return this.dealHit(m,now,{mult,mag:this.magicLine(),src:'basic'});},
   numFx(x,y,dmg,sty,now,o={},m){const k=this._numK=(this._numT&&now-this._numT<260&&Math.abs(x-this._numX)<40)?(this._numK||0)+1:0;this._numT=now;this._numX=x;
-    this.fx.push({x:x+(k%2?10:-6)*Math.min(1,k),y:y-Math.min(5,k)*13,dmg,sty,t0:now,weak:o.weak,resist:o.resist,remote:o.remote});},   // quick hits stack upward
-  sfx(fx,x,y,sc,now,dur,v){this.fxN({k:'sfx',fx,v,x,y,r:Math.round((sc||.6)*100),t0:now,dur:dur||(fx==='meteor'?900:640),color:v?fx+'.'+v:fx});},
+    this.fx.push({x:x+(k%2?10:-6)*Math.min(1,k),y:y-Math.min(5,k)*15,dmg,sty,t0:now,weak:o.weak,resist:o.resist,remote:o.remote,sign:o.sign});},   // quick hits stack upward
+  sfx(fx,x,y,sc,now,dur,v,snd){this.fxN({k:'sfx',fx,v,x,y,r:Math.round((sc||.6)*100),t0:now,dur:dur||(fx==='meteor'?900:640),color:v?fx+'.'+v:fx,snd});},
   /* the swing reaches its hit frame: a skill goes off, a ranged class lets its shot fly, a melee class connects */
   release(a,now){const m=a.mob,sk=a.skill;
     if(sk){this.skillEffect(sk,m,now,a.rank,a.at);return;}
-    if(!m||m.state==='dead') return;const sh=LINES[this.line()].shot,M=this.mods(),spec={mult:1,mag:this.magicLine(),src:'basic'};
-    if(sh){this.fire(m,sh,now,{basic:spec});AudioFX.sfx(sh.kind==='arrow'?'shoot':'spell');}
-    else{AudioFX.sfx('swing');this.dealHit(m,now,spec);if(M.double&&Math.random()<M.double) this.later(now+130,t=>{if(m.state!=='dead'){this.fx.push({x:m.x,y:m.y-m.def.h-22,text:'Double!',color:'#e0d4ff',t0:t,label:true});this.dealHit(m,t,spec);}});}
+    if(!m||m.state==='dead') return;const st=this.atkStyle(),sh=st==='melee'?null:LINES[this.line()].shot,M=this.mods(),spec={mult:1,mag:this.magicLine(),src:'basic'};
+    if(sh){const arrow=sh.kind==='arrow';this.fire(m,sh,now,{basic:{...spec,arrow}});
+      if(arrow){AudioFX.sfx('shoot');AudioFX.smp('arrow_fly',.45,{at:.04});}
+      else if(!(this.line()==='Magic'?AudioFX.smp('fireball_launch',.42,{rate:1.15}):AudioFX.smp('holy_chimes',.28,{gap:450,rate:1.25}))) AudioFX.sfx('spell');}
+    else if(!this.inReach(m,this.reach()+14)){this.meleeSound();this.fx.push({x:m.x,y:m.y-m.def.h-12,text:'Out of reach',color:'#cfe8ff',t0:now,italic:true});}   // it stepped away mid-swing: a whiff, no damage
+    else{this.meleeSound();this.dealHit(m,now,spec);if(M.double&&Math.random()<M.double) this.later(now+130,t=>{if(m.state!=='dead'){AudioFX.smp(this.line()==='Stealth'?'dual_blade_combo':'sword_slash_double',.7);this.fx.push({x:m.x,y:m.y-m.def.h-22,text:'Double!',color:'#e0d4ff',t0:t,label:true});this.dealHit(m,t,spec);}});}
     if(this.ch.job.classId==='skywarden') this.falconAttack(m,now);},
   /* the Skywarden's falcon: Gale Sweep (a sweep through the target and the enemies around it) and Symbiosis Strike */
   falconAttack(m,now){const S=this.st(),gr=this.rank('galeSweep'),sr=this.rank('symbiosisStrike');
@@ -2955,7 +3040,7 @@ const TownScreen={
     if(sr>0&&Math.random()<SV(skillById('symbiosisStrike').falconStrike,sr))
       this.later(now+180,t=>{if(m.state==='dead') return;this.fx.push({x:m.x,y:m.y-m.def.h-24,text:'Symbiosis',color:'#e6f4ff',t0:t,label:true});
         this.dealHit(m,t,{mult:.5,src:'skill',stv:{brk:[100,5]},brk:.1});});},
-  fire(m,sh,now,spec){const sx=this.p.x+(m.x>this.p.x?8:-8),sy=this.p.y-30,d=Math.hypot(m.x-sx,m.y-m.def.h*.5-sy);
+  fire(m,sh,now,spec){const [sx,sy]=handAt(this.p.x,this.p.y,this.dir),d=Math.hypot(m.x-sx,m.y-m.def.h*.5-sy);
     this.shots.push({x0:sx,y0:sy,m,t0:now,dur:sh.kind==='beam'?120:Math.max(90,d/(sh.speed||450)*1000),sh,spec});
     if(this.mp&&Net.room) this.pushRing('vf',[++Net.seq,'shot',m.i,sh.kind,sh.color,sh.size||0,sh.speed||450],8);},
   shotHit(sh,now){if(sh.vis||!sh.spec||sh.m.state==='dead') return;const P=sh.spec;
@@ -3090,15 +3175,15 @@ const TownScreen={
   /* ---------- a monster hits you: HIT vs FLEE, block, DEF or MDEF, shields ---------- */
   hurtPlayer(m,now){const c=this.ch,D=m.def,M=this.mods();
     const hc=Math.max(5,Math.min(95,this.mobHit(m,now)-this.flee()));
-    if(Math.random()*100>=hc){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Dodge',color:'#cfe8ff',t0:now,italic:true});AudioFX.sfx('dodge');return;}
-    if(M.block&&!D.mag&&Math.random()<M.block){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('dodge');return;}
+    if(Math.random()*100>=hc){this.fx.push({x:this.p.x,y:this.p.y-62,miss:true,sty:'miss',t0:now});AudioFX.sfx('dodge');return;}
+    if(M.block&&!D.mag&&Math.random()<M.block){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('block');return;}
     const raw=m.atk[0]+Math.random()*(m.atk[1]-m.atk[0]);
     let dmg=D.mag?Math.max(raw*.15,raw-this.mdef()*1.2-(this.ch.baseLevel||1)*.2):Math.max(raw*.15,raw-this.defence());
     if(M.dr) dmg*=1-Math.min(.6,M.dr);dmg=Math.max(1,Math.round(dmg));
     if(M.reflect&&!D.mag){const back=Math.max(1,Math.round(raw*M.reflect));this.dealHit(m,now,{fixed:back,noMiss:1,noCrit:1,src:'skill',num:'skill'});}
     if(this.barrier&&this.barrier.hp>0){const ab=Math.min(this.barrier.hp,dmg);this.barrier.hp-=ab;dmg-=ab;
       this.fx.push({x:this.p.x,y:this.p.y-70,text:`Shield ${ab}`,color:'#fff8d0',t0:now,italic:true});if(this.barrier.hp<=0) this.barrier=null;this.renderBuffs(now);if(dmg<=0) return;}
-    c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.fx.push({x:this.p.x+(Math.random()-.5)*8,y:this.p.y-62,text:`-${dmg}`,color:'#ff6b6b',t0:now});
+    c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});
     if(!this.target&&!this.path&&!this.keys.size&&!this.casting) this.target=m;      // fight back when something bites you
     if(c.hp<=0){c.hp=0;this.dead={until:now+2400};this.target=null;this.atk=null;this.path=null;this.casting=null;for(const o of this.mobs) if(!o.tgt||o.tgt==='me') o.hostile=false;
       AudioFX.sfx('death');this.log('sys',null,'You fall. The Waystone\'s light carries you home.');toast('Defeated · returning to Oakhaven Sanctuary');}
@@ -3122,7 +3207,7 @@ const TownScreen={
     if(m.hp<=0) this.hostKill(m,now);},
   netFxIn(o,e,now){const k=e[1];
     if(k==='shot'){const m=this.mobs[e[2]|0];if(!m) return;const sh={kind:['arrow','orb','beam','shard'].includes(e[3])?e[3]:'orb',color:Net.color(e[4]),size:Math.min(12,e[5]|0)||undefined,speed:Math.max(100,e[6]|0)};
-      const sx=o.x+(m.x>o.x?8:-8),sy=o.y-30,d=Math.hypot(m.x-sx,m.y-m.def.h*.5-sy);this.shots.push({x0:sx,y0:sy,m,t0:now,dur:sh.kind==='beam'?120:Math.max(90,d/sh.speed*1000),sh,vis:true});return;}
+      const [sx,sy]=handAt(o.x,o.y,o.dir),d=Math.hypot(m.x-sx,m.y-m.def.h*.5-sy);this.shots.push({x0:sx,y0:sy,m,t0:now,dur:sh.kind==='beam'?120:Math.max(90,d/sh.speed*1000),sh,vis:true});return;}
     if(k==='sfx'){const [fx,v]=String(e[6]).split('.');if(!FX_ROWS.includes(fx)||(v&&!['fall','zap','self'].includes(v))) return;this.wfx.push({k,fx,v,x:+e[2]||0,y:+e[3]||0,r:Math.min(300,e[4]|0),t0:now,dur:Math.min(1500,e[5]|0)||640});return;}
     if(!['ring','heal','slash','trail','rain','cast'].includes(k)) return;
     this.wfx.push({k,x:+e[2]||0,y:+e[3]||0,r:Math.min(200,e[4]|0),t0:now,dur:Math.min(6000,e[5]|0)||500,color:Net.color(e[6]),x0:+e[7]||0,y0:+e[8]||0});},
@@ -3224,7 +3309,7 @@ const TownScreen={
     if(S&&now-S.t0<S.dur&&S.amp*(1-(now-S.t0)/S.dur)>a) return;this.shake={t0:now,amp:a,dur};},
   addDecal(kind,x,y,r,now){const D=this.decals||(this.decals=[]);D.push({kind,x,y,r,t0:now,dur:kind==='scorch'?5200:3800,seed:Math.random()*99});if(D.length>24) D.shift();},
   /* the first frame of a spell effect: its sound (quieter far away), scorch/frost/crack marks, a shake for the big ones */
-  fxOnce(f,now){const d=Math.hypot(f.x-this.p.x,f.y-this.p.y),vol=Math.max(0,1-d/650);if(vol>.05) AudioFX.el(f.fx,f.v,vol);
+  fxOnce(f,now){const d=Math.hypot(f.x-this.p.x,f.y-this.p.y),vol=Math.max(0,1-d/650);if(vol>.05&&!(f.snd&&AudioFX.smp(f.snd,vol*.9))) AudioFX.el(f.fx,f.v,vol);
     if(f.v==='self'||SETTINGS.lowfx) return;const big=(f.r||60)>=60,w=(Sprites.skillfx?Sprites.skillfx.meta.cell:176)*(f.r||60)/100;
     if(big&&f.fx==='fire') this.addDecal('scorch',f.x,f.y,w*.3,now+120);
     else if(big&&f.fx==='ice') this.addDecal('frost',f.x,f.y,w*.32,now+80);
@@ -3401,17 +3486,20 @@ const TownScreen={
     if(m.lex){ctx.globalAlpha=.6+.3*Math.sin(now/180);ctx.strokeStyle='#fff3a0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.x,top-16);ctx.lineTo(m.x,top-4);ctx.moveTo(m.x-5,top-12);ctx.lineTo(m.x+5,top-12);ctx.stroke();}
     ctx.restore();},
   /* damage numbers: the painted burst for the hit's type, the number drawn on top in the matching colours */
-  drawNum(ctx,f,now,S){const e=(now-f.t0)/1000;if(e<0) return;const [px,py]=S(f.x,f.y-e*28);const crit=f.sty==='crit',D=Sprites.dmgfx;
-    const pop=e<.12?1.4-3.3*e:1,sz=Math.round((crit?25:f.sty==='normal'?16:19)*(f.weak?1.12:1)*(f.resist?.88:1)*(f.remote?.82:1)*pop);
-    const a=Math.min(1,(1-e)*2.2)*(f.remote?.85:1);ctx.save();ctx.globalAlpha=a;
-    if(D&&!SETTINGS.lowfx&&!f.remote){const row=D.meta.rows[f.sty];if(row){const C=D.meta.cell,fr=Math.min(5,Math.floor(e/.6*6)),w=(crit?104:f.sty==='normal'?62:80)*(f.weak?1.1:1);
-      ctx.drawImage(D.canvas,fr*C,row.row*C,C,C,px-w/2,py-sz*.4-w/2,w,w);}}
-    const P=NUM_PAINT[f.sty]||NUM_PAINT.normal,t=f.dmg.toLocaleString('en-US');
-    ctx.font=`italic 900 ${sz}px Nunito,sans-serif`;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.lineJoin='round';
-    const g=ctx.createLinearGradient(0,py-sz*.85,0,py);g.addColorStop(0,P[0]);g.addColorStop(1,P[1]);
-    ctx.lineWidth=Math.max(3,sz*.24);ctx.strokeStyle=P[2];ctx.strokeText(t,px,py);ctx.fillStyle=g;ctx.fillText(t,px,py);
-    if(crit){const s2=Math.round(sz*.42);ctx.font=`italic 900 ${s2}px Nunito,sans-serif`;ctx.lineWidth=3;ctx.strokeStyle='#5a0808';ctx.strokeText('CRITICAL!',px,py-sz*.92);ctx.fillStyle='#fff3a0';ctx.fillText('CRITICAL!',px,py-sz*.92);}
-    else if(f.weak&&!f.remote){ctx.font='italic 900 9px Nunito,sans-serif';ctx.lineWidth=2.6;ctx.strokeStyle='#1a0a04';ctx.strokeText('WEAK',px+sz*.9,py-sz*.7);ctx.fillStyle='#ffd36b';ctx.fillText('WEAK',px+sz*.9,py-sz*.7);}
+  /* floating numbers: appear at once on impact, pop slightly larger, settle, float up and fade (0.65-1 s).
+     crit: bigger, a quick burst and a small shake. heal: a slower, gentler float. MISS: a quick pop and fade. */
+  drawNum(ctx,f,now,S){const e=(now-f.t0)/1000;if(e<0) return;const st=f.sty in NUM_STYLE_PAINT?f.sty:'normal',kind=NUM_ANIM[st]?st:'normal',[dur,rise]=NUM_ANIM[kind];if(e>=dur) return;
+    const crit=st==='crit',q=e/dur,ease=1-Math.pow(1-Math.min(1,q*1.4),2),[px,py]=S(f.x,f.y-rise*ease),A=numAtlas(),D=Sprites.dmgfx;
+    const pop=crit?(e<.07?.7+e/.07*1.1:e<.2?1.8-(e-.07)/.13*.8:1):(e<.05?1+e/.05*.32:e<.15?1.32-(e-.05)/.1*.32:1);
+    const base=(crit?.86:kind==='miss'?.52:.6)*(f.weak?1.1:1)*(f.resist?.9:1)*(f.remote?.8:1),k=base*pop;
+    const shake=crit&&e<.22?Math.sin(e*95)*3.2*(1-e/.22):0,alpha=(q<.6?1:1-(q-.6)/.4)*(f.remote?.85:1);
+    ctx.save();ctx.globalAlpha=Math.max(0,alpha);
+    if(D&&!SETTINGS.lowfx&&!f.remote&&e<.35&&(crit||st==='skill')){const row=D.meta.rows[st];if(row){const C=D.meta.cell,fr=Math.min(5,Math.floor(e/.35*6)),w=crit?78:56;ctx.globalAlpha=Math.max(0,alpha)*.75;
+      ctx.drawImage(D.canvas,fr*C,row.row*C,C,C,px-w/2,py-NUM_CH*k*.5-w/2,w,w);ctx.globalAlpha=Math.max(0,alpha);}}
+    const txt=f.miss?'MISS':(f.sign||'')+Math.max(0,Math.round(f.dmg));let W=0;for(const ch of txt) W+=(A.met[ch]?A.met[ch].w:0)-NUM_U;W+=NUM_U;
+    let x=px-W*k/2+shake;const y=py-NUM_CH*k;ctx.imageSmoothingEnabled=true;
+    for(const ch of txt){const m=A.met[ch];if(!m) continue;ctx.drawImage(A.canvas,m.x,A.rows[st],m.w,NUM_CH,x,y,m.w*k,NUM_CH*k);x+=(m.w-NUM_U)*k;}
+    if(f.weak&&!f.remote&&!crit){ctx.font='900 9px Nunito,sans-serif';ctx.textAlign='left';ctx.lineWidth=2.6;ctx.strokeStyle='#1a0a04';ctx.strokeText('WEAK',px+W*k/2+2,y+6);ctx.fillStyle='#ffd36b';ctx.fillText('WEAK',px+W*k/2+2,y+6);}
     ctx.restore();},
   /* damage of one hit on m: base from level, job and the line's main stat; DEX vs level decides misses, LUK crits */
   tracker(){const c=this.ch;
@@ -3509,10 +3597,10 @@ const TownScreen={
       if(this.path&&this.path.length&&!this.atk&&!casting){const [tx,ty]=this.path[0],dx=tx-this.p.x,dy=ty-this.p.y,d=Math.hypot(dx,dy);
         if(d<=sp){this.p.x=tx;this.p.y=ty;this.path.shift();if(!this.path.length) this.arrive();}
         else{vx=dx/d;vy=dy/d;}}}
-    if((vx||vy)&&!this.atk){const nx=this.p.x+vx*sp,ny=this.p.y+vy*sp;
+    if((vx||vy)&&!this.atk){const nx=this.p.x+vx*sp,ny=this.p.y+vy*sp,ox=this.p.x,oy=this.p.y;
       if(this.free(nx,ny)){this.p.x=nx;this.p.y=ny;}else if(this.free(nx,this.p.y)) this.p.x=nx;else if(this.free(this.p.x,ny)) this.p.y=ny;
       else if(this.path){this.path=null;}
-      this.dir=dirOf(vx,vy);this.moving=true;this.walkT+=dt;}
+      const moved=Math.hypot(this.p.x-ox,this.p.y-oy);this.dir=dirOf(vx,vy);this.moving=moved>.01;this.walkT+=moved/STRIDE;}
     else this.moving=false;
     if(this.atk){const e=(now-this.atk.t0)/1000,D=this.atk.dur||ATK_T;if(!this.atk.hit&&e>=D*ATK_HIT){this.atk.hit=true;this.release(this.atk,now);}if(e>=D) this.atk=null;}
     // Waystone attunes on approach
@@ -3645,7 +3733,7 @@ const TownScreen={
     if(t!=='h'&&t!=='b') return;if(!P.pt||P.pt.i!==pa.i||P.m!==this.mapId||this.dead||this.travelling) return;
     if(Math.hypot((+P.x||0)-this.p.x,(+P.y||0)-this.p.y)>SUPPORT_RANGE+PARTY_NEAR) return;
     if(t==='h'){const c=this.ch,mx=this.maxHp(),h=Math.max(1,Math.min(mx,e[3]|0));if(c.hp>=mx) return;c.hp=Math.min(mx,c.hp+h);
-      this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:'#9dffb8'});
+      this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:900,color:'#9dffb8'});
       if(now>(this.healLogT||0)){this.healLogT=now+4000;this.log('pchat',nm,`healed you for ${h}`);}this.hudBars();return;}
     const sk=skillById(String(e[3]));if(!sk||sk.k!=='buff'||!(ALLY_SKILLS.has(sk.id)||PARTY_SKILLS.has(sk.id))) return;
     const r=Math.max(1,Math.min(sk.max||10,e[4]|0));this.addBuff(sk,r,now);this.wfx.push({k:'ring',x:this.p.x,y:this.p.y,r:40,t0:now,dur:600,color:sk.color||'#bff4ff'});
@@ -3696,8 +3784,8 @@ const TownScreen={
     if(d<=SUPPORT_RANGE){this.path=null;this.begin(s,null,now,null,id);return true;}
     this.walkTo(o.x,o.y,null);if(this.path){this.qAlly={s,id};return true;}return false;},
   supportEffect(s,r,id,now){const M=this.allyOk(id);if(!M) return false;const o=M.o,nm=Net.name(M.P.n);
-    if(s.k==='heal'){const h=this.healAmount(s,r);this.partySend('h',id,h,s.id);this.sfx(s.fx||'holy',o.x,o.y,s.fxs||.6,now);this.fxN({k:'heal',x:o.x,y:o.y,t0:now,dur:900,color:s.color});
-      this.fx.push({x:o.x,y:o.y-64,text:`+${h}`,color:'#8fe3a8',t0:now,big:true});return true;}
+    if(s.k==='heal'){const h=this.healAmount(s,r);this.partySend('h',id,h,s.id);this.sfx(s.fx||'holy',o.x,o.y,s.fxs||.6,now,0,'','holy_flourish');this.fxN({k:'heal',x:o.x,y:o.y,t0:now,dur:900,color:s.color});
+      this.fx.push({x:o.x,y:o.y-64,dmg:h,sty:'heal',sign:'+',t0:now});return true;}
     this.partySend('b',id,s.id,r);this.sfx(fxOf(s),o.x,o.y,s.fxs||.5,now,0,'self');this.fxN({k:'ring',x:o.x,y:o.y,r:40,t0:now,dur:600,color:s.color});
     this.fx.push({x:o.x,y:o.y-80,text:`${s.name} → ${nm}`,color:s.color||'#bff4ff',t0:now,label:true});return true;},
   /* party-wide buffs reach everyone near you; Sanctuary heals members standing in it */
@@ -3825,7 +3913,7 @@ const TownScreen={
     const a=Array.isArray(P.at)?P.at[0]:0;if(o.atS===undefined) o.atS=a;else if(a!==o.atS){o.atS=a;o.atkT=now;}},
   updateRemotes(dt){if(!this.others) return;const k=1-Math.exp(-dt*12);
     for(const o of this.others.values()){const dx=o.tx-o.x,dy=o.ty-o.y,d=Math.hypot(dx,dy);
-      if(d>140){o.x=o.tx;o.y=o.ty;}else{o.x+=dx*k;o.y+=dy*k;}o.moving=o.mv||d>1.5;if(o.moving) o.walkT+=dt;}},
+      if(d>140){o.x=o.tx;o.y=o.ty;}else{o.x+=dx*k;o.y+=dy*k;}const step=d>140?0:d*k;o.moving=d>1.5||(o.mv&&step>.02);if(o.moving) o.walkT+=Math.max(step,o.mv?dt*STRIDE*.6:0)/STRIDE;}},
   netKillIn(e,now,me){const m=this.mobs[e[1]|0];if(!m) return;if(m.state!=='dead') this.mobDie(m,now);
     if(me&&Array.isArray(e[2])&&e[2].includes(me)) this.reward(m,now);},
   netMobHitIn(e,now,me){const m=this.mobs[e[1]|0];if(!m||m.state==='dead') return;m.lunge=now;
@@ -3890,8 +3978,8 @@ const TownScreen={
         if(!G[j]||done[j]===gen) continue;if(dx&&dy&&(!G[y*W+nx]||!G[ny*W+x])) continue;const ng=g[i]+(dx&&dy?1.414:1);
         if(seen[j]!==gen||ng<g[j]){seen[j]=gen;g[j]=ng;heap.push(ng+h(nx,ny),j);}}}
     return null;},
-  swing(m,now){this.atk={t0:now,mob:m,hit:false,dur:Math.min(ATK_T,this.swingCd())};this.nextSwing=now+this.swingCd()*1000;this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);
-    {const L=this.look();if((L[0]>=2||L[1]>=7)&&!this.magicLine()&&this.line()!=='Ranged'&&!SETTINGS.lowfx){const a=Math.atan2(m.y-this.p.y,m.x-this.p.x);this.later(now+(this.atk.dur*ATK_HIT*800),tt=>this.fxN({k:'slash',x:this.p.x+Math.cos(a)*16,y:this.p.y-22+Math.sin(a)*8,t0:tt,dur:260,color:RARITY[Math.max(0,L[0])].color}));}}if(this.mp) this.mp.at=[++Net.seq,this.dir];},
+  swing(m,now){this.atk={t0:now,mob:m,hit:false,dur:Math.min(ATK_T,this.swingCd())};if(this.atkStyle()==='bow') AudioFX.smp('bow_draw',.5,{rate:Math.max(1,.5/(this.atk.dur*ATK_HIT))});this.nextSwing=now+this.swingCd()*1000;this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);
+    {const L=this.look();if((L[0]>=2||L[1]>=7)&&this.atkStyle()==='melee'&&!SETTINGS.lowfx){const a=Math.atan2(m.y-this.p.y,m.x-this.p.x);this.later(now+(this.atk.dur*ATK_HIT*800),tt=>this.fxN({k:'slash',x:this.p.x+Math.cos(a)*16,y:this.p.y-22+Math.sin(a)*8,t0:tt,dur:260,color:RARITY[Math.max(0,L[0])].color}));}}if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   /* facing for a fight: sheets whose swing is drawn on the diagonals only (the Recruit's attack sheet) turn the
      character to the nearest diagonal, so the drawn body and the hairstyle head face the same way */
   faceTo(dx,dy){return this.comp&&this.comp.meta.attackDiag?(dy>=0?(dx>=0?7:1):(dx>=0?5:3)):dirOf(dx,dy);},
@@ -3903,7 +3991,7 @@ const TownScreen={
     H[i]={t,id};AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();},
   drink(now){const c=this.ch;if(!(c.items.potion>0)){this.fx.push({x:this.p.x,y:this.p.y-70,text:'No potions left',color:'#ffcf7a',t0:now});return;}
     if(c.hp>=this.maxHp()) return;c.items.potion--;AudioFX.sfx('potion');this.cds.potion=now+POTION.cd*1000;const h=Math.round(this.maxHp()*.3+40);c.hp=Math.min(this.maxHp(),c.hp+h);
-    this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#ff9aa8',t0:now,big:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:700,color:'#ff9aa8'});this.hudBars();this.save();},
+    this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:700,color:'#ff9aa8'});this.hudBars();this.save();},
   /* ---------- shops: Greta (equipment), Granny Hessa (potions), Dorin (crafting) ---------- */
   openShop(kind){this.shopKind=kind;this.shopTab=this.shopTab||'Wings';if(this.win==='shopwin') this.renderShop();else this.openWin('shopwin');},
   gearLine(g){const B=GEAR_BASES[g.base],v=k=>gearVal(g,k);return [v('atk')?`Attack <b>${v('atk')}</b>`:'',v('def')?`Defence <b>${v('def')}</b>`:'',v('hp')?`Max HP <b>+${v('hp')}</b>`:'',
@@ -3957,7 +4045,7 @@ const TownScreen={
     if(id==='tonic'){const mx=this.maxRes();if((this.res||0)>=mx) return;const r=Math.round(mx*.35+20);this.res=Math.min(mx,(this.res||0)+r);
       this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${r} ${this.resName()}`,color:'#8fc8ff',t0:now,big:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:700,color:'#8fc8ff'});}
     else{if(c.hp>=this.maxHp()) return;const h=Math.round(this.maxHp()*.6+120);c.hp=Math.min(this.maxHp(),c.hp+h);
-      this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${h}`,color:'#ffc27a',t0:now,big:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:800,color:'#ffc27a'});}
+      this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:800,color:'#ffc27a'});}
     c.items[id]--;AudioFX.sfx('potion');this.cds[id]=now+d.cd*1000;this.hudBars();this.save();if(this.win==='invwin') this.renderInv();},
   sellMats(){const c=this.ch;let g=0,n=0;for(const k of Object.keys(MATERIALS)) if(c.items[k]>0){g+=c.items[k]*MATERIALS[k].price;n+=c.items[k];c.items[k]=0;}
     if(!n) return {pages:['Nothing to sell, dear. Bring me gel, hides, shards, anything the monsters leave behind.']};
@@ -4415,7 +4503,7 @@ const TownScreen={
   },
   look(){const E=this.ch.equip||{},w=E.weapon&&this.canUse(E.weapon,true)?E.weapon:null,b=E.body,g=E.wings;
     return [w?w.rar:-1,w?(w.enh||0):0,b?b.rar:-1,g?(g.wing??GEAR_BASES.wings.names.indexOf(g.name.replace(/^(Fine|Superior|Heroic|Mythic) /,''))):-1];},
-  drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,atkDur:this.atk&&this.atk.dur,
+  drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,atkDur:this.atk&&this.atk.dur,skill:!!(this.atk&&this.atk.skill),
       dead:!!this.dead,veil:now<this.veilUntil,hurtT:this.hurtT,j:this.ch.job.classId,falcon:this.falcon,lv:this.ch.baseLevel,eq:this.look()},this.pocc||(this.pocc={}),now);},
   drawRemote(ctx,o,now){if(!o.comp) return;if(o.j==='skywarden'&&!o.falcon) o.falcon=new Falcon();
     this.drawHero(ctx,{comp:o.comp,pk:o.pk,x:o.x,y:o.y,dir:o.dir,moving:o.moving,walkT:o.walkT,atkT:o.atkT,dead:o.dead,veil:o.veil,hurtT:o.hurtT,j:o.j,falcon:o.falcon,lv:o.lv,eq:o.eq},o.occ||(o.occ={}),now);},
@@ -4444,6 +4532,7 @@ const TownScreen={
     ctx.drawImage(comp.canvas,ci*CW,h.dir*CH,CW,CH,x-ax*k,y-ay*k+bob,CW*k,CH*k);ctx.restore();
     this.occlude(ctx,occ,x-ax*k,y-ay*k+bob,CW*k,CH*k,y,true,{img:comp.canvas,sx:ci*CW,sy:h.dir*CH,sw:CW,sh:CH,dx:x-ax*k,dy:y-ay*k+bob,dw:CW*k,dh:CH*k});
     if(eq[3]>=0&&!h.dead&&!wingsBack) this.drawWings(ctx,x,y,h.dir,eq[3],h.moving,now,true);
+    if(ae>=0&&ae<ATK_HIT&&!h.dead&&h.j&&!h.skill) this.drawWindup(ctx,h,x,y+bob,ae/ATK_HIT,now);
     if(eq[1]>=ENH_MAX&&!h.dead&&!SETTINGS.lowfx) this.drawGlints(ctx,x,y,now,RARITY[Math.max(0,eq[0])].color);
     if(h.lv>=MAX_BASE&&!h.dead) this.drawAura(ctx,x,y,now,true);
     if(h.j==='skywarden'&&h.falcon) h.falcon.draw(ctx,{dir:h.dir},x,y,k/(m.displayScale||1),now);
@@ -4466,6 +4555,16 @@ const TownScreen={
     if(side) one(-face);else{one(-1);one(1);}
     if(W.motes&&!SETTINGS.lowfx){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=W.motes;for(let i=0;i<5;i++){const ph=(t*.7+i/5)%1;ctx.globalAlpha=Math.sin(ph*Math.PI)*.85;
       ctx.beginPath();ctx.arc(sx+(i%2?1:-1)*(8+i*5),sy-6+ph*26,1.3,0,7);ctx.fill();}ctx.restore();}
+    ctx.restore();},
+  /* basic-attack wind-up: a charge gathering at the casting hand, or an arrow drawn back on the bow (e: 0..1 to the release) */
+  drawWindup(ctx,h,x,y,e,now){const st=attackStyleOf(h.j);if(st==='melee') return;const [hx,hy]=handAt(x,y,h.dir),sh=LINES[lineOf(h.j)].shot||{};ctx.save();
+    if(st==='magic'){const col=sh.color||'#ff9a4a',r=1.5+e*4.5,t=now/1000;ctx.globalCompositeOperation='lighter';
+      const g=ctx.createRadialGradient(hx,hy,0,hx,hy,r*2.6);g.addColorStop(0,hexA(col,.9));g.addColorStop(.35,hexA(col,.45));g.addColorStop(1,hexA(col,0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(hx,hy,r*2.6,0,7);ctx.fill();
+      ctx.fillStyle='#fff';ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(hx,hy,r*.45,0,7);ctx.fill();
+      for(let i=0;i<4;i++){const a=t*5+i*Math.PI/2,rr=r*3.2*(1-e)+r;ctx.globalAlpha=.7*e;ctx.fillStyle=col;ctx.beginPath();ctx.arc(hx+Math.cos(a)*rr,hy+Math.sin(a)*rr*.6,1.1,0,7);ctx.fill();}}
+    else{const [vx,vy]=dirVec(h.dir),pull=3+e*7,ax=hx+vx*4,ay=hy+vy*2;ctx.strokeStyle='rgba(60,40,20,.9)';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(ax-vx*pull,ay-vy*pull);ctx.lineTo(ax+vx*9,ay+vy*9*.6);ctx.stroke();
+      ctx.fillStyle='#e9e2cf';ctx.beginPath();ctx.moveTo(ax+vx*11,ay+vy*11*.6);ctx.lineTo(ax+vx*8-vy*1.8,ay+vy*8*.6+vx*1.8);ctx.lineTo(ax+vx*8+vy*1.8,ay+vy*8*.6-vx*1.8);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,'+(.35+.4*e)+')';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(ax-vx*pull-vy*5,ay-vy*pull+vx*5);ctx.lineTo(ax-vx*pull,ay-vy*pull);ctx.lineTo(ax-vx*pull+vy*5,ay-vy*pull-vx*5);ctx.stroke();}
     ctx.restore();},
   /* +10 weapon: sparks of its colour drifting off you */
   drawGlints(ctx,x,y,now,col){const t=REDUCED?0:now/1000;ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=col;
@@ -4583,7 +4682,7 @@ const TownScreen={
     {const mx=this.maxHp(),f=Math.max(0,Math.min(1,this.ch.hp/mx));if(f<.999&&this.mapId!=='town'||now-this.hurtT<3000){const bw=40;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(me[0]-bw/2-1,me[1]+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(me[0]-bw/2,me[1]+5,bw*f,3);}}
     this.fx=this.fx.filter(f=>now-f.t0<1000);
     if(this.speech&&now-this.speech.t<3500){const [px,py]=S(this.p.x,this.p.y-74);this.bubble(ctx,px,py,this.speech.text,Math.min(1,(3500-(now-this.speech.t))/400));}
-    for(const f of this.fx){const e=(now-f.t0)/1000;if(e<0) continue;if(f.dmg!==undefined){if(SETTINGS.numbers) this.drawNum(ctx,f,now,S);continue;}if(!SETTINGS.numbers&&!f.big&&!f.label&&/^[-+]?\d+!?$/.test(f.text)) continue;const [px,py]=S(f.x,f.y-e*26);ctx.globalAlpha=Math.min(1,(1-e)*2);
+    for(const f of this.fx){const e=(now-f.t0)/1000;if(e<0) continue;if(f.dmg!==undefined||f.miss){if(SETTINGS.numbers||f.sty==='heal'||f.sty==='recv') this.drawNum(ctx,f,now,S);continue;}if(!SETTINGS.numbers&&!f.big&&!f.label&&/^[-+]?\d+!?$/.test(f.text)) continue;const [px,py]=S(f.x,f.y-e*26);ctx.globalAlpha=Math.min(1,(1-e)*2);
       ctx.font=`${f.italic?'italic ':''}900 ${f.big?17:14}px Nunito,sans-serif`;ctx.lineWidth=3.2;ctx.strokeStyle='rgba(8,12,28,.9)';ctx.fillStyle=f.color;ctx.strokeText(f.text,px,py);ctx.fillText(f.text,px,py);ctx.globalAlpha=1;}
     // prompt
     const pr=$('#town-prompt'),touch=matchMedia('(pointer: coarse)').matches;
@@ -4720,7 +4819,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12c';
+const BUILD='2026-11-12d';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
