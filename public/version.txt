@@ -1,3 +1,1 @@
-MMORPG ONLINE
-build: 2026-11-12b (full screen, phone layout, update notice, max-level aura, falcon effects, faster attacks and casting, long hair fix)
-server: wss://mmorpg.iamjohnwoo12.workers.dev/ws/world
+build: 2026-11-12c (shops, crafting, wings, drag-and-drop equipment, AUTO settings)
