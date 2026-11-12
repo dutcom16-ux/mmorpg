@@ -68,13 +68,13 @@ button{font:inherit;color:inherit}
 .login-wrap{display:grid;grid-template-columns:minmax(320px,420px) minmax(340px,500px);gap:28px;align-items:start;justify-content:center;width:min(980px,100%);margin:auto}
 .login-col{display:flex;flex-direction:column;align-items:center;gap:20px;min-width:0}
 @media (max-width:860px){.login-wrap{grid-template-columns:minmax(0,440px);gap:18px}}
-.login :focus-visible,.pn :focus-visible,.pnm :focus-visible,.ld :focus-visible{outline:2px solid #7fe3ff;outline-offset:2px}
+.login :focus-visible,.pnotes :focus-visible,.pnm :focus-visible,.ldscr :focus-visible{outline:2px solid #7fe3ff;outline-offset:2px}
 .login .name-input[aria-invalid="true"]{border-color:#ff8f9b;box-shadow:0 0 0 3px rgba(255,143,155,.18)}
-.login .btn:not(:disabled):hover,.pn .btn:hover,.ld .btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
-.login .btn,.pn .btn,.ld .btn{transition:filter .15s,transform .15s}
+.login .btn:not(:disabled):hover,.pnotes .btn:hover,.ldscr .btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.login .btn,.pnotes .btn,.ldscr .btn{transition:filter .15s,transform .15s}
 .login .name-msg.bad{color:#ff9aa6;font-weight:800}
 /* patch notes */
-.pn{padding:20px 22px 18px;border-radius:20px;background:rgba(10,14,34,.8);display:flex;flex-direction:column;gap:12px;min-width:0}
+.pnotes{padding:20px 22px 18px;border-radius:20px;background:rgba(10,14,34,.8);display:flex;flex-direction:column;gap:12px;min-width:0}
 .pn-k{font:900 11.5px Nunito,sans-serif;letter-spacing:.2em;color:var(--aether);display:flex;align-items:center;gap:8px;margin:0}
 .pn-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pn-head h2{margin:0;font:700 21px Cinzel,serif;color:var(--gold)}
 .pn-meta{font-size:12.5px;font-weight:800;color:var(--muted)}.pn-meta b{color:var(--text)}
@@ -94,8 +94,8 @@ button{font:inherit;color:inherit}
 .pnm-rel{padding:16px 0;border-bottom:1px solid rgba(160,220,255,.1);display:grid;gap:10px}.pnm-rel:last-child{border-bottom:0}
 .pnm-rel .pn-head h2{font-size:18px}
 /* loading screen: the logo, the themed background, a real progress bar (or an indeterminate one), status, errors */
-.ld{width:min(520px,88vw);text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
-.ld .logo{align-items:center;text-align:center}.ld .logo .title{font-size:clamp(30px,5vw,44px)}
+.ldscr{width:min(520px,88vw);text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.ldscr .logo{align-items:center;text-align:center}.ldscr .logo .title{font-size:clamp(30px,5vw,44px)}
 .ld-bar{position:relative;width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(160,220,255,.15)}
 .ld-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--aether2),var(--aether));box-shadow:0 0 14px var(--aether);transition:width .2s}
 .ld-bar.ind i{width:34%;animation:ldind 1.25s ease-in-out infinite}
@@ -103,7 +103,7 @@ button{font:inherit;color:inherit}
 @media (prefers-reduced-motion:reduce){.ld-bar.ind i{animation:none;left:0;width:100%;opacity:.45}.ld-bar i{transition:none}}
 .ld-st{min-height:20px;font-size:14px;font-weight:800;color:#cfe8ff;letter-spacing:.04em}.ld-st small{color:var(--muted);font-weight:800;margin-left:6px}
 .ld-err{display:none;flex-direction:column;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;background:rgba(60,10,22,.6);border:1px solid rgba(255,143,155,.4);color:#ffd6dc;font-weight:700;font-size:14px;line-height:1.45}
-.ld.failed .ld-err{display:flex}.ld.failed .ld-bar,.ld.failed .ld-st{display:none}
+.ldscr.failed .ld-err{display:flex}.ldscr.failed .ld-bar,.ldscr.failed .ld-st{display:none}
 .login-logo{align-items:center;text-align:center}.login-logo .title{font-size:38px}
 .login{width:100%;padding:22px 24px;border-radius:20px;display:flex;flex-direction:column;gap:13px;background:rgba(10,14,34,.8)}
 .ltabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
@@ -750,6 +750,56 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
   html.mobile .hotbar-wrap{bottom:6px}
   html.mobile .dlg{bottom:4px;padding:10px}
 }
+/* ---------- touch layout (html.mobile) ----------
+   Bottom centre: the menu icons and AUTO in one row, the full 10-slot skill bar under it. The party sits under the
+   HP panel (placeParty). Windows are smaller and open above the bars, so the world stays visible around them. */
+html.mobile .hotbar-wrap{left:0;right:0;transform:none;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px 6px;bottom:max(6px,env(safe-area-inset-bottom));pointer-events:none}
+html.mobile .hotbar-wrap>*{pointer-events:auto}html.mobile #screen-town.talking .hotbar-wrap>*{pointer-events:none}
+html.mobile .hotbar-wrap::before{content:'';flex:0 0 100%;order:2;height:0}
+html.mobile .hotbar-wrap .shortcuts{order:0;flex:none;flex-wrap:nowrap;justify-content:center;padding:4px 5px;gap:4px}
+html.mobile .hotbar-wrap .shortcuts .ib{width:34px;height:34px;border-radius:9px}html.mobile .hotbar-wrap .shortcuts .ib svg{width:18px;height:18px}
+html.mobile .hotbar-wrap .autobox,html.mobile body.skills-open .autobox,html.mobile body.dragging-skill .autobox{order:1;display:flex;flex-direction:row;align-items:center;gap:4px}
+html.mobile .autobox .ib.cfg{width:34px;height:34px}html.mobile .btn.auto{min-height:34px;padding:4px 10px;font-size:11.5px}
+html.mobile .autocfg{bottom:calc(100% + 8px);right:0;max-width:92vw;max-height:60vh;overflow:auto}
+html.mobile .hotbar{order:3;gap:3px;padding:5px}
+html.mobile .hslot,html.mobile body.skills-open .hslot,html.mobile body.dragging-skill .hslot{width:clamp(26px,calc((100vw - 53px)/10),40px);height:clamp(26px,calc((100vw - 53px)/10),40px);border-radius:8px}
+html.mobile .hslot.empty{display:grid}
+html.mobile .buffbar{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:96vw}
+html.mobile .town-prompt{bottom:calc(var(--hbh,96px) + 38px)}
+html.mobile .chatbox{bottom:calc(var(--hbh,96px) + 8px);width:min(250px,52vw)}
+html.mobile .party-frame{width:min(160px,42vw);padding:4px 5px}
+html.mobile .hud-right{gap:5px}
+html.mobile .charwin{top:auto;bottom:calc(var(--hbh,96px) + 6px);transform:translateX(-50%);width:min(430px,94vw);max-height:min(54vh,calc(100vh - var(--hbh,96px) - 76px));max-height:min(54dvh,calc(100dvh - var(--hbh,96px) - 76px));padding:10px 12px 12px;border-radius:16px;overscroll-behavior:contain}
+html.mobile #invwin{width:min(430px,94vw)}html.mobile.tablet #invwin{width:min(760px,84vw)}
+html.mobile.tablet .charwin{width:min(560px,72vw);max-height:min(62vh,calc(100vh - var(--hbh,96px) - 90px))}
+html.mobile .charwin h3{font-size:16px}html.mobile .charwin .sub{font-size:10px;letter-spacing:.1em}html.mobile .charwin .x{min-height:30px;padding:2px 10px;font-size:12.5px}
+html.mobile .charwin .head{position:sticky;top:-10px;z-index:2;margin:-10px -12px 0;padding:8px 12px 6px;background:rgba(14,18,42,.94);border-radius:16px 16px 0 0}
+html.mobile .charwin .note,html.mobile .charwin .hint,html.mobile .shfoot,html.mobile .aw-hint{font-size:11px;line-height:1.4}
+html.mobile .set-sec h4,html.mobile .aw-sec h4{font-size:12px}html.mobile .set-row{grid-template-columns:96px 1fr 38px;font-size:12.5px}
+html.mobile .shrow{grid-template-columns:38px 1fr auto;gap:8px;padding:7px 2px}html.mobile .shrow .ic{width:36px;height:36px}html.mobile .shrow .ic .gi,html.mobile .shrow .ic svg{width:32px;height:32px}
+html.mobile .shrow .nm{font-size:13px}html.mobile .shrow .st{font-size:11px}
+@media (max-height:500px){
+  html.mobile .charwin{width:min(470px,58vw);max-height:calc(100vh - var(--hbh,90px) - 12px);max-height:calc(100dvh - var(--hbh,90px) - 12px)}
+  html.mobile .chatbox{width:min(210px,26vw)}
+  html.mobile #invwin{width:min(500px,56vw)}
+  html.mobile .hotbar-wrap{gap:4px 6px;bottom:4px}
+  html.mobile .hslot,html.mobile body.skills-open .hslot,html.mobile body.dragging-skill .hslot{width:34px;height:34px}
+  html.mobile .hotbar-wrap .shortcuts .ib,html.mobile .autobox .ib.cfg{width:32px;height:30px}html.mobile .btn.auto{min-height:30px}
+}
+/* phones: the inventory as one compact column: a row of equipment slots, numbers, then the bag */
+html.phone .eqwrap{grid-template-columns:1fr;gap:8px}
+html.phone .doll{display:flex;justify-content:center;gap:5px;padding:6px;flex-wrap:wrap}html.phone .doll canvas{display:none}html.phone .ecol{display:contents}
+html.phone .eslot{width:40px;height:40px;border-radius:10px}html.phone .eslot .gi,html.phone .eslot svg.tile{width:34px;height:34px}html.phone .eslot .sl{display:none}html.phone .eslot>svg:not(.tile){width:20px;height:20px;margin:0}
+html.phone .eqstats{margin-top:8px;font-size:12px;gap:3px 8px;grid-template-columns:auto 1fr auto 1fr auto 1fr}
+html.phone .charwin .wfoot{margin-top:8px;flex-wrap:wrap}html.phone .charwin .wfoot .btn{min-height:30px;padding:3px 10px;font-size:12px}
+html.phone .lootcfg{display:none;margin-top:8px}html.phone .lootcfg.open{display:block}
+html.phone .inv-grid.bag{grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px}
+html.phone .idetail{min-height:0;padding:8px 10px;font-size:12px;margin-top:8px}html.phone #invwin .note{display:none}
+html.phone .bagbar .tab{min-height:28px;padding:2px 9px;font-size:11.5px}
+#iw-rules{display:none}html.phone #iw-rules{display:inline-flex}
+html.phone .skrow{padding:6px 0}html.phone .skrow p{font-size:11.5px;line-height:1.4}html.phone .sg,html.phone .sg .gi,html.phone .sg>svg{width:40px;height:40px}
+html.phone .aw-grid{grid-template-columns:1fr 1fr}
+@media (max-height:500px){html.phone .inv-grid.bag{grid-template-columns:repeat(10,1fr)}}
 </style>
 </head>
 <body>
@@ -781,7 +831,7 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
         <p class="lnote">Accounts and characters are saved in this browser on this device. There is no password recovery, so keep your password somewhere safe.</p>
       </form>
       </div>
-      <aside class="pn glass" id="pn" aria-labelledby="pn-k"></aside>
+      <aside class="pnotes glass" id="pn" aria-labelledby="pn-k"></aside>
     </div>
     <div class="pn-modal" id="pn-modal" hidden>
       <div class="pnm glass" role="dialog" aria-modal="true" aria-labelledby="pnm-h">
@@ -883,7 +933,7 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
 
   <!-- ================= ENTER WORLD / INTRO ================= -->
   <section id="screen-intro" class="screen" aria-label="Loading">
-    <div class="ld" id="ld">
+    <div class="ldscr" id="ld">
       <div class="logo"><span class="title">MMORPG ONLINE</span><span class="sub">The Fracture of Terago</span></div>
       <div class="ld-bar ind" id="ld-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100"><i></i></div>
       <div class="ld-st" id="ld-st" aria-live="polite"></div>
@@ -1982,6 +2032,10 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-12g',date:'2026-11-12',title:'A tidier phone layout',
+    new:['Phones and tablets: the menu icons sit in the centre, in a row with AUTO above the skill bar','All ten skill slots always show on phones'],
+    balance:['Inventory, Skills, Quests, Settings and the other windows are smaller on phones and open above the bars, so the world stays in view','The phone inventory is one compact column: a row of equipment slots, your numbers, then the bag'],
+    fixes:['The party frames sit under your HP panel on phones instead of over the chat','Party member cards are compact again (they had grown a dark box in the last two builds)']},
   {v:'2026-11-12f',date:'2026-11-12',title:'Mobile browser detection',
     new:['The game detects whether it runs in a phone, tablet or desktop browser and picks the touch or desktop layout by itself','Settings \u203a Device shows what was detected and lets you choose Auto, Mobile or Desktop'],
     fixes:['The layout now follows changes while you play: turning the screen, or plugging a mouse into a tablet']},
@@ -2835,7 +2889,7 @@ const TownScreen={
       const x=v.x+(e.clientX-r.left)/r.width*v.w,y=v.y+(e.clientY-r.top)/r.height*v.h;if(whole) this.bigMap(false);this.walkTo(x,y,null);});
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
-    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.placeParty());
+    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.layoutHud());
     {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
@@ -2894,7 +2948,7 @@ const TownScreen={
       setTimeout(()=>toast(`New skill system · ${moved[0]} stat points and ${moved[1]} skill points to spend`,6000),900);}
     Sprites.ensure('skillfx').catch(()=>{});Sprites.ensure('dmgfx').catch(()=>{});
     this.hud();$('#dlg').classList.remove('on');this.save();this.questCheck();
-    showScreen('screen-town');
+    showScreen('screen-town');this.layoutHud();requestAnimationFrame(()=>requestAnimationFrame(()=>this.layoutHud()));setTimeout(()=>this.layoutHud(),400);
   },
   /* switch the world to a map: its art, depth, walk grid, townspeople or monsters; at = [x, y] to stand on */
   loadMap(id,at,dir){
@@ -3934,7 +3988,16 @@ const TownScreen={
       const bar=row.querySelector('.hpb i');if(bar) bar.style.width=r.hp+'%';});},
   /* the party list sits on the left, just above the chat box (minimized or not), and never runs up under your portrait */
   placeParty(){const el=$('#party-frame');if(!el.classList.contains('on')) return;const sc=$('#screen-town').getBoundingClientRect(),cb=$('#chatbox').getBoundingClientRect(),st=$('#screen-town .hud-status').getBoundingClientRect();
+    if(Device.mobile){const top=Math.round(st.bottom-sc.top+6),hb=$('#screen-town .hotbar-wrap').getBoundingClientRect(),lim=Math.min(cb.height?cb.top:1e9,hb.height?hb.top:1e9,sc.bottom);
+      el.style.top=top+'px';el.style.bottom='auto';el.style.left=Math.round(st.left-sc.left)+'px';el.style.maxHeight=Math.max(64,Math.round(lim-sc.top-top-8))+'px';return;}
+    if(el.style.top){el.style.top='';el.style.left='';}
     const bottom=Math.round(sc.bottom-cb.top+8)+'px',room=Math.max(80,Math.round(cb.top-st.bottom-16))+'px';if(el.style.bottom!==bottom) el.style.bottom=bottom;if(el.style.maxHeight!==room) el.style.maxHeight=room;},
+  /* touch devices: the menu icons live in the bottom bar (centred, above the skill bar); elsewhere under the minimap.
+     --hbh = how much of the bottom the bars take, for the windows, chat and prompt that sit above them */
+  layoutHud(){const sc=$('#screen-town'),sh=sc.querySelector('.shortcuts'),hw=sc.querySelector('.hotbar-wrap'),hr=sc.querySelector('.hud-right');
+    if(Device.mobile){if(sh.parentNode!==hw) hw.insertBefore(sh,hw.firstChild);}else if(sh.parentNode!==hr) hr.insertBefore(sh,$('#hud-tracker'));
+    const r=hw.getBoundingClientRect(),s=sc.getBoundingClientRect();if(r.height) sc.style.setProperty('--hbh',Math.round(s.bottom-r.top)+'px');
+    this.placeParty();},
   chatMin(on){SETTINGS.chatMin=!!on;saveSettings();const b=$('#chat-min');$('#chatbox').classList.toggle('min',!!on);b.setAttribute('aria-pressed',!!on);b.title=on?'Show chat':'Minimize chat';b.setAttribute('aria-label',b.title);
     b.querySelector('svg').innerHTML=on?'<path d="M6 12h12M12 6v12"/>':'<path d="M6 12h12"/>';if(!on){this.unread=0;const el=$('#chatlog');el.scrollTop=el.scrollHeight;}this.unreadBadge();this.placeParty();},
   unreadBadge(){const bd=$('#chat-min b');const n=SETTINGS.chatMin?this.unread||0:0;bd.hidden=!n;bd.textContent=n>9?'9+':n;},
@@ -4273,8 +4336,8 @@ const TownScreen={
     $('#iw-body').innerHTML=`<div class="eqwrap"><div>
       <div class="doll"><div class="ecol">${['head','body','feet','wings'].map(eqHtml).join('')}</div><canvas id="doll-cv" aria-label="${esc(c.name)}"></canvas><div class="ecol">${['weapon','hands','ring'].map(eqHtml).join('')}</div></div>
       <dl class="eqstats"><dt>Attack</dt><dd>${this.attackPower()}</dd><dt>Defence</dt><dd>${this.defence()}</dd><dt>Max HP</dt><dd>${this.maxHp()}</dd><dt>Gear score</dt><dd>${this.gearScoreWorn()}</dd><dt>Gold</dt><dd style="color:var(--gold)">${c.gold||0}</dd><dt>Ingots</dt><dd>${c.items.ingot||0}${c.items.dust?` · ${c.items.dust} dust`:''}</dd></dl>
-      <div class="wfoot" style="justify-content:flex-start;gap:6px"><button class="btn" id="iw-sell" ${nSell?'':'disabled'}>Sell junk (${nSell})</button><button class="btn" id="iw-smelt" ${nSmelt?'':'disabled'}>Smelt junk (${nSmelt})</button></div>
-      <div class="lootcfg"><div class="lt">Auto-sell &amp; auto-smelt</div>
+      <div class="wfoot" style="justify-content:flex-start;gap:6px"><button class="btn" id="iw-sell" ${nSell?'':'disabled'}>Sell junk (${nSell})</button><button class="btn" id="iw-smelt" ${nSmelt?'':'disabled'}>Smelt junk (${nSmelt})</button><button class="btn" id="iw-rules" aria-expanded="${!!this.lootOpen}">Rules ${this.lootOpen?'▴':'▾'}</button></div>
+      <div class="lootcfg${this.lootOpen?' open':''}"><div class="lt">Auto-sell &amp; auto-smelt</div>
         <div class="row"><label><input type="checkbox" id="lr-smelt" ${L.smelt?'checked':''}> Auto-smelt</label>${rsel('lr-smelt-r',L.smeltUpTo)}</div>
         <div class="row"><label><input type="checkbox" id="lr-sell" ${L.sell?'checked':''}> Auto-sell</label>${rsel('lr-sell-r',L.sellUpTo)}</div>
         <label><input type="checkbox" id="lr-weaker" ${L.weaker?'checked':''}> Only if weaker than my worn gear</label>
@@ -4291,7 +4354,7 @@ const TownScreen={
       if(CONSUMABLES[id]){b.ondblclick=()=>{this.useItem(id,performance.now());this.renderInv();};b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','item:'+id));}});
     B.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this.invTab=b.dataset.tab;this.renderInv();});
     $('#iw-sort').onclick=()=>{c.bag.sort((a,b)=>b.rar-a.rar||gearScore(b)-gearScore(a));this.renderInv();this.save();};
-    $('#iw-sell').onclick=()=>this.clearJunk('sell');$('#iw-smelt').onclick=()=>this.clearJunk('smelt');
+    $('#iw-rules').onclick=()=>{this.lootOpen=!this.lootOpen;this.renderInv();};$('#iw-sell').onclick=()=>this.clearJunk('sell');$('#iw-smelt').onclick=()=>this.clearJunk('smelt');
     const sync=()=>{L.smelt=$('#lr-smelt').checked;L.sell=$('#lr-sell').checked;L.weaker=$('#lr-weaker').checked;L.smeltUpTo=+$('#lr-smelt-r').value;L.sellUpTo=+$('#lr-sell-r').value;this.save();this.renderInv();};
     ['lr-smelt','lr-sell','lr-weaker','lr-smelt-r','lr-sell-r'].forEach(id=>$('#'+id).onchange=sync);
     this.bindDetail=()=>$$('#iw-detail [data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act,g=sel&&(sel.eq?c.equip[sel.eq]:c.bag.find(x=>x.uid===sel.uid));
@@ -4944,7 +5007,7 @@ const Device={type:'desktop',mobile:false,os:'',browser:'',why:'',
   apply(first){const d=this.read(),pref=SETTINGS.layout||'auto',mobile=pref==='auto'?d.type!=='desktop':pref==='mobile',was=this.mobile,wasT=this.type;
     Object.assign(this,d,{mobile,pref});const h=document.documentElement;h.classList.toggle('mobile',mobile);h.classList.toggle('phone',mobile&&d.type!=='tablet');h.classList.toggle('tablet',mobile&&d.type==='tablet');h.dataset.device=d.type;
     if(first||(was===mobile&&wasT===d.type)) return;
-    window.dispatchEvent(new Event('resize'));try{if(activeScreen===TownScreen&&TownScreen.ch){TownScreen.placeParty();TownScreen.renderHotbar();if(TownScreen.win==='setwin') TownScreen.renderSettings();}}catch(e){}
+    window.dispatchEvent(new Event('resize'));try{if(activeScreen===TownScreen&&TownScreen.ch){TownScreen.renderHotbar();TownScreen.layoutHud();if(TownScreen.win==='setwin') TownScreen.renderSettings();}}catch(e){}
     if(was!==mobile) toast(mobile?'Touch layout on':'Desktop layout on');},
   label(){return `${{phone:'Phone',tablet:'Tablet',desktop:'Desktop'}[this.type]}${this.browser||this.os?' · '+[this.browser,this.os].filter(Boolean).join(' on '):''}`;},
   init(){this.apply(true);let t=0;const re=()=>{clearTimeout(t);t=setTimeout(()=>this.apply(),200);};
@@ -4964,7 +5027,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12f';
+const BUILD='2026-11-12g';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
