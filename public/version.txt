@@ -1,1 +1,1 @@
-build: 2026-11-12i (AUTO loot order setting)
+build: 2026-11-12j (Mythic set letter for every character)

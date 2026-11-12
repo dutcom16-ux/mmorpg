@@ -2078,6 +2078,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-12j',date:'2026-11-12',title:'A Mythic set in the mail',
+    events:['Every character has a letter waiting with a full Legendary set: a Mythic weapon for their job, four pieces of Mythic armour and Celestial Wings, forged at their level when claimed (until Dec 31)']},
   {v:'2026-11-12i',date:'2026-11-12',title:'AUTO loot order',
     new:['AUTO settings \u203a Auto-loot has an Order choice: "Attack, then loot" (pick up after every kill, the default) or "Clear first" (loot once the monsters in range are dead)']},
   {v:'2026-11-12h',date:'2026-11-12',title:'PK, guilds, vault and mail',
@@ -4350,13 +4352,15 @@ const TownScreen={
     if(need&&this.bagUsed()+need>BAG_SIZE){if(!quiet) toast(`Your bag needs ${need} free space${need>1?'s':''} for this letter`);return false;}
     const got=[];if(m.gold){c.gold=(c.gold||0)+m.gold;got.push(`${m.gold} gold`);}
     for(const [k,n] of Object.entries(m.items||{})){c.items[k]=(c.items[k]|0)+n;got.push(`${n} ${itemDef(k).name}`);}
-    for(const g0 of m.gear||[]){const g=craftGear(g0.base==='weapon'?WEAPON_OF[this.line()]:g0.base,g0.lvl,g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];}c.bag.unshift(g);got.push(gearName(g));}
+    for(const g0 of m.gear||[]){const g=craftGear(g0.base==='weapon'?WEAPON_OF[this.line()]:g0.base,this.mailLvl(g0),g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];}c.bag.unshift(g);got.push(gearName(g));}
     m.claimed=true;m.read=true;AudioFX.sfx('coin');this.log('loot',null,`Mail · ${got.join(', ')}`);this.tracker();this.save();this.mailBadge();this.renderHotbar();return true;},
+  /* "char" gear is forged at claim time, at the highest item level the character can wear right now (level + 3) */
+  mailLvl(g0){return g0.lvl==='char'?Math.max(1,Math.min(100,(this.ch.baseLevel||1)+3)):g0.lvl;},
   mailDelete(id){const c=this.ch;c.mail=(c.mail||[]).filter(m=>m.id!==id);if(this.mailSel===id) this.mailSel=null;this.save();this.mailBadge();this.renderMail();},
   renderMail(){if(this.win!=='mailwin') return;const c=this.ch,L=c.mail||[],line=this.line();
     const date=t=>{try{return new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(e){return '';}};
     const att=m=>`<div class="mw-att">${m.gold?`<span class="g">${m.gold} gold</span>`:''}${Object.entries(m.items||{}).map(([k,n])=>`<span>${itemIcon(k)}${esc(itemDef(k).name)} × ${n}</span>`).join('')}${(m.gear||[]).map(g=>{const base=g.base==='weapon'?WEAPON_OF[line]:g.base,B=GEAR_BASES[base];
-      return `<span style="color:${RARITY[g.rar].color}">${gi(B.icon)||tileIcon(B.icon,RARITY[g.rar].color)}${RARITY[g.rar].name} ${esc(base==='wings'?B.names[g.wing|0]:B.names[Math.min(4,Math.floor((g.lvl-1)/10))])} · Lv ${g.lvl}</span>`;}).join('')}</div>`;
+      return `<span style="color:${RARITY[g.rar].color}">${gi(B.icon)||tileIcon(B.icon,RARITY[g.rar].color)}${RARITY[g.rar].name} ${esc(base==='wings'?B.names[g.wing|0]:(RARITY_WORD[g.rar]?RARITY_WORD[g.rar]+' ':'')+B.names[Math.min(4,Math.floor((this.mailLvl(g)-1)/10))])} · ${g.lvl==='char'?`fits you (item Lv ${this.mailLvl(g)})`:`Lv ${g.lvl}`}</span>`;}).join('')}</div>`;
     const wait=L.filter(m=>Mail.has(m)&&!m.claimed).length;
     $('#mw-sub').textContent=L.length?`${L.length} letter${L.length>1?'s':''}${wait?` · ${wait} with gifts to claim`:''}`:'Oakhaven Post';
     $('#mw-body').innerHTML=(L.length?`<div class="mw-btns" style="margin-top:8px"><button class="btn" id="mw-all" ${wait?'':'disabled'}>Claim all (${wait})</button><button class="btn" id="mw-clear" ${L.some(m=>m.read&&(!Mail.has(m)||m.claimed))?'':'disabled'}>Delete read letters</button></div>`:'')+
@@ -5177,6 +5181,9 @@ const VAULT_SIZE=80;
      "gear":[{"base":"weapon","lvl":30,"rar":2}],"to":["CharacterName"],"minLevel":10,"until":"2026-12-31"}]}
    "to" limits a letter to those characters (compensation for one player); without it everyone gets it. */
 const MAIL_BUILTIN=[
+  {id:'mythic-set-2026-11',from:'The MMORPG ONLINE team',title:'A Mythic set for every hero',until:'2026-12-31',
+    body:'A full Legendary set, forged for you: a Mythic weapon for your job, Mythic armour for body, head, hands and feet, and Celestial Wings.\n\nEach piece is made when you press Claim, at the highest level you can wear at that moment, so claim it whenever you like. You need six free spaces in your bag.',
+    gear:[{base:'weapon',lvl:'char',rar:4},{base:'body',lvl:'char',rar:4},{base:'head',lvl:'char',rar:4},{base:'hands',lvl:'char',rar:4},{base:'feet',lvl:'char',rar:4},{base:'wings',lvl:'char',rar:4,wing:4}]},
   {id:'welcome-oakhaven',from:'Pip · Oakhaven Post',title:'Welcome to Oakhaven',body:'A parcel from the Post to get you started. Letters with gifts wait here until you take them: open one and press Claim.\n\nSafe roads!',items:{potion:5,tonic:3}},
   {id:'gift-2026-11-12',from:'The MMORPG ONLINE team',title:'Thank you for playing through the updates',body:'Shops, wings, new sounds, the phone layout and more all landed this week, with a few bumps along the way. Here is a little something for the road.',gold:300,items:{potion:10,tonic:5,elixir:2},until:'2027-01-31'}];
 const Mail={remote:[],
@@ -5184,7 +5191,7 @@ const Mail={remote:[],
     try{const r=await fetch('mail.json?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const j=await r.json();if(j&&Array.isArray(j.mails)) this.remote=j.mails.slice(0,60);}catch(e){}},
   all(){const seen=new Set(),out=[];for(const m of [...this.remote,...MAIL_BUILTIN]){if(!m||!m.id||seen.has(String(m.id))) continue;seen.add(String(m.id));out.push(m);}return out;},
   make(m,now){const items={};for(const [k,v] of Object.entries(m.items||{})) if(itemDef(k)&&(v|0)>0) items[k]=Math.min(999,v|0);
-    const gear=(Array.isArray(m.gear)?m.gear:[]).slice(0,6).filter(g=>g&&(g.base==='weapon'||GEAR_BASES[g.base])).map(g=>({base:String(g.base),lvl:Math.max(1,Math.min(100,(g.lvl|0)||1)),rar:Math.max(0,Math.min(4,g.rar|0)),wing:g.base==='wings'?Math.max(0,Math.min(4,g.wing|0)):undefined}));
+    const gear=(Array.isArray(m.gear)?m.gear:[]).slice(0,6).filter(g=>g&&(g.base==='weapon'||GEAR_BASES[g.base])).map(g=>({base:String(g.base),lvl:g.lvl==='char'?'char':Math.max(1,Math.min(100,(g.lvl|0)||1)),rar:Math.max(0,Math.min(4,g.rar|0)),wing:g.base==='wings'?Math.max(0,Math.min(4,g.wing|0)):undefined}));
     return {id:String(m.id).slice(0,40),t:now,from:String(m.from||'Oakhaven Post').slice(0,40),title:String(m.title||'A letter').slice(0,70),body:String(m.body||'').slice(0,700),gold:Math.max(0,Math.min(1e7,m.gold|0)),items,gear,read:false,claimed:false};},
   /* put every letter this character should have and hasn't had yet into its mailbox; returns how many were new */
   deliver(c){c.mail=Array.isArray(c.mail)?c.mail:[];c.mailGot=c.mailGot||{};let n=0;const now=Date.now(),nm=String(c.name||'').toLowerCase();
@@ -5265,7 +5272,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12i';
+const BUILD='2026-11-12j';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
