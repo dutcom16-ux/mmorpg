@@ -1,1 +1,1 @@
-build: 2026-11-12d (attack patterns, walking, retro damage numbers, sound effects)
+build: 2026-11-12e (sign-in with patch notes, loading screen, sharper icons)

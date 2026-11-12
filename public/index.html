@@ -65,7 +65,45 @@ button{font:inherit;color:inherit}
 .acct b{color:#fff}.acct .btn{min-height:30px;padding:4px 12px;font-size:12px;border-radius:999px}
 /* sign in / create account */
 #screen-login{padding:24px;overflow:auto}
-.login-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;width:min(420px,92vw);margin:auto}
+.login-wrap{display:grid;grid-template-columns:minmax(320px,420px) minmax(340px,500px);gap:28px;align-items:start;justify-content:center;width:min(980px,100%);margin:auto}
+.login-col{display:flex;flex-direction:column;align-items:center;gap:20px;min-width:0}
+@media (max-width:860px){.login-wrap{grid-template-columns:minmax(0,440px);gap:18px}}
+.login :focus-visible,.pn :focus-visible,.pnm :focus-visible,.ld :focus-visible{outline:2px solid #7fe3ff;outline-offset:2px}
+.login .name-input[aria-invalid="true"]{border-color:#ff8f9b;box-shadow:0 0 0 3px rgba(255,143,155,.18)}
+.login .btn:not(:disabled):hover,.pn .btn:hover,.ld .btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.login .btn,.pn .btn,.ld .btn{transition:filter .15s,transform .15s}
+.login .name-msg.bad{color:#ff9aa6;font-weight:800}
+/* patch notes */
+.pn{padding:20px 22px 18px;border-radius:20px;background:rgba(10,14,34,.8);display:flex;flex-direction:column;gap:12px;min-width:0}
+.pn-k{font:900 11.5px Nunito,sans-serif;letter-spacing:.2em;color:var(--aether);display:flex;align-items:center;gap:8px;margin:0}
+.pn-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pn-head h2{margin:0;font:700 21px Cinzel,serif;color:var(--gold)}
+.pn-meta{font-size:12.5px;font-weight:800;color:var(--muted)}.pn-meta b{color:var(--text)}
+.pn-new{font:900 10.5px Nunito,sans-serif;letter-spacing:.14em;color:#1a1204;background:linear-gradient(180deg,#ffe9a6,#f7c552);border-radius:999px;padding:3px 9px;box-shadow:0 0 12px rgba(247,197,82,.35)}
+.pn-g{margin:0}.pn-g h3{margin:0 0 4px;font:900 12.5px Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:7px;color:#cfe8ff}
+.pn-g h3 svg{width:16px;height:16px;flex:none}.pn-g ul{margin:0;padding-left:20px;display:grid;gap:3px}.pn-g li{font-size:13.5px;line-height:1.45;color:#dfe6f4}
+.pn-g.empty li{color:var(--muted);list-style:none;margin-left:-20px;font-style:italic}
+.g-new h3{color:#9ff0c0}.g-events h3{color:#ffd27a}.g-balance h3{color:#9fd0ff}.g-fixes h3{color:#ffb4c0}
+.pn-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:2px}.pn-foot small{color:var(--muted);font-weight:700;font-size:12px}
+.pn-modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(4,6,16,.66);padding:18px}
+.pn-modal[hidden]{display:none}
+.pnm{width:min(720px,100%);max-height:min(86vh,900px);display:flex;flex-direction:column;border-radius:20px;background:rgba(12,16,38,.96);overflow:hidden}
+.pnm header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.pnm header h2{margin:0;font:700 22px Cinzel,serif;color:var(--gold)}
+.pnm-x{min-width:40px;min-height:40px;font-size:20px;line-height:1;padding:0}
+.pnm-body{overflow:auto;padding:6px 20px 20px;overscroll-behavior:contain}
+.pnm-rel{padding:16px 0;border-bottom:1px solid rgba(160,220,255,.1);display:grid;gap:10px}.pnm-rel:last-child{border-bottom:0}
+.pnm-rel .pn-head h2{font-size:18px}
+/* loading screen: the logo, the themed background, a real progress bar (or an indeterminate one), status, errors */
+.ld{width:min(520px,88vw);text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.ld .logo{align-items:center;text-align:center}.ld .logo .title{font-size:clamp(30px,5vw,44px)}
+.ld-bar{position:relative;width:100%;height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(160,220,255,.15)}
+.ld-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--aether2),var(--aether));box-shadow:0 0 14px var(--aether);transition:width .2s}
+.ld-bar.ind i{width:34%;animation:ldind 1.25s ease-in-out infinite}
+@keyframes ldind{0%{left:-34%}100%{left:100%}}
+@media (prefers-reduced-motion:reduce){.ld-bar.ind i{animation:none;left:0;width:100%;opacity:.45}.ld-bar i{transition:none}}
+.ld-st{min-height:20px;font-size:14px;font-weight:800;color:#cfe8ff;letter-spacing:.04em}.ld-st small{color:var(--muted);font-weight:800;margin-left:6px}
+.ld-err{display:none;flex-direction:column;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;background:rgba(60,10,22,.6);border:1px solid rgba(255,143,155,.4);color:#ffd6dc;font-weight:700;font-size:14px;line-height:1.45}
+.ld.failed .ld-err{display:flex}.ld.failed .ld-bar,.ld.failed .ld-st{display:none}
 .login-logo{align-items:center;text-align:center}.login-logo .title{font-size:38px}
 .login{width:100%;padding:22px 24px;border-radius:20px;display:flex;flex-direction:column;gap:13px;background:rgba(10,14,34,.8)}
 .ltabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
@@ -221,17 +259,9 @@ button{font:inherit;color:inherit}
 .create-actions .btn{flex:1}
 
 /* ---------- intro ---------- */
-#screen-intro{background:#000;align-items:center;justify-content:center;flex-direction:column}
-.loading{width:min(520px,80vw);text-align:center}
-.loading .lt{font-family:'Cinzel',serif;font-size:14px;letter-spacing:.3em;color:var(--gold);margin-bottom:16px}
-.loading .bar{height:6px;background:rgba(255,255,255,.08)}
-.loading .bar i{width:0;background:linear-gradient(90deg,var(--aether2),var(--aether));box-shadow:0 0 14px var(--aether)}
-.loading .pct{margin-top:10px;font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.14em}
-.story{max-width:760px;padding:0 28px;text-align:center;display:none}
-.story p{font-family:'Cinzel',serif;font-size:clamp(18px,2.4vw,27px);line-height:1.7;color:#efe6d2;text-shadow:0 0 22px rgba(247,213,142,.25);margin:0;min-height:5.1em}
-.story .hint{margin-top:26px;font-size:12px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase;font-weight:800;opacity:0;transition:opacity .6s}
-.story .hint.on{opacity:1}
-.skip{position:absolute;right:24px;bottom:22px}
+#screen-intro{background:radial-gradient(ellipse at 50% 40%,rgba(20,30,70,.35),rgba(4,6,16,.75));align-items:center;justify-content:center;flex-direction:column;padding:24px}
+
+
 .quest{border-left:3px solid var(--gold);padding:8px 12px;background:rgba(247,213,142,.07);border-radius:0 10px 10px 0;font-size:14px;line-height:1.5}
 .quest b{color:var(--gold)}
 
@@ -355,6 +385,7 @@ button{font:inherit;color:inherit}
 .skrow .act{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
 .skrow .act .btn{min-height:30px;padding:3px 10px;font-size:12px}
 /* icons from the generated atlas (skills, potion, gear, smelted materials) */
+svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}.hslot svg.tile{position:absolute;inset:3px;width:auto;height:auto}.eslot svg.tile{width:50px;height:50px}.shrow .ic svg.tile{width:40px;height:40px}
 .gi{display:block;width:100%;height:100%;background-image:var(--icon-atlas);background-repeat:no-repeat;pointer-events:none}
 .hslot .gi{position:absolute;inset:1px;width:auto;height:auto;border-radius:10px}
 .skrow .ic .gi{width:46px;height:46px;border-radius:11px}
@@ -729,6 +760,7 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
   <!-- ================= SIGN IN ================= -->
   <section id="screen-login" class="screen" aria-label="Sign in">
     <div class="login-wrap">
+      <div class="login-col">
       <div class="logo login-logo"><span class="title">MMORPG ONLINE</span><span class="sub">The Fracture of Terago</span></div>
       <form class="login glass" id="login-form" novalidate>
         <div class="ltabs" role="tablist" aria-label="Account">
@@ -748,6 +780,14 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
         <button class="btn btn-primary btn-lg" id="lg-go" type="submit">Sign in</button>
         <p class="lnote">Accounts and characters are saved in this browser on this device. There is no password recovery, so keep your password somewhere safe.</p>
       </form>
+      </div>
+      <aside class="pn glass" id="pn" aria-labelledby="pn-k"></aside>
+    </div>
+    <div class="pn-modal" id="pn-modal" hidden>
+      <div class="pnm glass" role="dialog" aria-modal="true" aria-labelledby="pnm-h">
+        <header><h2 id="pnm-h">Patch notes</h2><button class="btn pnm-x" id="pnm-close" type="button" aria-label="Close patch notes">×</button></header>
+        <div class="pnm-body" id="pnm-body" tabindex="0"></div>
+      </div>
     </div>
   </section>
 
@@ -842,10 +882,13 @@ html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
   </section>
 
   <!-- ================= ENTER WORLD / INTRO ================= -->
-  <section id="screen-intro" class="screen" aria-label="Story intro">
-    <div class="loading" id="loading"><div class="lt">ENTERING MMORPG</div><div class="bar"><i id="load-bar"></i></div><div class="pct" id="load-pct">0%</div></div>
-    <div class="story" id="story"><p id="story-text" aria-live="polite"></p><div class="hint" id="story-hint">Click or press Space to continue</div></div>
-    <button class="btn skip" id="btn-skip">Skip intro</button>
+  <section id="screen-intro" class="screen" aria-label="Loading">
+    <div class="ld" id="ld">
+      <div class="logo"><span class="title">MMORPG ONLINE</span><span class="sub">The Fracture of Terago</span></div>
+      <div class="ld-bar ind" id="ld-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+      <div class="ld-st" id="ld-st" aria-live="polite"></div>
+      <div class="ld-err" role="alert"><span id="ld-msg">Loading failed.</span><button class="btn btn-primary" id="ld-retry" type="button">Retry</button></div>
+    </div>
   </section>
 
   <!-- ================= MAP 1 · OAKHAVEN SANCTUARY ================= -->
@@ -1756,6 +1799,8 @@ const LoginScreen={mode:'in',busy:false,fails:0,lockUntil:0,
     if(this.mode==='in'&&Date.now()<this.lockUntil){this.msg(`Too many wrong tries. Wait ${Math.ceil((this.lockUntil-Date.now())/1000)} s and try again.`,true);return;}
     let err=Auth.validName(u)||(this.mode==='up'?Auth.validPass(p):(p?'':'Enter your password.'));
     if(!err&&this.mode==='up'&&p!==$('#lg-pass2').value) err="The two passwords don't match.";
+    {const bad=err?(Auth.validName(u)?'#lg-user':this.mode==='up'&&p!==$('#lg-pass2').value&&!Auth.validPass(p)?'#lg-pass2':'#lg-pass'):null;
+      for(const f of ['#lg-user','#lg-pass','#lg-pass2']) $(f).setAttribute('aria-invalid',f===bad?'true':'false');if(bad) $(bad).focus();}
     if(err){this.msg(err,true);AudioFX.sfx('miss');return;}
     this.busy=true;$('#lg-go').disabled=true;this.msg(this.mode==='up'?'Creating your account…':'Signing in…');
     try{const r=this.mode==='up'?await Auth.register(u,p,remember):await Auth.login(u,p,remember);
@@ -1766,7 +1811,7 @@ const LoginScreen={mode:'in',busy:false,fails:0,lockUntil:0,
         :r.localOnly==='offline'?`Welcome back, ${r.name} · the game server can't be reached, so this session saves on this device only`
         :r.localOnly==='taken'?`Welcome back, ${r.name} · that name belongs to another online account, so your characters stay on this device`
         :`Welcome back, ${r.name}`,5200);
-      showScreen(Store.load().length?'screen-select':'screen-create');}
+      afterAssets(()=>showScreen(Store.load().length?'screen-select':'screen-create'));}
     catch(e){this.msg('Something went wrong: '+e.message,true);}
     finally{this.busy=false;$('#lg-go').disabled=false;}}
 };
@@ -1934,30 +1979,86 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
     drawAvatar(ctx,Sprites.compose('recruit',this.app),this.avatar,cx,cy,s,now);}
 };
 
-const STORY=[
-  'For a thousand generations, the core of Terago hummed in absolute balance, suspended in a sea of clouds. Its lifeblood — Aetherite Crystals — was protected by the floating island temples.',
-  'Then came the Fracture. A violent, unknown surge tore through the lower strata, shattering the crystals and pulling the World Bosses from their dormant slumbers. Darkness spilled into the fields, and the world began to bleed.',
-  'You awake as a newly arrived Recruit in Oakhaven Sanctuary, the last standing safe haven. Your memory is fractured, but the call in your veins is clear: mend the crystal core, or watch Terago fall into the endless abyss.'
-];
-const IntroScreen={
-  ch:null,phase:'idle',idx:0,typed:0,tStart:0,
-  init(){
-    $('#btn-skip').onclick=()=>this.arrive();
-    $('#screen-intro').addEventListener('click',e=>{if(e.target.closest('button')||this.phase!=='story') return;this.advance();});
-    document.addEventListener('keydown',e=>{if(activeScreen!==this) return;if(e.key===' '||e.key==='Enter'){if(this.phase==='story'){this.advance();e.preventDefault();}}if(e.key==='Escape') this.arrive();});},
-  start(c){this.ch=c;this.phase='loading';this.tStart=performance.now();$('#loading').style.display='block';$('#story').style.display='none';$('#btn-skip').style.display='';showScreen('screen-intro');},
-  advance(){const full=STORY[this.idx];if(this.typed<full.length){this.typed=full.length;return;}
-    if(this.idx<STORY.length-1){this.idx++;this.typed=0;this.tStart=performance.now();$('#story-hint').classList.remove('on');}else this.arrive();},
-  /* the story ends where the blueprint says: the Recruit wakes beside the Central Waystone of Map 1 */
-  arrive(){if(this.phase==='arrived') return;this.phase='arrived';$('#loading').style.display='none';$('#story').style.display='none';$('#btn-skip').style.display='none';TownScreen.start(this.ch);},
-  draw(now){
-    if(this.phase==='loading'){const p=Math.min(1,(now-this.tStart)/1500);$('#load-bar').style.width=(p*100).toFixed(1)+'%';$('#load-pct').textContent=Math.round(p*100)+'%';
-      if(p>=1){if(this.ch.introSeen){this.arrive();return;}
-        this.phase='story';this.idx=0;this.typed=0;this.tStart=now+400;$('#loading').style.display='none';$('#story').style.display='block';$('#story-text').textContent='';}
-      return;}
-    if(this.phase==='story'){const full=STORY[this.idx];if(now>this.tStart&&this.typed<full.length){this.typed=Math.min(full.length,Math.floor((now-this.tStart)/28));}
-      $('#story-text').textContent=full.slice(0,this.typed);$('#story-hint').classList.toggle('on',this.typed>=full.length);return;}
-  }
+/* ---------- patch notes (sign-in screen) ----------
+   The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
+const PATCH_NOTES=[
+  {v:'2026-11-12e',date:'2026-11-12',title:'Sign-in, loading and sharper icons',
+    new:['Patch notes on the sign-in screen, with every earlier release one tap away','A new loading screen: real progress, a status line only while that step runs, and a Retry button if something fails','Sharper item, skill and equipment icons; wings and potions get proper filled icons'],
+    fixes:['The story intro and its Skip button are gone: entering the world goes straight in','Sign-in shows at once instead of waiting for all the art to download']},
+  {v:'2026-11-12d',date:'2026-11-12',title:'Combat feel and sound',
+    new:['28 new sound effects: swords, bows, daggers, fire, ice, lightning, holy, buffs, blocks, dodges and defeat','Retro pixel damage numbers: crit bursts, stacked multi-hits, red damage taken, green heals, MISS','Spells charge at the caster’s hand; archers nock and draw before each shot'],
+    balance:['The Arbiter now fights in melee with the scepter (damage unchanged)','Melee hits only land if the target is still within reach at contact'],
+    fixes:['No more walking in place against walls','Steps match your speed, so feet no longer slide']},
+  {v:'2026-11-12c',date:'2026-11-12',title:'Shops, crafting and wings',
+    new:['Greta’s Equipment Shop and Granny Hessa’s Potion Shop (Mana Tonic, Greater Healing Draught)','Dorin the Artificer crafts five kinds of wings and Heroic and Mythic gear','Wings slot; drag-and-drop equipment','AUTO settings: targets, loot filters, potions and skill order'],
+    fixes:['+10 weapon glow now shows on light ground too']},
+  {v:'2026-11-12b',date:'2026-11-12',title:'Faster fights, phones and full screen',
+    new:['Full-screen button (Esc leaves it)','A touch layout for phones and tablets','A golden aura at Base Level 100','An in-game notice when a new version is out'],
+    balance:['Monsters above Lv 10: 12% more HP, damage and armour','Attacks 20% faster; casting 20% quicker'],
+    fixes:['Long hair no longer hangs in front of the body']},
+  {v:'2026-11-12a',date:'2026-11-12',title:'Tougher monsters',
+    balance:['Monsters are harder to kill, with armour and magic resistance by kind','13 to 15 spawn sites per field map']},
+  {v:'2026-11-07f',date:'2026-11-07',title:'Parties and chat',
+    new:['Parties of up to 8: follow the leader, heal and buff members, party chat','Minimise the chat; party frames above it on the left'],
+    fixes:['Players on the Cloudflare and Vercel links now always see each other; older versions are flagged']},
+  {v:'2026-11-07c',date:'2026-11-07',title:'Portals, auto-move and ground casting',
+    new:['All six maps linked by portals','Auto-move to your quest','Ground-targeted and pre-cast skills','More monster spawn points'],
+    balance:['Bigger portals'],fixes:['Houses removed from the field maps']}];
+const PN_GROUPS=[['new','New Content','<path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2z"/>'],
+  ['events','Events','<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'],
+  ['balance','Balance Changes','<path d="M12 3v18M6 21h12M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/>'],
+  ['fixes','Bug Fixes','<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>']];
+const PatchNotes={
+  date(d){try{return new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}},
+  groups(r,max){return PN_GROUPS.map(([k,name,ic])=>{const L=r[k]||[];if(max&&!L.length) return '';const items=max?L.slice(0,max):L;
+    return `<section class="pn-g g-${k}${L.length?'':' empty'}"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg>${name}</h3>
+      <ul>${L.length?items.map(t=>`<li>${esc(t)}</li>`).join(''):'<li>Nothing in this release.</li>'}</ul></section>`;}).join('');},
+  head(r,latest,tag='h2'){return `<div class="pn-head"><${tag}>${esc(r.title)}</${tag}>${latest?'<span class="pn-new">NEW</span>':''}</div><div class="pn-meta">Version <b>${esc(r.v)}</b> · ${esc(this.date(r.date))}</div>`;},
+  init(){const L=PATCH_NOTES[0];
+    $('#pn').innerHTML=`<p class="pn-k" id="pn-k">LATEST PATCH NOTES</p>${this.head(L,true)}${this.groups(L,2)}
+      <div class="pn-foot"><small>${PATCH_NOTES.length} releases</small><button class="btn" id="pn-more" type="button" aria-haspopup="dialog">Read More</button></div>`;
+    $('#pn-more').onclick=()=>this.open();$('#pnm-close').onclick=()=>this.close();
+    $('#pn-modal').addEventListener('click',e=>{if(e.target.id==='pn-modal') this.close();});
+    document.addEventListener('keydown',e=>{if($('#pn-modal').hidden) return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();this.close();}
+      else if(e.key==='Tab'){const F=[...$('#pn-modal').querySelectorAll('button,[tabindex="0"]')];const i=F.indexOf(document.activeElement);
+        if(e.shiftKey&&i<=0){e.preventDefault();F[F.length-1].focus();}else if(!e.shiftKey&&i===F.length-1){e.preventDefault();F[0].focus();}}},true);},
+  open(){AudioFX.sfx('ui');this.back=document.activeElement;
+    $('#pnm-body').innerHTML=PATCH_NOTES.map((r,i)=>`<article class="pnm-rel">${this.head(r,i===0,'h3')}${this.groups(r)}</article>`).join('');
+    $('#pn-modal').hidden=false;$('#pnm-body').scrollTop=0;$('#pnm-close').focus();},
+  close(){$('#pn-modal').hidden=true;AudioFX.sfx('ui');if(this.back&&this.back.focus) this.back.focus();}};
+/* ---------- loading screen ----------
+   Runs a list of real steps (only the ones that apply), shows each step's own status while it runs, a progress bar
+   that is real when the step can count what it has done and indeterminate otherwise, an error with Retry, and goes
+   straight on when everything is ready. */
+const BootAssets={keys:null,p:null,ok:false,hair:false,
+  list(){return this.keys||(this.keys=Object.keys(window.ASSET_MANIFEST).filter(k=>!Sprites.isMap(k)||k==='town'));},
+  progress(){const K=this.list();return [K.filter(k=>Sprites[k]&&Sprites[k].meta).length,K.length];},
+  start(){if(this.ok) return Promise.resolve();if(this.p) return this.p;
+    return this.p=Promise.all(this.list().map(k=>Sprites.ensure(k))).then(()=>{
+      if(!this.hair&&Sprites.heads){this.hair=true;for(const g of ['m','f']) Sprites.heads.meta.styles[g].forEach((st,i)=>APPEARANCE.hairStyles[g].push({...st,source:'head',index:i}));}
+      this.ok=true;}).catch(e=>{this.p=null;throw e;});}};
+/* go on to a screen that needs the art: at once if it's loaded, otherwise through the loading screen */
+function afterAssets(fn){if(BootAssets.ok){fn();return;}
+  IntroScreen.run([{label:'Loading assets',run:()=>BootAssets.start(),progress:()=>BootAssets.progress(),error:"The game's art couldn't be downloaded. Check your connection and try again."}],fn);}
+const IntroScreen={tasks:[],i:0,cur:null,then:null,failed:false,
+  init(){$('#ld-retry').onclick=()=>{AudioFX.sfx('ui');this.failed=false;this.ui();this.next();};},
+  run(tasks,then){this.tasks=tasks.filter(t=>!t.when||t.when());this.i=0;this.then=then;this.failed=false;this.cur=null;showScreen('screen-intro');this.ui();this.next();},
+  async next(){const gen=this.gen=(this.gen||0)+1;
+    while(this.i<this.tasks.length){const t=this.cur=this.tasks[this.i];this.ui();
+      try{await t.run();}catch(e){if(gen!==this.gen) return;this.failed=true;$('#ld-msg').textContent=t.error||`Loading failed${e&&e.message?' ('+e.message+')':''}.`;this.ui();$('#ld-retry').focus();return;}
+      if(gen!==this.gen) return;this.i++;}
+    this.cur=null;this.ui();const f=this.then;this.then=null;if(f) await f();},
+  ui(){$('#ld').classList.toggle('failed',this.failed);const t=this.cur,P=t&&t.progress?t.progress():null,bar=$('#ld-bar');
+    bar.classList.toggle('ind',!P);if(P){const pc=P[1]?P[0]/P[1]*100:0;bar.firstElementChild.style.width=pc.toFixed(1)+'%';bar.setAttribute('aria-valuenow',Math.round(pc));}else{bar.firstElementChild.style.width='';bar.removeAttribute('aria-valuenow');}
+    const st=t?`${t.label}${P?`<small>${P[0]} / ${P[1]}</small>`:''}`:'';const el=$('#ld-st');if(el.innerHTML!==st) el.innerHTML=st;},
+  draw(){if(this.cur&&this.cur.progress) this.ui();},
+  /* entering the world: the map you were on (if it isn't loaded yet) and the game server (if it's still connecting) */
+  start(c){const id=c.map&&c.map!=='oakhaven'&&Sprites.isMap(c.map)?c.map:'town';
+    this.run([
+      {label:'Loading assets',when:()=>!BootAssets.ok,run:()=>BootAssets.start(),progress:()=>BootAssets.progress(),error:"The game's art couldn't be downloaded. Check your connection and try again."},
+      {label:'Loading the map',when:()=>!(Sprites[id]&&Sprites[id].meta),run:()=>Sprites.ensure(id),error:`${MAP_NAMES[id]||'The map'} couldn't be downloaded. Check your connection and try again.`},
+      {label:'Connecting to server',when:()=>Net.busy,run:()=>new Promise(res=>{const t0=performance.now(),w=()=>!Net.busy||performance.now()-t0>6000?res():setTimeout(w,100);w();})}
+    ],()=>TownScreen.start(c));}
 };
 /* Skill card shown on character select while the Skywarden outfit is shown. The little practice scene
    loops by itself: the Skywarden shoots a training dummy and the falcon sweeps at the Gale Sweep chance. */
@@ -2445,7 +2546,7 @@ function itemDef(id){return CONSUMABLES[id]||MATERIALS[id]||REFINED[id];}
 function gi(id,cls=''){const I=Sprites.icons;if(!I||!I.meta.icons[id]) return '';const [x,y]=I.meta.icons[id],M=I.meta;
   return `<i class="gi ${cls}" style="background-size:${M.cols*100}% ${M.rows*100}%;background-position:${(x/(M.cols-1)*100).toFixed(3)}% ${(y/(M.rows-1)*100).toFixed(3)}%" aria-hidden="true"></i>`;}
 function skillIcon(s){return gi(s.id)||iconSvg(s.icon,s.color);}
-function itemIcon(id){const d=itemDef(id);return gi(id)||iconSvg(d.icon,d.color);}
+function itemIcon(id){const d=itemDef(id);return gi(id)||tileIcon(d.icon,d.color);}
 /* ------------------------------ equipment ------------------------------
    Monsters drop gear at their own level. Rarity sets a multiplier on the base numbers and how many bonus stat
    lines it rolls. A weapon only works for the job line it was made for; armour and rings fit everyone. */
@@ -2481,7 +2582,7 @@ const gearSmelt=g=>({ingot:1+Math.floor(g.lvl/12)+g.rar+Math.floor((g.enh||0)/2)
 const enhCost=g=>{const n=(g.enh||0)+1;return {ingot:2*n,dust:Math.max(0,n-4),gold:15*n*(1+Math.floor(g.lvl/10))};};
 const gearName=g=>(g.enh?`+${g.enh} `:'')+g.name;
 /* gear picture: the generated icon, or a drawn one for kinds the atlas doesn't have (wings) */
-const gearIcon=g=>{const B=GEAR_BASES[g.base];return gi(B.icon)||iconSvg(B.icon,RARITY[g.rar].color);};
+const gearIcon=g=>{const B=GEAR_BASES[g.base];return gi(B.icon)||tileIcon(B.icon,RARITY[g.rar].color);};
 function makeGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar],v=()=>.88+Math.random()*.24;
   const g={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8),base,slot:B.slot,lvl,rar,enh:0,
     name:(RARITY_WORD[rar]?RARITY_WORD[rar]+' ':'')+B.names[Math.min(4,Math.floor((lvl-1)/10))],bonus:{}};
@@ -2497,7 +2598,18 @@ function rollGear(lvl,line){let base;
   if(Math.random()<.3){const ws=['sword','staff','bow','scepter','dagger'];base=Math.random()<.6?WEAPON_OF[line]:ws[Math.floor(Math.random()*ws.length)];}
   else base=['head','body','hands','feet','ring'][Math.floor(Math.random()*5)];
   return makeGear(base,lvl,rollRarity());}
-const iconSvg=(k,color)=>`<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[k]||''}</svg>`;
+/* filled tile icons in the painted icons' style (rounded tile, gold rim, glow of the item's colour, a solid silhouette
+   with a dark outline) for things that have no painted icon: wings and the new potions */
+const TILE_PATHS={
+  wings:'<path d="M12 9.6C10.3 5.9 6.2 4.2 2.4 5.3c.5 1.5 1.5 2.5 2.8 3.1-1 .3-1.9 1-2.3 2.1 1.4.4 2.9.4 4.2 0-.6 1-.8 2.1-.6 3.2 2.8-.2 5.1-2 6.1-4.1zM12 9.6c1.7-3.7 5.8-5.4 9.6-4.3-.5 1.5-1.5 2.5-2.8 3.1 1 .3 1.9 1 2.3 2.1-1.4.4-2.9.4-4.2 0 .6 1 .8 2.1.6 3.2-2.8-.2-5.1-2-6.1-4.1z"/><ellipse cx="12" cy="11.2" rx="1.4" ry="2.8"/>',
+  flask:'<path fill="rgba(235,245,255,.32)" d="M9.5 3.4h5M10.4 3.6v4.6l-4.7 8.1A3.2 3.2 0 0 0 8.5 21h7a3.2 3.2 0 0 0 2.8-4.7l-4.7-8.1V3.6z"/><path d="M7.3 14.6h9.4l1.3 2.2a2.2 2.2 0 0 1-1.9 3.2H7.9A2.2 2.2 0 0 1 6 16.8z"/><path fill="#fff" stroke="none" opacity=".7" d="M11 9.2l-1.4 2.4h1.1l1.2-2.1z"/>'};
+let TILE_N=0;
+const tileIcon=(k,color)=>{const id='ti'+(++TILE_N),body=TILE_PATHS[k]?`<g fill="${color}" stroke="#141026" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round" paint-order="stroke">${TILE_PATHS[k]}</g>`
+    :`<g transform="translate(3.6 3.6) scale(.7)" fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#141026" stroke-width="4.4">${ICON_PATHS[k]||''}</g><g stroke="${color}" stroke-width="2.3">${ICON_PATHS[k]||''}</g></g>`;
+  return `<svg class="tile" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="${id}" cx="50%" cy="42%" r="72%"><stop offset="0" stop-color="${color}" stop-opacity=".62"/><stop offset=".55" stop-color="${color}" stop-opacity=".22"/><stop offset="1" stop-color="#121733"/></radialGradient></defs>
+  <rect x="1" y="1" width="22" height="22" rx="4.6" fill="url(#${id})" stroke="#d8b35c" stroke-width="1.3"/><rect x="2.4" y="2.4" width="19.2" height="19.2" rx="3.6" fill="none" stroke="rgba(0,0,0,.45)" stroke-width=".8"/>
+  ${body}</svg>`;};
+const iconSvg=(k,color)=>TILE_PATHS[k]?tileIcon(k,color):`<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[k]||''}</svg>`;
 const STAT_INFO={STR:'+1 melee ATK (+0.2 ranged), bonus every 10',AGI:'+1 FLEE, faster attacks',VIT:'+1% max HP, +0.5 DEF, +0.2 MDEF, HP recovery',
   INT:'MATK, +1% max SP, shorter casts, SP recovery',DEX:'+1 HIT, ranged ATK, +0.2 melee ATK, shorter casts',LUK:'+0.3% critical, +0.2 ATK and MATK'};
 const STAT_KEYS=Object.keys(STAT_INFO);
@@ -2748,6 +2860,7 @@ const TownScreen={
   },
   /* ---------- setup ---------- */
   async start(c){
+    if(!BootAssets.ok) await BootAssets.start();     // never enter before the art is in
     this.ch=c;this._gt=null;this._mods=null;this.buffs={};this.invSel=null;c.quests=c.quests||{firstSteps:'active'};c.waystones=c.waystones||[];c.introSeen=true;
     c.baseLevel=c.baseLevel||1;c.baseExp=c.baseExp||0;if(c.hp==null||c.hp<=0) c.hp=this.maxHp();
     c.stats=c.stats||{STR:1,AGI:1,VIT:1,INT:1,DEX:1,LUK:1};c.statPoints=c.statPoints??statTotal(c.baseLevel);c.gold=c.gold??20;
@@ -4819,7 +4932,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12d';
+const BUILD='2026-11-12e';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
@@ -4865,13 +4978,10 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
     const sync=()=>{if(w){try{w.postMessage(document.hidden?50:0);return;}catch(e){w=null;}}
       clearInterval(iv);iv=document.hidden?setInterval(step,50):null;};     // no workers here: a slower timer still keeps it going
     document.addEventListener('visibilitychange',sync);sync();}
-  try{
-    await Promise.all(Object.keys(window.ASSET_MANIFEST).filter(k=>!Sprites.isMap(k)||k==='town').map(k=>Sprites.ensure(k)));
-    if(Sprites.heads) for(const g of ['m','f']) Sprites.heads.meta.styles[g].forEach((st,i)=>APPEARANCE.hairStyles[g].push({...st,source:'head',index:i}));
-  }
-  catch(e){document.body.insertAdjacentHTML('beforeend',`<div class="glass" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:24px;z-index:9;max-width:420px">Couldn't load the Recruit sprites (${esc(e.message)}). Serve this folder over http (e.g. <code>npx serve</code>) or open dist/index.html.</div>`);return;}
+  BootAssets.start().catch(()=>{});     // in the background: signing in doesn't wait for it, the next screen does
   Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();Updates.init();FS.init();
-  if(Auth.restore()){Store.useAccount(Auth.user);showScreen(Store.load().length?'screen-select':'screen-create');
+  PatchNotes.init();
+  if(Auth.restore()){Store.useAccount(Auth.user);afterAssets(()=>showScreen(Store.load().length?'screen-select':'screen-create'));
     if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
       else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
   else showScreen('screen-login');
