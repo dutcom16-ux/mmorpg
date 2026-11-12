@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mmo-server" content="wss://mmorpg.iamjohnwoo12.workers.dev/ws/world">
 <title>MMORPG ONLINE — Character Select</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -269,8 +272,8 @@ button{font:inherit;color:inherit}
 .minimap.min .mm-wrap{display:none}
 .minimap.min .mm-head{margin:0}
 /* shortcut icons */
-.shortcuts{display:flex;justify-content:space-between;gap:4px;padding:6px 8px}
-.shortcuts .ib{position:relative;width:40px;height:40px;border-radius:11px}
+.shortcuts{display:flex;justify-content:space-between;gap:4px;padding:6px}
+.shortcuts .ib{position:relative;width:36px;height:36px;border-radius:10px}
 .shortcuts .ib svg{width:21px;height:21px}
 .shortcuts .ib kbd{position:absolute;right:2px;bottom:1px;font:900 9px Nunito,sans-serif;color:var(--muted)}
 /* big map */
@@ -548,8 +551,12 @@ dl dd.main{color:var(--gold)}
 /* ---------- toast / modal ---------- */
 #toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-20px);z-index:20;padding:12px 18px;font-weight:800;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+#fs-float{position:fixed;right:12px;top:12px;z-index:25;width:38px;height:38px;border-radius:11px;background:rgba(10,16,38,.7)}
+body:has(#screen-town.shown) #fs-float,html.no-fs .fs-btn{display:none}
+.fs-btn svg{width:19px;height:19px}
 #upd{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:21;padding:10px 12px 10px 16px;align-items:center;gap:10px;font-weight:800;font-size:14px;max-width:94vw}
-#upd.on{display:flex}#upd .btn{min-height:34px;padding:5px 14px;font-size:13px}
+#upd.on{display:flex}#upd .btn{min-height:34px;padding:5px 14px;font-size:13px}#upd .upd-btns{display:flex;gap:8px;flex:none}
+@media (max-width:640px){#upd{flex-direction:column;align-items:stretch;text-align:center;bottom:auto;top:10px;font-size:13px}#upd .upd-btns{justify-content:center}}
 #modal{position:fixed;inset:0;z-index:30;background:rgba(3,6,18,.6);display:none;align-items:center;justify-content:center;padding:20px}
 #modal.on{display:flex}
 #modal .box{width:min(420px,100%);padding:24px}
@@ -661,9 +668,34 @@ dl dd.main{color:var(--gold)}
 }
 @media (max-width: 640px){ .eqwrap{grid-template-columns:1fr} }
 @media (prefers-reduced-motion: reduce){ .screen{transition:none} }
+/* ---------- touch devices: panels hug the edges, small enough to keep the middle of the screen clear ---------- */
+html.mobile .shortcuts{flex-wrap:wrap;justify-content:center;gap:4px;padding:5px 4px}
+html.mobile .hslot .tip{display:none!important}
+html.mobile .town-prompt{max-width:min(92vw,520px)}
+html.mobile .chatbox .chatlog{max-height:min(84px,18vh)}
+@media (max-width: 600px){
+  html.mobile .hud-right{width:min(150px,40vw);gap:5px}
+  html.mobile .minimap{padding:4px}html.mobile .minimap .mm-head{margin-bottom:3px}html.mobile .minimap .ib{min-width:24px;height:24px}
+  html.mobile .shortcuts{padding:4px}html.mobile .shortcuts .ib{width:34px;height:34px}
+  html.mobile .hud-tracker .qbody{max-height:26vh;overflow:auto}
+  html.mobile .hud-status{max-width:56vw}
+}
+@media (max-height: 500px){
+  html.mobile .hud-status{transform:scale(.8);transform-origin:top left}
+  html.mobile .hud-right{width:118px;gap:4px;right:max(8px,env(safe-area-inset-right))}
+  html.mobile .minimap{padding:3px}html.mobile .minimap .mm-name{display:none}html.mobile .minimap .mm-head{justify-content:flex-end;margin-bottom:2px}
+  html.mobile .minimap .ib{min-width:22px;height:22px}html.mobile .mm-zoom .ib{min-width:22px;height:22px}
+  html.mobile .shortcuts{padding:3px;gap:3px}html.mobile .shortcuts .ib{width:34px;height:30px}
+  html.mobile .hud-tracker{padding:5px 7px}html.mobile .hud-tracker .qbody{max-height:84px;overflow:auto}
+  html.mobile .chatbox{width:min(250px,34vw);bottom:8px}
+  html.mobile .party-frame{width:150px}
+  html.mobile .hotbar-wrap{bottom:6px}
+  html.mobile .dlg{bottom:4px;padding:10px}
+}
 </style>
 </head>
 <body>
+<button class="ib fs-btn" id="fs-float" type="button" title="Full screen" aria-label="Full screen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 <canvas id="bg" aria-hidden="true"></canvas>
 
 <div id="app">
@@ -816,6 +848,7 @@ dl dd.main{color:var(--gold)}
         <button class="ib" data-win="skillwin" title="Skills (K)" aria-label="Skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><kbd>K</kbd></button>
         <button class="ib" data-win="questwin" title="Quest journal (J)" aria-label="Quest journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><kbd>J</kbd></button>
         <button class="ib" data-win="charwin" title="Character stats (C)" aria-label="Character stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/></svg><kbd>C</kbd></button>
+        <button class="ib fs-btn" type="button" title="Full screen" aria-label="Full screen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
         <button class="ib" data-win="setwin" title="Settings (Esc)" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><kbd>Esc</kbd></button>
       </div>
       <div class="hud-tracker glass" id="hud-tracker"></div>
@@ -890,7 +923,7 @@ dl dd.main{color:var(--gold)}
 </div>
 
 <div id="toast" class="glass" role="status" aria-live="polite"></div>
-<div id="upd" class="glass" role="alert"><span>A new version of the game is out.</span><button class="btn primary" id="upd-go" type="button">Reload</button><button class="btn" id="upd-x" type="button" aria-label="Later">Later</button></div>
+<div id="upd" class="glass" role="alert"><span>A new game update is available. Please refresh your browser for the update to take effect.</span><span class="upd-btns"><button class="btn primary" id="upd-go" type="button">Refresh Now</button><button class="btn" id="upd-x" type="button">Later</button></span></div>
 <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="box glass"><h3 id="modal-title"></h3><p id="modal-text"></p><div class="row"><button class="btn" id="modal-no">Cancel</button><button class="btn btn-danger" id="modal-yes">Delete</button></div></div></div>
 
 <script>
@@ -957,6 +990,8 @@ const SKILLS={
 /* ----------------------------- Appearance ----------------------------- */
 /* Appearance lives on the character, never on the class. Job changes swap the
    sprite sheet; the same appearance is re-applied to whatever sheet is active. */
+/* head sprites: directions (sheet rows) that face the camera, and the chin line inside a head cell (px) */
+const HEAD_FRONT_DIRS=[0,1,7],HEAD_CHIN_Y=72,MAX_BASE=100;
 const APPEARANCE = {
   genders:[{id:'m',label:'Male'},{id:'f',label:'Female'}],
   /* index 0 = the class sheet's own painted head; the rest come from the hairstyle sheets (filled at boot). */
@@ -1198,18 +1233,24 @@ const Sprites={
       const body=pick(sheet.hctx.canvas),mc=memo('hmask',()=>pick(sheet.hmctx.canvas)),mx=mc.getContext('2d');
       const img=body.getContext('2d').getImageData(0,0,W,H);
       if(sl) this.recolor(img.data,mx.getImageData(0,0,W,H).data,null,sl,null);
-      ctx.putImageData(img,0,0);
+      const bc=makeCanvas(W,H);bc.getContext('2d').putImageData(img,0,0);
       const fgA=memo('fgA',()=>this.channelAlpha(mx,0,0,W,H,0));
-      const fg=makeCanvas(W,H),fx=fg.getContext('2d');fx.drawImage(c,0,0);fx.globalCompositeOperation='destination-in';fx.drawImage(fgA,0,0);
+      const fg=makeCanvas(W,H),fx=fg.getContext('2d');fx.drawImage(bc,0,0);fx.globalCompositeOperation='destination-in';fx.drawImage(fgA,0,0);
       const HM=this.heads.meta,HC=HM.cell,row=this.headRow(app2,st),place=meta.headPlace[g],hsc=(meta.headScaleG&&meta.headScaleG[g])||meta.headScale||1;
-      const drawHeads=(tctx,src)=>{for(let d=0;d<8;d++)frames.forEach((f,i)=>{const [x,y]=place[d][f];
-        tctx.save();tctx.beginPath();tctx.rect(i*CW,d*CH,CW,CH);tctx.clip();
-        tctx.drawImage(src,d*HC,0,HC,HC,i*CW+Math.round(x),d*CH+Math.round(y),HC*hsc,HC*hsc);tctx.restore();});};
+      /* facing the camera, long hair below the chin hangs BEHIND the shoulders and arms: that part is drawn before the
+         body, the rest (face, fringe, top) after it. Turned away or sideways the whole head stays on top. */
+      const drawHeads=(tctx,src,part)=>{for(let d=0;d<8;d++){const front=HEAD_FRONT_DIRS.includes(d);if(part==='low'&&!front) continue;
+        frames.forEach((f,i)=>{const [x,y]=place[d][f],cy=d*CH+Math.round(y)+Math.round(HEAD_CHIN_Y*hsc);
+        tctx.save();tctx.beginPath();
+        if(part==='low') tctx.rect(i*CW,cy,CW,(d+1)*CH-cy);else if(part==='high'&&front) tctx.rect(i*CW,d*CH,CW,cy-d*CH);else tctx.rect(i*CW,d*CH,CW,CH);
+        tctx.clip();tctx.drawImage(src,d*HC,0,HC,HC,i*CW+Math.round(x),d*CH+Math.round(y),HC*hsc,HC*hsc);tctx.restore();});}};
       // hats and hoods: the head layer is cut where the headwear covers it (B channel of the headless mask)
       const occA=meta.cover?memo('occA',()=>this.channelAlpha(mx,0,0,W,H,2)):null;
-      const headLayer=src=>{const L=makeCanvas(W,H),lx=L.getContext('2d');drawHeads(lx,src);
+      const headLayer=(src,part)=>{const L=makeCanvas(W,H),lx=L.getContext('2d');drawHeads(lx,src,part);
         if(occA){lx.globalCompositeOperation='destination-out';lx.drawImage(occA,0,0);}return L;};
-      ctx.drawImage(headLayer(row),0,0);
+      ctx.drawImage(headLayer(row,'low'),0,0);
+      ctx.drawImage(bc,0,0);
+      ctx.drawImage(headLayer(row,'high'),0,0);
       ctx.drawImage(fg,0,0);
       if(app.faceMark&&app.faceMark!=='none'){
         const H2=this.heads,rowIdx=(g==='m'?0:12)+st.index;
@@ -1549,7 +1590,7 @@ class Falcon{
     const [CW,CH]=F.meta.cell,A=F.meta.anim,d=owner.dir,[fx,fy]=FACING[d];
     const side=(d>=5&&d<=7)?-1:1;                                     // trail behind the owner's shoulder
     const t=REDUCED?0:now/1000;
-    const fs=.82*s;                                                    // falcon a little smaller than its owner's head+torso
+    const fs=.943*s;                                                   // falcon (15% larger than it was)
     const hx=x+side*50*s, hy=y-128*s+Math.sin(t*3.1)*4*s;
     let px=hx,py=hy,frame=A.hover[Math.floor(t*9)%A.hover.length],dir=d;
     if(this.state==='sweep'){
@@ -1561,13 +1602,23 @@ class Falcon{
         px=hx+(tx-hx)*p; py=hy+(ty-hy)*p-Math.sin(k*Math.PI)*10*s;
         frame=A.sweep[Math.min(A.sweep.length-1,Math.floor(k*A.sweep.length))];
         if(target) dir=k<.5?(tx>hx?6:2):(tx>hx?2:6);
-        if(!this.hitShown&&k>=.45){this.hitShown=true;this.texts.push({x:tx,y:ty-18*s,t:now});}
+        if(!this.hitShown&&k>=.45){this.hitShown=true;this.texts.push({x:tx,y:ty-18*s,t:now});this.claws={x:tx,y:ty,t:now,s,side:tx>hx?1:-1};}
+        (this.trail=this.trail||[]).push([px,py,now]);
       }
     }
+    // swoop trail: a fading streak along the dive
+    if(this.trail&&this.trail.length){this.trail=this.trail.filter(q=>now-q[2]<180);if(this.trail.length>1&&!SETTINGS.lowfx){ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+      for(let i=1;i<this.trail.length;i++){const a=this.trail[i-1],b=this.trail[i],e=1-(now-b[2])/180;ctx.strokeStyle=`rgba(190,255,235,${.5*e})`;ctx.lineWidth=7*s*e;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}ctx.restore();}}
     ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.globalAlpha=.25;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(px,y+2,14*s,4*s,0,0,7);ctx.fill();ctx.globalAlpha=1;
     ctx.drawImage(F.canvas,frame*CW,dir*CH,CW,CH,px-CW/2*fs,py-CH/2*fs,CW*fs,CH*fs);
     ctx.restore();
+    // claw slashes and a quick flash where the talons hit
+    const C=this.claws;if(C&&now-C.t<340){const e=(now-C.t)/340,u=C.s;ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+      const g=ctx.createRadialGradient(C.x,C.y,0,C.x,C.y,26*u*(.5+e));g.addColorStop(0,`rgba(255,255,255,${.6*(1-e)})`);g.addColorStop(1,'rgba(160,255,220,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(C.x,C.y,26*u*(.5+e),0,7);ctx.fill();
+      for(let i=-1;i<=1;i++){const k2=Math.min(1,e*3),x0=C.x-16*u*C.side,y0=C.y-14*u+i*7*u,x1=C.x+16*u*C.side,y1=C.y+10*u+i*7*u;
+        ctx.strokeStyle=`rgba(230,255,248,${1-e})`;ctx.lineWidth=(2.6-Math.abs(i)*.6)*u;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(C.x,C.y-2*u+i*7*u,x0+(x1-x0)*k2,y0+(y1-y0)*k2);ctx.stroke();}
+      ctx.restore();}
     // floating "GALE SWEEP!" text
     this.texts=this.texts.filter(o=>now-o.t<800);
     for(const o of this.texts){const k=(now-o.t)/800;ctx.save();ctx.globalAlpha=1-k;
@@ -1942,6 +1993,7 @@ const LINES={
 /* job lines: max HP / SP multipliers and the base time between basic attacks (s) */
 const HP_MOD={Recruit:1,Melee:1.2,Stealth:.95,Ranged:.9,Magic:.8,Support:.9},SP_MOD={Recruit:1,Melee:.8,Stealth:.9,Ranged:1,Magic:1.5,Support:1.4};
 const ASPD_BASE={Recruit:.95,Melee:.85,Stealth:.75,Ranged:1,Magic:1.1,Support:1.05};
+const ASPD_BOOST=1.2,CAST_SCALE=.8;   // everyone attacks 20% faster and casts 20% quicker than the base formulas
 /* stat points: Floor((Lv-1)/5)+3 on reaching each level (48 at the start: 1,225 more by Level 99);
    raising a stat from X costs Floor((X-1)/10)+2; stats go up to 99 */
 const STAT_MAX=99,statGain=n=>Math.floor((n-1)/5)+3,raiseCost=x=>Math.floor((x-1)/10)+2;
@@ -2133,7 +2185,7 @@ const NUM_PAINT={normal:['#ffffff','#d8dde8','#1a1f2e'],skill:['#fff6c0','#ffb02
   lightning:['#fffbe0','#ffd23a','#2a1a4a'],poison:['#ffe6f6','#ff5ab4','#3a0628']};
 /* ------------------------------ settings ------------------------------
    graphics, sound and HUD layout; saved on this device (not on the character) */
-const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8};
+const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8,touchInit:false};
   try{return {...D,...JSON.parse(localStorage.getItem('mmorpg-online.settings.v1')||'{}')};}catch(e){return D;}})();
 function saveSettings(){try{localStorage.setItem('mmorpg-online.settings.v1',JSON.stringify(SETTINGS));}catch(e){}}
 /* ------------------------------ sound ------------------------------
@@ -2338,9 +2390,10 @@ const MOB_ARMOR={slime:[.6,.8],boar:[1.1,.7],treant:[1.3,.9],fishman:[.9,1],crab
   drake:[1.3,1.2],cloud:[.6,1.4],wolf:[.9,.8],gargoyle:[1.5,1.1]};
 /* numbers for a monster of this kind at this level (Slime Lv 2: 92 HP, 4% armour, hits 3-5, 21 EXP).
    dp / mp: the share of a weapon hit / a spell it shrugs off (criticals go through armour, poison and burns ignore both) */
-function mobStats(kind,lvl){const D=MOB_DEFS[kind],L=lvl||D.lvl,b=1.5+L*1.1,A=MOB_ARMOR[kind]||[1,1];
-  return {lvl:L,hp:Math.round(D.hp*(40+L*26)),atk:[Math.round(D.atk*b*.8),Math.round(D.atk*b*1.35)],exp:Math.round(D.exp*(4+L*5)*1.5),
-    dp:Math.min(.5,(4+L*.5)/100*A[0]),mp:Math.min(.45,(3+L*.4)/100*A[1])};}
+function mobStats(kind,lvl){const D=MOB_DEFS[kind],L=lvl||D.lvl,b=1.5+L*1.1,A=MOB_ARMOR[kind]||[1,1],T=L>10?MOB_TOUGH:1;   // above Lv 10: 12% more HP, damage and defence
+  return {lvl:L,hp:Math.round(D.hp*(40+L*26)*T),atk:[Math.round(D.atk*b*.8*T),Math.round(D.atk*b*1.35*T)],exp:Math.round(D.exp*(4+L*5)*1.5),
+    dp:Math.min(.5,(4+L*.5)/100*A[0]*T),mp:Math.min(.45,(3+L*.4)/100*A[1]*T)};}
+const MOB_TOUGH=1.12;
 /* the long road: hunting quests from Level 3 to 100, one at a time. Each starts by itself once you reach its level
    (and the one before is done) and pays out the moment the last monster falls, wherever you are.
    goals: [monster, map, how many]; level: reach that Base Level instead */
@@ -2548,6 +2601,7 @@ const TownScreen={
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
     this.dlg=null;this.keys.clear();this.dead=null;this.travelling=false;$('#map-fade').classList.remove('on');
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);
+    if(IS_TOUCH&&!SETTINGS.touchInit){SETTINGS.touchInit=true;SETTINGS.chatMin=true;saveSettings();}
     this.chat=[];this.unread=0;$('#chatlog').innerHTML='';this.chatMin(SETTINGS.chatMin);this.log('sys',null,'Press Enter to chat · /help for commands');this.pillT=0;
     if(Net.room) this.log('sys',null,`Online${Net.kind==='claude'?' (claude.ai world)':''}: other players in your map appear with green names. P opens the Party window with everyone who is online.`);
     let id=c.map&&c.map!=='oakhaven'&&Sprites.isMap(c.map)?c.map:'town';
@@ -2633,9 +2687,9 @@ const TownScreen={
     return Math.floor((40+(L-1)*3+t*20)*(SP_MOD[this.line()]||1)*(1+S.INT/100)*(1+(M.spPct||0)));},
   line(){return lineOf(this.ch.job.classId);},
   reach(){const R=LINES[this.line()].reach;return R>40?R+(this.mods().range||0):R;},
-  swingCd(){const S=this.st(),M=this.mods();return Math.max(.3,(ASPD_BASE[this.line()]||.95)*Math.max(.35,1-S.AGI*.004-S.DEX*.001)/(1+(M.aspd||0)));},
+  swingCd(){const S=this.st(),M=this.mods();return Math.max(.25,(ASPD_BASE[this.line()]||.95)*Math.max(.35,1-S.AGI*.004-S.DEX*.001)/(1+(M.aspd||0))/ASPD_BOOST);},
   aspd(){return Math.min(190,Math.round(200-this.swingCd()*50));},
-  castMul(){const S=this.st(),M=this.mods();return Math.max(0,1-(S.DEX*2+S.INT)/530)*Math.max(.2,1-(M.castPct||0));},
+  castMul(){const S=this.st(),M=this.mods();return Math.max(0,1-(S.DEX*2+S.INT)/530)*Math.max(.2,1-(M.castPct||0))*CAST_SCALE;},
   castTime(s,r){return SV(s.cast||0,r)*this.castMul();},
   cdOf(s,r){return SV(s.cd,r)*(1-Math.min(.5,this.mods().cdPct||0));},
   costOf(s,r){return Math.max(0,Math.round(SV(s.cost,r)));},
@@ -2678,7 +2732,7 @@ const TownScreen={
     this.fx.push({x:this.p.x,y:this.p.y-80,text:s.name,color:s.color,t0:now,label:true});
     if(s.k==='heal'||s.k==='buff'||s.k==='veil'){this.skillEffect(s,m,now,r,at,ally);return;}
     AudioFX.sfx(s.mag||s.shot?'spell':'swing');
-    this.atk={t0:now,mob:m,hit:false,skill:s,rank:r,at};this.nextSwing=now+this.swingCd()*1000;if(this.mp) this.mp.at=[++Net.seq,this.dir];},
+    this.atk={t0:now,mob:m,hit:false,skill:s,rank:r,at,dur:Math.min(ATK_T,this.swingCd())};this.nextSwing=now+this.swingCd()*1000;if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   resName(){return (JOBS[this.ch.job.classId]||JOBS.recruit).resource||'Stamina';},
   /* do something a little later (multi-hit skills, falcon strikes): runs from the game loop, dropped on map change */
   later(t,fn){(this.laters=this.laters||[]).push({t,fn});},
@@ -3315,7 +3369,7 @@ const TownScreen={
       else if(this.path){this.path=null;}
       this.dir=dirOf(vx,vy);this.moving=true;this.walkT+=dt;}
     else this.moving=false;
-    if(this.atk){const e=(now-this.atk.t0)/1000;if(!this.atk.hit&&e>=ATK_T*ATK_HIT){this.atk.hit=true;this.release(this.atk,now);}if(e>=ATK_T) this.atk=null;}
+    if(this.atk){const e=(now-this.atk.t0)/1000,D=this.atk.dur||ATK_T;if(!this.atk.hit&&e>=D*ATK_HIT){this.atk.hit=true;this.release(this.atk,now);}if(e>=D) this.atk=null;}
     // Waystone attunes on approach
     if(this.meta.waystone&&!this.ch.waystones.includes('oakhaven')&&this.nearWaystone()){this.ch.waystones.push('oakhaven');this.log('sys',null,'Waystone attuned · Oakhaven Sanctuary');toast('Waystone attuned · Oakhaven Sanctuary');this.tracker();this.save();}
     // portals: step in to travel (you arrive outside the far one, so walk off before it works again)
@@ -3690,7 +3744,7 @@ const TownScreen={
         if(!G[j]||done[j]===gen) continue;if(dx&&dy&&(!G[y*W+nx]||!G[ny*W+x])) continue;const ng=g[i]+(dx&&dy?1.414:1);
         if(seen[j]!==gen||ng<g[j]){seen[j]=gen;g[j]=ng;heap.push(ng+h(nx,ny),j);}}}
     return null;},
-  swing(m,now){this.atk={t0:now,mob:m,hit:false};this.nextSwing=now+this.swingCd()*1000;this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);if(this.mp) this.mp.at=[++Net.seq,this.dir];},
+  swing(m,now){this.atk={t0:now,mob:m,hit:false,dur:Math.min(ATK_T,this.swingCd())};this.nextSwing=now+this.swingCd()*1000;this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);if(this.mp) this.mp.at=[++Net.seq,this.dir];},
   /* facing for a fight: sheets whose swing is drawn on the diagonals only (the Recruit's attack sheet) turn the
      character to the nearest diagonal, so the drawn body and the hairstyle head face the same way */
   faceTo(dx,dy){return this.comp&&this.comp.meta.attackDiag?(dy>=0?(dx>=0?7:1):(dx>=0?5:3)):dirOf(dx,dy);},
@@ -4024,7 +4078,7 @@ const TownScreen={
     this.gainExp(m.exp);},
   gainExp(n,why){const c=this.ch;c.baseExp=(c.baseExp||0)+n;c.job.jobExp=(c.job.jobExp||0)+Math.round(n*.75);
     if(why) this.log('loot',null,`${why} · +${n} EXP`);
-    while(c.baseExp>=expNeed(c.baseLevel)&&c.baseLevel<100){c.baseExp-=expNeed(c.baseLevel);c.baseLevel++;c.statPoints=(c.statPoints||0)+statGain(c.baseLevel);c.hp=this.maxHp();this.res=this.maxRes();
+    while(c.baseExp>=expNeed(c.baseLevel)&&c.baseLevel<MAX_BASE){c.baseExp-=expNeed(c.baseLevel);c.baseLevel++;c.statPoints=(c.statPoints||0)+statGain(c.baseLevel);c.hp=this.maxHp();this.res=this.maxRes();
       if(c.baseLevel===10&&c.job.classId==='recruit') setTimeout(()=>{toast('Level 10 · Elder Fin has your Ascension Trial');this.log('sys',null,'Elder Fin in Oakhaven is waiting to set your Ascension Trial.');},1400);
       this.fx.push({x:this.p.x,y:this.p.y-72,text:'LEVEL UP!',color:'#7fe3ff',t0:performance.now(),big:true});AudioFX.sfx('level');toast(`Base Level ${c.baseLevel}!`);this.log('sys',null,`Base Level ${c.baseLevel} · +${statGain(c.baseLevel)} stat points`);}
     while(c.job.jobExp>=jobNeed(c.job.jobLevel||1)&&(c.job.jobLevel||1)<50){c.job.jobExp-=jobNeed(c.job.jobLevel||1);c.job.jobLevel=(c.job.jobLevel||1)+1;c.skillPoints=(c.skillPoints||0)+1;this.log('sys',null,`Job Level ${c.job.jobLevel} · +1 skill point`);}
@@ -4141,24 +4195,34 @@ const TownScreen={
       ctx.save();ctx.globalAlpha=.42;ctx.drawImage(s,o.x0,o.y0,W2,H2);ctx.restore();}
     return o.n;
   },
-  drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,
-      dead:!!this.dead,veil:now<this.veilUntil,hurtT:this.hurtT,j:this.ch.job.classId,falcon:this.falcon},this.pocc||(this.pocc={}),now);},
+  drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,atkDur:this.atk&&this.atk.dur,
+      dead:!!this.dead,veil:now<this.veilUntil,hurtT:this.hurtT,j:this.ch.job.classId,falcon:this.falcon,lv:this.ch.baseLevel},this.pocc||(this.pocc={}),now);},
   drawRemote(ctx,o,now){if(!o.comp) return;if(o.j==='skywarden'&&!o.falcon) o.falcon=new Falcon();
-    this.drawHero(ctx,{comp:o.comp,pk:o.pk,x:o.x,y:o.y,dir:o.dir,moving:o.moving,walkT:o.walkT,atkT:o.atkT,dead:o.dead,veil:o.veil,hurtT:o.hurtT,j:o.j,falcon:o.falcon},o.occ||(o.occ={}),now);},
+    this.drawHero(ctx,{comp:o.comp,pk:o.pk,x:o.x,y:o.y,dir:o.dir,moving:o.moving,walkT:o.walkT,atkT:o.atkT,dead:o.dead,veil:o.veil,hurtT:o.hurtT,j:o.j,falcon:o.falcon,lv:o.lv},o.occ||(o.occ={}),now);},
   drawHero(ctx,h,occ,now){
     const comp=h.comp,m=comp.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,A=m.anim||{},k=h.pk,x=h.x,y=h.y;
     let fr=0,bob=0;const swing=A.attack&&A.attack.length>1?(A.attack[0]===((A.idle||[0])[0])?A.attack.slice(1):A.attack):null;   // skip the standing pose
-    const ae=(now-h.atkT)/1000/ATK_T;
+    const ae=(now-h.atkT)/1000/(h.atkDur||ATK_T);
     if(ae>=0&&ae<1&&swing){fr=swing[Math.min(swing.length-1,Math.floor(ae*swing.length))];}
     else if(h.moving){if(A.walk&&A.walk.length>1) fr=A.walk[Math.floor(h.walkT*8)%A.walk.length];else bob=-Math.abs(Math.sin(h.walkT*10))*2.4;}
     else bob=REDUCED?0:Math.sin(now/560)*.35;
     const ci=comp.col&&comp.col[fr]!==undefined?comp.col[fr]:0;
     ctx.save();ctx.globalAlpha=.3;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(x,y,12,4,0,0,7);ctx.fill();ctx.restore();
+    if(h.lv>=MAX_BASE&&!h.dead) this.drawAura(ctx,x,y,now,false);
     ctx.save();if(h.dead){ctx.globalAlpha=.55;ctx.filter='grayscale(1) brightness(.8)';}else if(h.veil) ctx.globalAlpha=.42;else if(now-h.hurtT<130) ctx.filter='brightness(1.9) saturate(.5)';
     ctx.drawImage(comp.canvas,ci*CW,h.dir*CH,CW,CH,x-ax*k,y-ay*k+bob,CW*k,CH*k);ctx.restore();
     this.occlude(ctx,occ,x-ax*k,y-ay*k+bob,CW*k,CH*k,y,true,{img:comp.canvas,sx:ci*CW,sy:h.dir*CH,sw:CW,sh:CH,dx:x-ax*k,dy:y-ay*k+bob,dw:CW*k,dh:CH*k});
+    if(h.lv>=MAX_BASE&&!h.dead) this.drawAura(ctx,x,y,now,true);
     if(h.j==='skywarden'&&h.falcon) h.falcon.draw(ctx,{dir:h.dir},x,y,k/(m.displayScale||1),now);
   },
+  /* the max-level aura: a soft golden glow and slow ring at the feet (under), light motes rising around (over) */
+  drawAura(ctx,x,y,now,over){const t=REDUCED?0:now/1000;ctx.save();ctx.globalCompositeOperation='lighter';
+    if(!over){const g=ctx.createRadialGradient(x,y-34,4,x,y-30,46);g.addColorStop(0,'rgba(255,214,120,.26)');g.addColorStop(1,'rgba(255,214,120,0)');ctx.fillStyle=g;ctx.fillRect(x-48,y-80,96,90);
+      ctx.strokeStyle=`rgba(255,220,130,${.55+.2*Math.sin(t*3)})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(x,y,20,7.5,0,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba(255,240,190,.5)';ctx.lineWidth=1;ctx.setLineDash([4,6]);ctx.lineDashOffset=-t*14;ctx.beginPath();ctx.ellipse(x,y,25,9.5,0,0,7);ctx.stroke();ctx.setLineDash([]);}
+    else if(!SETTINGS.lowfx){ctx.fillStyle='#ffe7a8';for(let i=0;i<8;i++){const ph=(t*.55+i/8)%1,an=i*2.4+t*.8;ctx.globalAlpha=Math.sin(ph*Math.PI)*.9;
+      ctx.beginPath();ctx.arc(x+Math.cos(an)*17,y-4-ph*62+Math.sin(an)*5,1.4+((i%3)===0?.8:0),0,7);ctx.fill();}}
+    ctx.restore();},
   drawWaystone(ctx,now){const [wx,wy]=this.meta.waystone,t=REDUCED?0:now/1000,att=this.ch.waystones.includes('oakhaven');
     const g=ctx.createRadialGradient(wx,wy-10,0,wx,wy-10,58);const a=(att?.30:.42)+.12*Math.sin(t*2.2);
     g.addColorStop(0,`rgba(150,235,255,${a})`);g.addColorStop(.5,`rgba(110,210,255,${a*.45})`);g.addColorStop(1,'rgba(110,210,255,0)');
@@ -4355,15 +4419,31 @@ function serverUrl(){const q=new URLSearchParams(location.search).get('server');
   if(v) return abs(v);
   if(/^https?:$/.test(location.protocol)&&!/^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)) return abs('/ws/world');
   return null;}
+/* phones and tablets: a touch-first layout (html.mobile) */
+const IS_TOUCH=(()=>{try{return matchMedia('(pointer: coarse)').matches||/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));}catch(e){return false;}})();
+document.documentElement.classList.toggle('mobile',IS_TOUCH);
+/* full screen: the buttons show the current state; Esc (or the button) leaves it. Hidden where the browser can't (iPhone: add to Home Screen instead) */
+const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenElement);},
+  ok(){return !!(document.fullscreenEnabled||document.webkitFullscreenEnabled);},
+  async toggle(){try{if(this.on()) await (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+      else{const e=document.documentElement;await (e.requestFullscreen||e.webkitRequestFullscreen).call(e,{navigationUI:'hide'});}}catch(err){toast('Full screen is not available here');}},
+  sync(){const on=this.on();document.documentElement.classList.toggle('is-fs',on);
+    for(const b of document.querySelectorAll('.fs-btn')){b.setAttribute('aria-pressed',String(on));b.title=on?'Exit full screen (Esc)':'Full screen';b.setAttribute('aria-label',b.title);
+      b.querySelector('svg').innerHTML=on?'<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>':'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>';}},
+  init(){document.documentElement.classList.toggle('no-fs',!this.ok());for(const b of document.querySelectorAll('.fs-btn')) b.addEventListener('click',()=>{this.toggle();});
+    document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-12a';
+const BUILD='2026-11-12b';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
-  offer(){if(this.shown) return;this.shown=true;$('#upd').classList.add('on');$('#upd-go').onclick=()=>location.reload();$('#upd-x').onclick=()=>$('#upd').classList.remove('on');},
+  /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
+  offer(){if(this.shown||Date.now()<(this.snooze||0)) return;this.shown=true;$('#upd').classList.add('on');
+    $('#upd-go').onclick=async()=>{$('#upd-go').disabled=true;try{if(activeScreen===TownScreen&&TownScreen.ch){TownScreen.save();if(typeof Cloud!=='undefined'&&Cloud.push) await Promise.race([Cloud.push(),new Promise(r=>setTimeout(r,2500))]);}}catch(e){}location.reload();};
+    $('#upd-x').onclick=()=>{$('#upd').classList.remove('on');this.shown=false;this.snooze=Date.now()+10*60000;};},
   async check(){if(window.claude||!/^https?:$/.test(location.protocol)) return;
     try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const m=/build:\s*(\S+)/.exec(await r.text());if(m&&this.newer(m[1])) this.offer();}catch(e){}},
-  init(){this.check();setInterval(()=>this.check(),5*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden) this.check();});}};
+  init(){this.check();setInterval(()=>this.check(),2*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden) this.check();});}};
 const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,pe:[],peN:0,lobby:new Map(),since:0,kind:null,where:'',tries:0,
   /* the claude.ai link has its own room; the hosted links (Cloudflare, Vercel) share the game server. A failed
      connection is tried again every little while, so a bad moment on a phone network doesn't leave you alone */
@@ -4405,7 +4485,7 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
     if(Sprites.heads) for(const g of ['m','f']) Sprites.heads.meta.styles[g].forEach((st,i)=>APPEARANCE.hairStyles[g].push({...st,source:'head',index:i}));
   }
   catch(e){document.body.insertAdjacentHTML('beforeend',`<div class="glass" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);padding:24px;z-index:9;max-width:420px">Couldn't load the Recruit sprites (${esc(e.message)}). Serve this folder over http (e.g. <code>npx serve</code>) or open dist/index.html.</div>`);return;}
-  Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();Updates.init();
+  Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();Updates.init();FS.init();
   if(Auth.restore()){Store.useAccount(Auth.user);showScreen(Store.load().length?'screen-select':'screen-create');
     if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
       else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
