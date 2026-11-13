@@ -11,6 +11,12 @@
                        {t:'p', from, p}                                 someone's new presence
                        {t:'bye', from}                                  someone left
      client -> server  {t:'p', p}                                       my presence (whole object)
+                       {t:'auth', tk}                                   who I am: my sign-in token (or null to forget)
+     server -> client  {t:'auth', gm}                                   gm: the account name if it is a GameMaster, else null
+
+   GameMasters: the accounts named in GM_USERS (wrangler.jsonc vars). After a GameMaster's game sends its token, the
+   room stamps p.gm = the account name on everything that player sends, and removes any gm a player wrote
+   themselves; the games trust GameMaster actions (items, gold, levels, bosses) only from presences stamped here.
 
    Uses the WebSocket Hibernation API, so an idle room costs nothing; the players' games re-send their
    presence every couple of seconds, which rebuilds the room's memory after it wakes up. */
@@ -18,6 +24,7 @@ import { DurableObject } from 'cloudflare:workers';
 
 const MAX_MSG = 6000;        // a presence is at most 4 KB of JSON; anything bigger is dropped
 const MAX_PLAYERS = 200;
+const gmList = env => String((env && env.GM_USERS) || '').toLowerCase().split(/[\s,]+/).filter(Boolean);
 
 /* answers to the game's pages on other sites (the Vercel link) may be read too: sign-in uses a token, not cookies */
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -65,14 +72,35 @@ export class GameRoom extends DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  webSocketMessage(ws, message) {
+  async webSocketMessage(ws, message) {
     if (typeof message !== 'string' || message.length > MAX_MSG) return;
     let d;
     try { d = JSON.parse(message); } catch (e) { return; }
     const a = ws.deserializeAttachment();
-    if (!a || !d || d.t !== 'p' || !d.p || typeof d.p !== 'object' || Array.isArray(d.p)) return;
+    if (!a || !d) return;
+    if (d.t === 'auth') { await this.auth(ws, a, d.tk); return; }
+    if (d.t !== 'p' || !d.p || typeof d.p !== 'object' || Array.isArray(d.p)) return;
+    delete d.p.gm;
+    if (a.gm) d.p.gm = a.gm;                         // only the room says who is a GameMaster
     this.pres.set(a.id, d.p);
     this.broadcast(ws, JSON.stringify({ t: 'p', from: a.id, p: d.p }));
+  }
+
+  /* a sign-in token -> the account, checked with the account store; a GameMaster account is remembered on the socket */
+  async auth(ws, a, tk) {
+    a.tries = (a.tries || 0) + 1;
+    if (a.tries > 6) return;
+    let gm = null;
+    if (typeof tk === 'string' && /^[0-9a-f]{64}$/.test(tk) && this.env && this.env.ACCOUNTS) {
+      try {
+        const st = this.env.ACCOUNTS.get(this.env.ACCOUNTS.idFromName('main'));
+        const r = await st.fetch(new Request('https://accounts/api/me', { headers: { authorization: 'Bearer ' + tk } }));
+        const o = r.ok ? await r.json() : null;
+        if (o && o.gm && typeof o.name === 'string') gm = o.name;
+      } catch (e) {}
+    }
+    a.gm = gm; ws.serializeAttachment(a);
+    try { ws.send(JSON.stringify({ t: 'auth', gm })); } catch (e) {}
   }
 
   webSocketClose(ws, code) {
@@ -106,6 +134,7 @@ export class GameRoom extends DurableObject {
      GET  /api/chars              the account's characters   -> {chars:[{id, t, data}], gone:{id: time}}
      POST /api/chars    {put:[{id, t, data}], del:[id]}       save changed characters, delete others
      POST /api/logout             end this sign-in
+     GET  /api/me                 who this sign-in is        -> {name, gm}   (gm: a GameMaster account)
 
    u is the username (3-16 letters, numbers or _). v is not the password: the browser stretches the password
    (PBKDF2-SHA-256, 150,000 rounds, salted with the game name and the username) and sends only that key. The server
@@ -131,11 +160,14 @@ export class AccountStore extends DurableObject {
       if (path === 'chars' && request.method === 'GET') return await this.chars(me);
       if (path === 'chars' && request.method === 'POST') return await this.save(me, await this.body(request));
       if (path === 'logout' && request.method === 'POST') { await this.ctx.storage.delete('s:' + me.th); return json({ ok: true }); }
+      if (path === 'me' && request.method === 'GET') { const a = await this.ctx.storage.get('a:' + me.u); return json({ name: a ? a.name : me.u, gm: this.isGM(me.u) }); }
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: e.status ? e.message : 'Server error', code: e.code }, e.status || 500);
     }
   }
+
+  isGM(low) { return gmList(this.env).includes(String(low).toLowerCase()); }
 
   async body(request) {
     const t = await request.text();
@@ -166,7 +198,7 @@ export class AccountStore extends DurableObject {
     const salt = randomHex(16);
     await S.put('a:' + low, { name: u, salt, hash: await sha256(salt + v), created: now, fails: 0, lockUntil: 0 });
     lim.n++; await S.put('r:' + ip, lim);
-    return json({ token: await this.session(low), name: u });
+    return json({ token: await this.session(low), name: u, gm: this.isGM(low) });
   }
 
   async login(o) {
@@ -181,7 +213,7 @@ export class AccountStore extends DurableObject {
       throw fail(401, 'Wrong username or password.');
     }
     a.fails = 0; a.last = now; await S.put('a:' + low, a);
-    return json({ token: await this.session(low), name: a.name });
+    return json({ token: await this.session(low), name: a.name, gm: this.isGM(low) });
   }
 
   async who(request) {

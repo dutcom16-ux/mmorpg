@@ -1237,7 +1237,7 @@ const SKILLS={
 /* Appearance lives on the character, never on the class. Job changes swap the
    sprite sheet; the same appearance is re-applied to whatever sheet is active. */
 /* head sprites: directions (sheet rows) that face the camera, and the chin line inside a head cell (px) */
-const HEAD_FRONT_DIRS=[0,1,7],HEAD_CHIN_Y=72,MAX_BASE=100;
+const HEAD_FRONT_DIRS=[0,1,7],HEAD_CHIN_Y=72,MAX_BASE=100,MAX_JOB=70;
 /* wings: drawn over the body when the character faces away (rows 3-5), behind it otherwise */
 const WING_FRONT_DIRS=[3,4,5];
 /* wing kinds 5 and 6 are the god-tier wings (godwings atlas, cut from the reference sheets): a back layer and a front
@@ -1666,10 +1666,12 @@ const Cloud={base:null,token:null,name:null,key:'mmorpg-online.cloud.v1',sent:{}
         headers:{...(b!==undefined?{'content-type':'application/json'}:{}),...(this.token?{authorization:'Bearer '+this.token}:{})},body:b});
       let d={};try{d=await r.json();}catch(e){}return {status:r.status,ok:r.ok,...d};}
     catch(e){return {status:0,ok:false,error:"Can't reach the game server right now."};}finally{clearTimeout(to);}},
-  remember(token,name,low,keep){this.token=token;this.name=name;this.sent={};const v=JSON.stringify({token,name,u:low});
+  remember(token,name,low,keep,gm){this.token=token;this.name=name;this.gm=!!gm;this.sent={};Net.auth();const v=JSON.stringify({token,name,u:low});
     try{(keep?localStorage:sessionStorage).setItem(this.key,v);(keep?sessionStorage:localStorage).removeItem(this.key);}catch(e){}},
   restore(){for(const st of [sessionStorage,localStorage]){try{const s=JSON.parse(st.getItem(this.key)||'null');if(s&&s.token&&s.u){this.token=s.token;this.name=s.name;return s;}}catch(e){}}return null;},
-  forget(){clearTimeout(this.timer);this.timer=0;this.token=null;this.name=null;this.sent={};this.gone.clear();try{localStorage.removeItem(this.key);sessionStorage.removeItem(this.key);}catch(e){}},
+  /* GameMaster: the server says so (login answer, or /api/me for a saved sign-in); the room checks again on its own */
+  async whoami(){if(!this.token) return;const r=await this.api('me');if(r.ok){this.gm=!!r.gm;Net.auth();}},
+  forget(){clearTimeout(this.timer);this.timer=0;this.token=null;this.name=null;this.gm=false;Net.auth();this.sent={};this.gone.clear();try{localStorage.removeItem(this.key);sessionStorage.removeItem(this.key);}catch(e){}},
   /* this browser's characters and the server's come together: the newer copy of each wins, deletions stick */
   async pull(){const r=await this.api('chars');if(!r.ok) return r;const L=Store.load(),gone=r.gone||{};let changed=false;
     for(const it of r.chars||[]){const c=it.data;if(!c||!c.id) continue;
@@ -1700,7 +1702,7 @@ const Auth={key:'mmorpg-online.accounts.v1',sessKey:'mmorpg-online.session.v1',u
   same(a,b){if(a.length!==b.length) return false;let d=0;for(let i=0;i<a.length;i++) d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;},
   async register(name,pw,remember){
     if(Cloud.on()){const low=name.toLowerCase(),r=await Cloud.api('register',{u:name,v:await Cloud.key4(name,pw)});
-      if(r.ok){Cloud.remember(r.token,r.name,low,remember);const claimed=Store.claimLegacy(low);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
+      if(r.ok){Cloud.remember(r.token,r.name,low,remember,r.gm);const claimed=Store.claimLegacy(low);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
         return {ok:true,id:low,name:r.name,isNew:true,claimed,online:true};}
       if(r.status) return {ok:false,error:r.error||'Could not create the account.'};
       // no server right now: fall through to an account on this device (it moves online the first time you sign in with the server up)
@@ -1712,11 +1714,11 @@ const Auth={key:'mmorpg-online.accounts.v1',sessKey:'mmorpg-online.session.v1',u
     const claimed=Store.claimLegacy(id);this.begin(id,remember);return {ok:true,id,name,isNew:true,claimed};},
   async login(name,pw,remember){
     if(Cloud.on()){const low=name.toLowerCase(),v=await Cloud.key4(name,pw),r=await Cloud.api('login',{u:name,v});
-      if(r.ok){Cloud.remember(r.token,r.name,low,remember);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();return {ok:true,id:low,name:r.name,online:true};}
+      if(r.ok){Cloud.remember(r.token,r.name,low,remember,r.gm);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();return {ok:true,id:low,name:r.name,online:true};}
       if(r.code==='nouser'){    // an account made on this device before accounts went online moves to the server now
         const loc=await this.localLogin(name,pw);if(!loc) return {ok:false,error:'Wrong username or password.'};
         const g=await Cloud.api('register',{u:loc.name,v});
-        if(g.ok){Cloud.remember(g.token,g.name,low,remember);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
+        if(g.ok){Cloud.remember(g.token,g.name,low,remember,g.gm);this.begin(low,remember);Store.useAccount(low);await Cloud.pull();Cloud.push();
           return {ok:true,id:low,name:g.name,online:true,moved:Store.load().length};}
         if(g.status) return {ok:false,error:g.error};}
       else if(r.status===401){const loc=await this.localLogin(name,pw);if(!loc) return {ok:false,error:r.error};
@@ -2191,6 +2193,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13w',date:'2026-11-13',title:'Job Level 70, a brighter crown, GameMasters',
+    new:['Job Level now goes up to 70 (one more skill point every level)','Reaching Base Level 100 gives a far stronger aura: a pillar of golden light, a turning rune circle with a shockwave, motes circling you, rising sparks and a ring of light over your head','GameMaster accounts: in-game commands for events (items, gold, levels and world bosses)']},
   {v:'2026-11-13v',date:'2026-11-13',title:'Wings on the character screen, axes for the Juggernaut',
     new:['Your equipped wings show on the character selection screen, in whichever way you turn your character'],
     balance:['Juggernaut: Spiral Pierce is now Cyclone Axe (spin your great axe into the target: five rending chops) and Brandish Spear is now Great Cleave (one huge axe sweep through everything in front of you), with new axe icons. They work exactly as before, and your learned ranks and skill bar stay as they are']},
@@ -3321,7 +3325,7 @@ const TownScreen={
     this.npcs=Object.entries(T.meta.npcs||{}).map(([id,[x,y]],i)=>({id,x,y,phase:Math.random()*3,period:3.1+((i*37)%9)/10,talkUntil:0,nextBark:0,bubble:null,
       patrol:PT[id]||null,wp:0,path:null,waitUntil:performance.now()+2000+Math.random()*4000,walking:false,walkT:0,occ:null}));
     this.grid=this.bases[id].slice();for(const n of this.npcs) if(!n.patrol) this.block(n.x,n.y,13);
-    this.mobs=[];if(T.meta.monsters&&Sprites.monsters) this.spawnMobs();this.spawnBoss();this.netReset();
+    this.mobs=[];if(T.meta.monsters&&Sprites.monsters) this.spawnMobs();this.baseMobs=this.mobs.length;this.gmCur=this.gmReady(this.gmActive(id));this.spawnBoss();this.netReset();
     this.portalLock=true;this.ch.map=id==='town'?'oakhaven':id;
     clearTimeout(this.prefetchT);this.prefetchT=setTimeout(()=>{for(const p of T.meta.portals||[]) if(p.to&&!p.closed) Sprites.ensure(p.to).catch(()=>{});},2500);
     $('#screen-town').setAttribute('aria-label',T.meta.name);AudioFX.play(ENC[id]?ENC[id].music:id);this.thumbFor=null;this.mmT=0;
@@ -4208,7 +4212,7 @@ const TownScreen={
   hid(x,y){const E=this.enc;return !!(E&&E.cfg.arena.hide&&!E.inside&&this.arenaIn(x,y,E.cfg.arena.tol));},
   /* the boss and its summon slots are ordinary entries of this.mobs (same index on every player's game); summons wait as
      "dead" until the boss calls them */
-  spawnBoss(){const C=ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
+  spawnBoss(){const C=this.gmCfg()||ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
     const mk=(kind,x,y)=>{const D=MOB_DEFS[kind],st=mobStats(kind,D.lvl),m={kind,def:D,zone:{kind,x,y,r:8,n:1},...st,maxHp:st.hp,x,y,dir:0,state:'idle',until:0,walkT:0,moving:false,hostile:false,nextHit:0,
       hitT:-1e9,deadT:-1e9,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*6,bornT:-1e9,barkAt:0,bubble:null,cds:{},act:null,actSeq:0,i:this.mobs.length};this.mobs.push(m);return m;};
     const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));{const df=BOSS_TUNE.def[C.boss]??1,mf=BOSS_TUNE.mdef[C.boss]??df;b.dp*=df;b.mp*=mf;}const slots=[];
@@ -4216,13 +4220,14 @@ const TownScreen={
       s.maxHp=s.hp=s.def.hpOfBoss?Math.round(b.maxHp*s.def.hpOfBoss):Math.round(s.maxHp*BOSS_TUNE.minion.hp);s.atk=s.atk.map(v=>Math.round(v*BOSS_TUNE.minion.dmg));slots.push(s);}
     this.enc={cfg:C,boss:b,slots,cx:C.at[0],cy:C.at[1],t0:0,seen:0,nextHeal:0,nextSummon:0,majorUntil:0,minorNext:0,resets:0,resetsSeen:0,resetT:-1e9,targets:[],inside:false};
     this.enc.inside=this.arenaIn(this.p.x,this.p.y,0);
+    if(C.gm){this.enc.inside=this.arenaIn(this.p.x,this.p.y,0);return;}   // a GameMaster's boss: no respawn clock, it appears at once
     const ck=BossClock.get(C.boss),left=ck&&ck.at?Math.min(ck.at-Date.now(),b.def.respawn[1]*1000):0;      // still down from an earlier kill
     if(left>1000){b.state='dead';b.deadT=-1e9;b.respawnAt=performance.now()+left;}},
   /* every frame, on every player's game: arena membership (with a tolerance so the edge doesn't flicker), action events,
      projectiles */
   bossFrame(dt,now){const E=this.enc;if(!E) return;const A=E.cfg.arena;
     E.inside=!this.dead&&!this.travelling&&this.arenaIn(this.p.x,this.p.y,E.inside?A.tol:-A.tol);
-    if(now>=(E.ckT||0)&&(!this.mp||this.mp.amHost||this.mp.lastSnap)){E.ckT=now+1000;const b=E.boss;BossClock.note(b.kind,b.state==='dead'?Date.now()+Math.max(0,b.respawnAt-now):0,b.state!=='dead'&&b.hostile);}
+    if(!E.cfg.gm&&now>=(E.ckT||0)&&(!this.mp||this.mp.amHost||this.mp.lastSnap)){E.ckT=now+1000;const b=E.boss;BossClock.note(b.kind,b.state==='dead'?Date.now()+Math.max(0,b.respawnAt-now):0,b.state!=='dead'&&b.hostile);}
     if(this.target&&this.target.def&&this.target.def.acts&&this.hid(this.target.x,this.target.y)) this.target=null;
     for(const m of [E.boss,...E.slots]) if(m.act){if(m.state==='dead') m.act=null;else this.actTick(m,now);}
     if(E.boss.state==='dead'&&this.bshots.length) this.bshots=[];
@@ -4265,7 +4270,7 @@ const TownScreen={
   /* the boss fell (host): its casts stop, its summons and projectiles go with it */
   encCleanup(m,now){const E=this.enc;if(!E) return;
     if(m.minion){m.respawnAt=1e15;m.act=null;return;}
-    if(m!==E.boss) return;m.act=null;this.bshots=[];E.t0=0;E.targets=[];
+    if(m!==E.boss) return;m.act=null;this.bshots=[];E.t0=0;E.targets=[];if(E.cfg.gm){m.respawnAt=1e15;E.gmDead=now;}   // a GameMaster's boss does not come back
     for(const s of E.slots){if(s.state!=='dead'){s.state='dead';s.deadT=now;if(this.target===s) this.target=null;if(this.mp) this.mp.dmg.delete(s);}s.respawnAt=1e15;s.act=null;s.hostile=false;}},
   bossLoot(m,now){const L=BOSS_LOOT[m.kind];if(!L) return;const c=this.ch;this.spawnDrop(m,now,{kind:'gold',n:Math.round(L.gold*(.85+Math.random()*.3))});
     for(let i=0;i<L.gear;i++){const r=Math.random(),rar=r<L.rar[0]?2:r<L.rar[0]+L.rar[1]?3:4,bases=[WEAPON_OF[this.line()],'body','head','hands','feet','ring'],g=craftGear(bases[Math.floor(Math.random()*bases.length)],m.lvl+2,rar);delete g.crafted;this.spawnDrop(m,now,{kind:'gear',g});}
@@ -4526,6 +4531,7 @@ const TownScreen={
     if(t==='greq'||t==='gok'||t==='gno'||t==='gq'||t==='grk'||t==='gkk'){this.guildEvent(t,from,P,e,now,nm);return;}
     if(t==='dinv'||t==='dacc'||t==='ddec'||t==='dend'){this.duelEvent(t,from,P,e,now,nm);return;}
     if(t==='tinv'||t==='tacc'||t==='tdec'||t==='tof'||t==='tst'||t==='tend'){this.tradeEvent(t,from,P,e,now,nm);return;}
+    if(t==='gm'||t==='gmok'){this.gmEvent(t,from,P,e,nm);return;}
     if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
       this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
@@ -4691,6 +4697,7 @@ const TownScreen={
     for(const k of [...this.others.keys()]) if(!here.has(k)) this.others.delete(k);
     this.elect(now,me);
     if(!mp.amHost&&mp.host){const o=this.others.get(mp.host);if(o&&o.P.mb) this.applySnap(o.P.mb,now);}
+    this.gmTick(now);
     if(now>=mp.pubT){mp.pubT=now+100;this.netPublish(now);}
     if(now>=(this.pillT||0)){this.pillT=now+1000;this.netPill();}},
   /* one host per map runs the monsters: whoever already claims it (the lowest label wins a tie); with nobody
@@ -4706,7 +4713,7 @@ const TownScreen={
       x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
       vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,bv:BUILD,eq:this.look(),pe:Net.pe,pk:Math.max(0,PK_MODES.findIndex(x=>x[0]===(c.pk&&c.pk.mode))),gd:c.guild?[c.guild.i,c.guild.n,this.gMy(),c.guild.v|0]:this.gOut&&now<this.gOut.until?[this.gOut.doc.i,this.gOut.doc.n,-1,this.gOut.doc.v]:null,gr:c.guild&&now<(this.gPubUntil||0)?this.gDoc():this.gOut&&now<this.gOut.until?this.gOut.doc:null,df:[Math.round(this.defence()),Math.round(this.mdef())],hm:this.maxHp()|0,mp:[Math.max(0,Math.round(this.res||0)),this.maxRes()],bf:Object.keys(this.buffs||{}).slice(0,12),bc:BossClock.pub(),
       pt:this.party?(this.isLeader()?{i:this.party.i,l:this.party.l,n:this.party.n.slice(0,40),s:this.party.s||0,m:this.party.m}:{i:this.party.i,l:this.party.l}):null,
-      mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
+      mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,gs:this.gmSpawns&&this.gmSpawns.length?this.gmSpawns:null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
     const enc=new TextEncoder();let t=JSON.stringify(P);
     for(const k of ['vf','hits','say','mh','mk','pe']) while(enc.encode(t).length>3800&&Array.isArray(P[k])&&P[k].length){P[k]=P[k].slice(1);t=JSON.stringify(P);}   // presence holds 4 KB
     if(enc.encode(t).length>3800&&P.gr){P.gr=null;t=JSON.stringify(P);}      // the guild roster waits for a quieter moment (it is asked for again)
@@ -5416,6 +5423,109 @@ const TownScreen={
     const gm=$('#tr-gmax');if(gm) gm.onclick=()=>this.tradeGold(c.gold|0);
     const lk=$('#tr-lock');if(lk) lk.onclick=()=>this.tradeLock();const ul=$('#tr-unlock');if(ul) ul.onclick=()=>this.tradeUnlock('');
     const cn=$('#tr-cancel');if(cn) cn.onclick=()=>this.tradeEnd('closed',true);const cl=$('#tr-close');if(cl) cl.onclick=()=>this.openWin(null);},
+  /* ---------- GameMaster ----------
+     A GameMaster is an account named in the server's GM_USERS. The server says so when you sign in (Cloud.gm), and the
+     room stamps `gm` on that player's presence; games accept GameMaster actions from other players only when that
+     stamp is there (and only on the game server, not on the claude.ai link). Commands (chat):
+       /gm                                   the list
+       /give <item> [amount] [@player]       materials, potions, ingots, dust ("/give potion 50")
+       /give <gear> [level] [rarity] [@player]   sword staff bow scepter dagger weapon head body hands feet ring
+       /give wings <kind> [@player]          feather seraph drake phoenix celestial night dawn
+       /gold <amount> [@player]
+       /maxlevel [@player]                   Base Level 100, Job Level 70, their stat and skill points
+       /boss <queen|golem> [here | <map> [x y]]   a boss appears there for everyone (not in Oakhaven, the safe zone)
+       /boss list · /boss clear [all]
+     Without @player the command is for you. @player is a name of someone online (any map). */
+  isGM(){return !!(Cloud.token&&Cloud.gm);},
+  gmNameOf(P){return Net.kind==='server'&&P&&typeof P.gm==='string'&&P.gm?P.gm:null;},
+  gmItem(q){q=String(q||'').toLowerCase();if(!q) return null;
+    const all={...MATERIALS,...REFINED,...CONSUMABLES};if(all[q]) return q;
+    const flat=x=>x.toLowerCase().replace(/[^a-z0-9]/g,'');const f=flat(q);
+    return Object.keys(all).find(k=>flat(all[k].name)===f)||Object.keys(all).find(k=>flat(all[k].name).includes(f))||null;},
+  gmWing(q){q=String(q||'').toLowerCase();const N=GEAR_BASES.wings.names;if(/^\d+$/.test(q)) return +q<N.length?+q:-1;
+    return N.findIndex(n=>n.toLowerCase().split(/\s+/).some(w=>w===q||w.startsWith(q)&&q.length>=3));},
+  gmRar(q){if(q===undefined) return null;q=String(q).toLowerCase();if(/^\d$/.test(q)) return Math.min(4,+q);
+    const i=RARITY.findIndex(r=>r.name.toLowerCase()===q);if(i>=0) return i;const j=RARITY_WORD.findIndex(w=>w&&w.toLowerCase()===q);return j>0?j:null;},
+  gmBossKind(q){q=String(q||'').toLowerCase();if(/queen|slime/.test(q)) return 'slimequeen';if(/golem|lava|dragon/.test(q)) return 'lavagolem';return null;},
+  gmMap(q){q=String(q||'').toLowerCase().replace(/[^a-z]/g,'');if(!q) return null;if(q==='oakhaven'||q==='town') return 'town';
+    if(MAP_NAMES[q]) return q;const k=Object.keys(MAP_NAMES).find(k=>MAP_NAMES[k].toLowerCase().replace(/[^a-z]/g,'').includes(q));return k==='oakhaven'?'town':k||null;},
+  gmCmd(cmd,args){const cmds=['gm','give','gold','maxlevel','boss'];if(!cmds.includes(cmd)) return false;
+    if(!this.isGM()){this.log('sys',null,cmd==='gm'?'You are not a GameMaster':'Unknown command /'+cmd+' · try /help');return true;}
+    let at=null;args=args.filter(a=>{if(a[0]==='@'&&a.length>1){at=a.slice(1).toLowerCase();return false;}return true;});
+    const say=t=>this.log('sys',null,t);
+    if(cmd==='gm'){say('GameMaster: /give <item> [amount] · /give <sword|staff|bow|scepter|dagger|weapon|head|body|hands|feet|ring> [level] [rarity] · /give wings <feather|seraph|drake|phoenix|celestial|night|dawn> · /gold <amount> · /maxlevel · add @name to any of these for someone online · /boss <queen|golem> [here | map [x y]] · /boss list · /boss clear [all]');return true;}
+    if(cmd==='boss') return this.gmBossCmd(args),true;
+    let pay=null;
+    if(cmd==='gold'){const n=Math.floor(+args[0]);if(!(n>0)){say('Usage: /gold <amount> [@name]');return true;}pay=['gold',Math.min(n,1e9)];}
+    else if(cmd==='maxlevel') pay=['max'];
+    else{const a0=(args[0]||'').toLowerCase();
+      if(a0==='wings'){const k=this.gmWing(args[1]);if(k<0){say('Wings: feather, seraph, drake, phoenix, celestial, night, dawn');return true;}pay=['gear','wings',102,4,k];}
+      else if(GEAR_BASES[a0]||a0==='weapon'){const lv=args[1]&&/^\d+$/.test(args[1])?Math.max(1,Math.min(102,+args[1])):0,r=this.gmRar(args[2]);pay=['gear',a0,lv,r===null?4:r,-1];}
+      else{const num=args.length>1&&/^\d+$/.test(args[args.length-1])?+args.pop():1,id=this.gmItem(args.join(' '));
+        if(!id){say(`No item called "${args.join(' ')}" · items: ${Object.keys({...MATERIALS,...REFINED,...CONSUMABLES}).join(', ')} · or gear / wings`);return true;}
+        pay=['item',id,Math.max(1,Math.min(99999,num))];}}
+    if(!at||at===String(this.ch.name).toLowerCase()){say('GameMaster · '+this.gmApply(pay,null));return true;}
+    const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===at);
+    if(!hit){say(`Nobody called ${at} is online`);return true;}
+    if(!Net.gmName){say('The game server has not confirmed your GameMaster account yet · try again in a moment');Net.auth();return true;}
+    this.partySend('gm',hit[0],...pay);say(`GameMaster · sent to ${Net.name(hit[1].P.n)}: ${this.gmText(pay)}`);return true;},
+  gmText(p){if(p[0]==='gold') return `${p[1].toLocaleString()} gold`;if(p[0]==='max') return 'Base Level 100 and Job Level 70';
+    if(p[0]==='item'){const d=itemDef(p[1]);return `${p[2]} x ${d?d.name:p[1]}`;}
+    if(p[0]==='gear') return p[1]==='wings'?GEAR_BASES.wings.names[p[4]]||'wings':`${RARITY[p[3]|0].name} ${p[1]}${p[2]?' Lv '+p[2]:''}`;return '?';},
+  /* carry out a GameMaster action on this character; from: the GameMaster's name, or null for your own command */
+  gmApply(p,from){const c=this.ch;let txt;
+    if(p[0]==='gold'){const n=Math.max(0,Math.min(1e9,Math.floor(+p[1]||0)));c.gold=(c.gold||0)+n;txt=`+${n.toLocaleString()} gold`;AudioFX.sfx('coin');}
+    else if(p[0]==='item'){const d=itemDef(p[1]);if(!d) return 'unknown item';const n=Math.max(1,Math.min(99999,Math.floor(+p[2]||1)));c.items[p[1]]=(c.items[p[1]]|0)+n;txt=`+${n} ${d.name}`;AudioFX.sfx('pick');}
+    else if(p[0]==='gear'){const base=String(p[1]);if(!(GEAR_BASES[base]||base==='weapon')) return 'unknown gear';if(c.bag.length>=BAG_SIZE) return 'the bag is full';
+      const rar=Math.max(0,Math.min(4,p[3]|0)),lvl=Math.max(1,Math.min(102,(p[2]|0)||c.baseLevel||1));let g;
+      if(base==='wings'){const k=Math.max(0,Math.min(GEAR_BASES.wings.names.length-1,p[4]|0));g=craftWings(k,102,4);}else g=craftGear(base==='weapon'?WEAPON_OF[this.line()]:base,lvl,rar);
+      delete g.crafted;c.bag.unshift(g);txt=`+${g.name} (${RARITY[g.rar].name}, Lv ${g.lvl})`;AudioFX.sfx('pick');}
+    else if(p[0]==='max'){const L0=c.baseLevel||1,J0=c.job.jobLevel||1;
+      if(L0<MAX_BASE){c.statPoints=(c.statPoints||0)+statTotal(MAX_BASE)-statTotal(L0);c.baseLevel=MAX_BASE;}c.baseExp=0;
+      if(J0<MAX_JOB){c.skillPoints=(c.skillPoints||0)+MAX_JOB-J0;c.job.jobLevel=MAX_JOB;}c.job.jobExp=0;
+      this.dirtyMods();if(c.autoStats) this.recStats(true);c.hp=this.maxHp();this.res=this.maxRes();AudioFX.sfx('level');
+      this.fx.push({x:this.p.x,y:this.p.y-72,text:'MAX LEVEL!',color:'#ffd76a',t0:performance.now(),big:true});txt=`Base Level ${MAX_BASE}, Job Level ${MAX_JOB}`;}
+    else return 'unknown';
+    this.hud();this.renderChar();this.renderInv();this.renderHotbar();this.tracker();this.save();
+    if(from){toast(`GameMaster ${from}: ${txt}`,3500);this.log('sys',null,`GameMaster ${from} gave you ${txt}`);}
+    return txt;},
+  gmEvent(t,from,P,e,nm){const gm=this.gmNameOf(P);
+    if(t==='gmok'){if(this.isGM()) this.log('sys',null,`GameMaster · ${nm}: ${String(e[3]||'').slice(0,80)}`);return;}
+    if(!gm) return;                                       // only the room's stamp makes someone a GameMaster
+    const txt=this.gmApply(e.slice(3),gm);this.partySend('gmok',from,txt);},
+  /* ---- GameMaster bosses: [id, map, kind, x, y] in the GameMaster's presence (gs); every game on that map builds the
+     same encounter there (the boss's own arena, size and summons, centred on the spot), instead of the map's own boss.
+     It doesn't respawn; once it has been down 30 s, or with /boss clear, the map goes back to normal. */
+  gmBossCmd(args){const say=t=>this.log('sys',null,t);this.gmSpawns=this.gmSpawns||[];const a0=(args[0]||'').toLowerCase();
+    if(a0==='list'||!a0){say(this.gmSpawns.length?'Your bosses: '+this.gmSpawns.map((g,i)=>`${i+1}. ${MOB_DEFS[g[2]].name} · ${MAP_NAMES[g[1]]||g[1]} (${g[3]}, ${g[4]})`).join(' | '):'No bosses of yours are out · /boss <queen|golem> [here | map [x y]]');return;}
+    if(a0==='clear'){const n=args[1]&&/^\d+$/.test(args[1])?+args[1]:0;if(n>0) this.gmSpawns.splice(n-1,1);else this.gmSpawns=[];say('GameMaster bosses cleared');return;}
+    const kind=this.gmBossKind(a0);if(!kind){say('Usage: /boss <queen|golem> [here | <map> [x y]] · /boss list · /boss clear [all]');return;}
+    let map=this.mapId,x=Math.round(this.p.x),y=Math.round(this.p.y);
+    if(args[1]&&args[1].toLowerCase()!=='here'){map=this.gmMap(args[1]);if(!map){say(`No map called "${args[1]}" · maps: ${Object.keys(MAP_NAMES).filter(k=>k!=='oakhaven').join(', ')}`);return;}
+      if(args[2]&&args[3]){x=Math.round(+args[2]);y=Math.round(+args[3]);}else{x=null;y=null;}}
+    if(map==='town'){say('Oakhaven is a safe zone: no bosses there');return;}
+    const go=()=>{if(x===null){const E0=ENC[map],M=Sprites[map]&&Sprites[map].meta;[x,y]=E0?E0.at:M&&M.spawn?M.spawn:[600,500];}
+      const M=Sprites[map]&&Sprites[map].meta;if(M&&M.size){x=Math.max(40,Math.min(M.size[0]-40,x));y=Math.max(40,Math.min(M.size[1]-40,y));}
+      this.gmSpawns=this.gmSpawns.filter(g=>g[1]!==map);this.gmSpawns.push([Date.now(),map,kind,x,y]);if(this.gmSpawns.length>4) this.gmSpawns.shift();
+      say(`GameMaster · ${MOB_DEFS[kind].name} appears in ${MAP_NAMES[map]||map} at (${x}, ${y})`);AudioFX.sfx('quest');};
+    if(x===null) Sprites.ensure(map).then(go,go);else go();},
+  /* the GameMaster boss for a map, from your own (if you are a GameMaster) or any stamped GameMaster's presence */
+  gmActive(map){let best=null;const pick=g=>{if(Array.isArray(g)&&g[1]===map&&MOB_DEFS[g[2]]&&MOB_DEFS[g[2]].acts&&Number.isFinite(+g[3])&&Number.isFinite(+g[4])&&(!best||+g[0]>best.id)) best={id:+g[0],kind:g[2],x:+g[3],y:+g[4]};};
+    if(this.isGM()) for(const g of this.gmSpawns||[]) pick(g);
+    for(const p of Net.others()){const P=p.presence;if(this.gmNameOf(P)&&Array.isArray(P.gs)) for(const g of P.gs.slice(0,4)) pick(g);}
+    return map==='town'?null:best;},
+  gmReady(g){if(!g) return null;const sh=MOB_DEFS[g.kind].sheet;if(Sprites[sh]) return g;Sprites.ensure(sh).catch(()=>{});return null;},   // its art first
+  gmCfg(){const g=this.gmCur;if(!g) return null;const home=Object.values(ENC).find(C=>C.boss===g.kind);if(!home) return null;
+    const f=this.nearestFree(Math.floor(g.x/this.cell),Math.floor(g.y/this.cell))||[Math.floor(g.x/this.cell),Math.floor(g.y/this.cell)];
+    return {...home,at:[(f[0]+.5)*this.cell,(f[1]+.5)*this.cell],arena:{...home.arena,hide:false},gm:{id:g.id}};},
+  gmTick(now){if(now<(this.gmT||0)) return;this.gmT=now+400;
+    const g=this.gmReady(this.gmActive(this.mapId)),cur=this.gmCur;
+    if((g&&g.id)!==(cur&&cur.id)){this.gmCur=g;this.encRebuild();if(g&&!(this.enc&&this.enc.inside)) this.log('sys',null,`${MOB_DEFS[g.kind].name} has appeared in ${MAP_NAMES[this.mapId]||'this map'}!`);}
+    const E=this.enc;if(this.isGM()&&E&&E.cfg.gm&&E.gmDead&&now-E.gmDead>30000){this.gmSpawns=(this.gmSpawns||[]).filter(x=>+x[0]!==E.cfg.gm.id);E.gmDead=0;}},
+  /* the map's encounter again (its own boss, or a GameMaster's): the monsters of the map stay, the encounter's are rebuilt */
+  encRebuild(){const keep=this.baseMobs??this.mobs.length;
+    for(const m of this.mobs.slice(keep)){if(this.target===m) this.target=null;if(this.mp) this.mp.dmg.delete(m);}
+    this.mobs.length=keep;this.spawnBoss();},
   /* ---------- duels: a challenge between two players standing side by side, a 5-second countdown, a fight in a ring ---------- */
   duelOther(){const D=this.duel;if(!D||!this.others) return null;for(const o of this.others.values()) if(o.P&&o.P.id===D.id) return o;return null;},
   duelOn(id,now){const D=this.duel;return D&&D.id===id&&(D.state==='on'||(D.state==='count'&&D.startAt-now<1000))?D:null;},      // a hit sent a moment before my countdown ends still counts
@@ -5469,7 +5579,8 @@ const TownScreen={
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=hexA(col,.16);ctx.lineWidth=10;ctx.beginPath();ctx.ellipse(cx,cy,DUEL.r,DUEL.r,0,0,7);ctx.stroke();
     ctx.strokeStyle=hexA(col,.6+.15*Math.sin(t*3));ctx.lineWidth=2;ctx.setLineDash([16,10]);ctx.lineDashOffset=-t*14;ctx.beginPath();ctx.ellipse(cx,cy,DUEL.r,DUEL.r,0,0,7);ctx.stroke();ctx.restore();},
   /* ---------- World Bosses panel: where each boss lives, whether it is up, when it comes back; Go walks you there ---------- */
-  bossState(k){const E=this.enc;if(E&&E.boss.kind===k){const b=E.boss,now=performance.now();
+  bossState(k){const E=this.enc;if(E&&!E.cfg.gm&&E.boss.kind===k){   // a GameMaster's boss is not the world boss in its lair
+    const b=E.boss,now=performance.now();
       if(b.state==='dead') return {t:'down',left:Math.max(0,b.respawnAt-now)};return {t:b.hostile?'fight':'up'};}
     return BossClock.status(k);},
   bossHud(full){const el=$('#hud-bosses');if(!el||!this.ch) return;const min=SETTINGS.bossMin==null?Device.type==='phone':!!SETTINGS.bossMin;
@@ -5636,6 +5747,7 @@ const TownScreen={
   /* ---------- chat ---------- */
   say(t){const c=this.ch,now=performance.now();
     if(t[0]==='/'){const cmd=t.slice(1).split(/\s+/)[0].toLowerCase();
+      if(this.gmCmd(cmd,t.trim().split(/\s+/).slice(1))) return;
       if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /patch (what is new), /duel name, /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
       else if(cmd==='p'){const msg=t.slice(2).trim().slice(0,120);if(!this.party){this.log('sys',null,'You are not in a party (P opens the Party window)');return;}if(!msg) return;
         this.log('pchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,this.party.i]);if(Net.says.length>5) Net.says.shift();}return;}
@@ -5738,7 +5850,7 @@ const TownScreen={
     while(c.baseExp>=expNeed(c.baseLevel)&&c.baseLevel<MAX_BASE){c.baseExp-=expNeed(c.baseLevel);c.baseLevel++;c.statPoints=(c.statPoints||0)+statGain(c.baseLevel);if(c.autoStats) this.recStats(true);c.hp=this.maxHp();this.res=this.maxRes();
       if(c.baseLevel===10&&c.job.classId==='recruit') setTimeout(()=>{toast('Level 10 · Elder Fin has your Ascension Trial');this.log('sys',null,'Elder Fin in Oakhaven is waiting to set your Ascension Trial.');},1400);
       this.fx.push({x:this.p.x,y:this.p.y-72,text:'LEVEL UP!',color:'#7fe3ff',t0:performance.now(),big:true});AudioFX.sfx('level');toast(`Base Level ${c.baseLevel}!`);this.log('sys',null,`Base Level ${c.baseLevel} · +${statGain(c.baseLevel)} stat points`);}
-    while(c.job.jobExp>=jobNeed(c.job.jobLevel||1)&&(c.job.jobLevel||1)<50){c.job.jobExp-=jobNeed(c.job.jobLevel||1);c.job.jobLevel=(c.job.jobLevel||1)+1;c.skillPoints=(c.skillPoints||0)+1;this.log('sys',null,`Job Level ${c.job.jobLevel} · +1 skill point`);}
+    while(c.job.jobExp>=jobNeed(c.job.jobLevel||1)&&(c.job.jobLevel||1)<MAX_JOB){c.job.jobExp-=jobNeed(c.job.jobLevel||1);c.job.jobLevel=(c.job.jobLevel||1)+1;c.skillPoints=(c.skillPoints||0)+1;this.log('sys',null,`Job Level ${c.job.jobLevel} · +1 skill point`);}
     this.hud();this.renderChar();this.save();this.questCheck();},
   /* a few townspeople stroll between their spots; they stop when the player comes close or talks to them */
   strolls(dt,now){
@@ -5952,12 +6064,36 @@ const TownScreen={
   drawGlints(ctx,x,y,now,col){const t=REDUCED?0:now/1000;ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=col;
     for(let i=0;i<6;i++){const ph=(t*.9+i/6)%1,an=i*1.7+t*1.3;ctx.globalAlpha=Math.sin(ph*Math.PI);this.star4(ctx,x+Math.cos(an)*18,y-26-ph*30+Math.sin(an)*6,1.2+((i%2)?1.2:.6));}ctx.restore();},
   /* the max-level aura: a soft golden glow and slow ring at the feet (under), light motes rising around (over) */
-  drawAura(ctx,x,y,now,over){const t=REDUCED?0:now/1000;ctx.save();ctx.globalCompositeOperation='lighter';
-    if(!over){const g=ctx.createRadialGradient(x,y-34,4,x,y-30,46);g.addColorStop(0,'rgba(255,214,120,.26)');g.addColorStop(1,'rgba(255,214,120,0)');ctx.fillStyle=g;ctx.fillRect(x-48,y-80,96,90);
-      ctx.strokeStyle=`rgba(255,220,130,${.55+.2*Math.sin(t*3)})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(x,y,20,7.5,0,0,7);ctx.stroke();
-      ctx.strokeStyle='rgba(255,240,190,.5)';ctx.lineWidth=1;ctx.setLineDash([4,6]);ctx.lineDashOffset=-t*14;ctx.beginPath();ctx.ellipse(x,y,25,9.5,0,0,7);ctx.stroke();ctx.setLineDash([]);}
-    else if(!SETTINGS.lowfx){ctx.fillStyle='#ffe7a8';for(let i=0;i<8;i++){const ph=(t*.55+i/8)%1,an=i*2.4+t*.8;ctx.globalAlpha=Math.sin(ph*Math.PI)*.9;
-      ctx.beginPath();ctx.arc(x+Math.cos(an)*17,y-4-ph*62+Math.sin(an)*5,1.4+((i%3)===0?.8:0),0,7);ctx.fill();}}
+  /* the Base Level 100 aura. Behind the hero (over=false): a pillar of golden light, a glowing pool, a rune circle on the
+     ground (an outer ring, two dashed rings turning opposite ways, eight runes going round), a shockwave every few
+     seconds, and the back half of the motes circling the body. In front (over=true): the front half of the motes,
+     sparks rising with short trails, and a ring of light over the head. Low effects keep the pool and the rings. */
+  auraPillar(){if(this.aPil) return this.aPil;const W=64,H=150,c=makeCanvas(W,H),x=c.getContext('2d');
+    const h=x.createLinearGradient(0,0,W,0);h.addColorStop(0,'rgba(255,214,110,0)');h.addColorStop(.32,'rgba(255,214,110,.55)');h.addColorStop(.5,'rgba(255,246,210,1)');h.addColorStop(.68,'rgba(255,214,110,.55)');h.addColorStop(1,'rgba(255,214,110,0)');
+    x.fillStyle=h;x.fillRect(0,0,W,H);x.globalCompositeOperation='destination-in';const v=x.createLinearGradient(0,0,0,H);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(.45,'rgba(0,0,0,.7)');v.addColorStop(.92,'rgba(0,0,0,1)');v.addColorStop(1,'rgba(0,0,0,.4)');
+    x.fillStyle=v;x.fillRect(0,0,W,H);return this.aPil=c;},
+  drawAura(ctx,x,y,now,over){const t=REDUCED?0:now/1000,lo=SETTINGS.lowfx,pu=.5+.5*Math.sin(t*2.6);ctx.save();ctx.globalCompositeOperation='lighter';
+    const orbit=(front)=>{for(let i=0;i<10;i++){const an=t*1.3+i*Math.PI*2/10,sn=Math.sin(an);if((sn>=0)!==front) continue;
+      const px=x+Math.cos(an)*23,py=y-30+sn*7+Math.sin(t*2+i)*3;ctx.globalAlpha=(front?.95:.55)*(.6+.4*Math.sin(t*3+i));ctx.fillStyle=i%3?'#ffe7a8':'#ffffff';
+      ctx.beginPath();ctx.arc(px,py,i%3?1.5:2.1,0,7);ctx.fill();}ctx.globalAlpha=1;};
+    if(!over){
+      if(!lo){ctx.globalAlpha=.22+.12*pu;ctx.drawImage(this.auraPillar(),x-26,y-122,52,124);ctx.globalAlpha=1;}
+      const g=ctx.createRadialGradient(x,y-30,4,x,y-26,58);g.addColorStop(0,`rgba(255,214,120,${.30+.08*pu})`);g.addColorStop(1,'rgba(255,214,120,0)');ctx.fillStyle=g;ctx.fillRect(x-60,y-92,120,104);
+      const pool=ctx.createRadialGradient(x,y,2,x,y,32);pool.addColorStop(0,`rgba(255,236,170,${.42+.12*pu})`);pool.addColorStop(1,'rgba(255,200,90,0)');
+      ctx.save();ctx.translate(x,y);ctx.scale(1,.36);ctx.fillStyle=pool;ctx.beginPath();ctx.arc(0,0,32,0,7);ctx.fill();ctx.restore();
+      ctx.strokeStyle=`rgba(255,220,130,${.65+.25*pu})`;ctx.lineWidth=1.8;ctx.beginPath();ctx.ellipse(x,y,29,11,0,0,7);ctx.stroke();
+      ctx.strokeStyle='rgba(255,240,190,.6)';ctx.lineWidth=1.1;ctx.setLineDash([5,5]);ctx.lineDashOffset=-t*16;ctx.beginPath();ctx.ellipse(x,y,24.5,9.2,0,0,7);ctx.stroke();
+      ctx.lineDashOffset=t*10;ctx.setLineDash([2,7]);ctx.beginPath();ctx.ellipse(x,y,33.5,12.6,0,0,7);ctx.stroke();ctx.setLineDash([]);
+      if(!lo){ctx.fillStyle='#fff1b8';for(let i=0;i<8;i++){const an=-t*.9+i*Math.PI/4,rx=x+Math.cos(an)*20,ry=y+Math.sin(an)*7.5;ctx.globalAlpha=.55+.35*Math.sin(t*4+i);
+          ctx.beginPath();ctx.moveTo(rx,ry-2.6);ctx.lineTo(rx+1.8,ry);ctx.lineTo(rx,ry+2.6);ctx.lineTo(rx-1.8,ry);ctx.closePath();ctx.fill();}
+        const w=(t%2.6)/2.6;ctx.globalAlpha=(1-w)*.75;ctx.strokeStyle='#ffe39a';ctx.lineWidth=2.2*(1-w)+.4;ctx.beginPath();ctx.ellipse(x,y,22+30*w,(22+30*w)*.38,0,0,7);ctx.stroke();ctx.globalAlpha=1;
+        orbit(false);}}
+    else if(!lo){orbit(true);
+      for(let i=0;i<12;i++){const ph=(t*.5+i/12)%1,an=i*2.39+t*.7,sx=x+Math.cos(an)*(14+6*(i%3)),sy=y-6-ph*78+Math.sin(an)*4,a=Math.sin(ph*Math.PI);
+        ctx.globalAlpha=a*.85;ctx.strokeStyle='#ffd76a';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,sy+7+5*(i%2));ctx.stroke();
+        ctx.fillStyle=i%4?'#ffefb0':'#ffffff';ctx.beginPath();ctx.arc(sx,sy,1.3+((i%3)===0?.8:0),0,7);ctx.fill();}
+      ctx.globalAlpha=.55+.3*pu;ctx.strokeStyle='#fff1b8';ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(x,y-66+Math.sin(t*1.8)*1.5,10,3.2,0,0,7);ctx.stroke();
+      ctx.globalAlpha=.25+.15*pu;ctx.lineWidth=4;ctx.strokeStyle='#ffd76a';ctx.beginPath();ctx.ellipse(x,y-66+Math.sin(t*1.8)*1.5,10,3.2,0,0,7);ctx.stroke();ctx.globalAlpha=1;}
     ctx.restore();},
   drawWaystone(ctx,now){const [wx,wy]=this.meta.waystone,t=REDUCED?0:now/1000,att=this.ch.waystones.includes('oakhaven');
     const g=ctx.createRadialGradient(wx,wy-10,0,wx,wy-10,58);const a=(att?.30:.42)+.12*Math.sin(t*2.2);
@@ -6129,7 +6265,7 @@ function localRoom(){const bus=new BroadcastChannel('mmorpg-online.localmp'),me=
   bus.postMessage({t:'hello',from:me});return R;}
 /* the game's own server (Cloudflare Worker, see the mmorpg-cloudflare project): same calls as the room above, over a
    WebSocket. Resolves to the room once connected, or null if there is no server there (single-player then). */
-function wsRoom(url){return new Promise(done=>{let ws=null,me=null,mine={},snap=null,pend=null,conn=false,opened=false,tries=0,settled=false,dead=false;
+function wsRoom(url){return new Promise(done=>{let ws=null,me=null,mine={},snap=null,pend=null,conn=false,opened=false,tries=0,settled=false,dead=false,tk=null;
   const others=new Map(),subs=new Set(),connSubs=new Set();
   const finish=v=>{if(settled) return;settled=true;if(!v){dead=true;try{ws&&ws.close();}catch(e){}}done(v);};
   const notify=()=>{snap=null;const ch={peers:R.peers(),joined:[],left:[],updated:[]};for(const f of subs) try{f(ch);}catch(e){}};
@@ -6137,18 +6273,20 @@ function wsRoom(url){return new Promise(done=>{let ws=null,me=null,mine={},snap=
   const send=()=>{pend=null;if(ws&&ws.readyState===1) try{ws.send(JSON.stringify({t:'p',p:mine}));}catch(e){}};
   const peer=(id,p)=>Object.freeze({peer:id,isMe:false,sameTab:false,kind:'viewer',by:null,guest:false,presence:Object.freeze(p&&typeof p==='object'?p:{}),updatedAt:Date.now()});
   const open=()=>{if(dead) return;try{ws=new WebSocket(url);}catch(e){finish(null);return;}
-    ws.onopen=()=>{opened=true;tries=0;};
+    ws.onopen=()=>{opened=true;tries=0;if(tk) try{ws.send(JSON.stringify({t:'auth',tk}));}catch(e){}};
     ws.onmessage=e=>{let d;try{d=JSON.parse(e.data);}catch(err){return;}if(!d) return;
       if(d.t==='hello'){me=String(d.me||'');others.clear();for(const x of Array.isArray(d.peers)?d.peers:[]) if(Array.isArray(x)) others.set(String(x[0]),peer(String(x[0]),x[1]));
         notify();setConn(true);send();finish(R);}
       else if(d.t==='p'&&d.from){others.set(String(d.from),peer(String(d.from),d.p));notify();}
-      else if(d.t==='bye'&&d.from){others.delete(String(d.from));notify();}};
+      else if(d.t==='bye'&&d.from){others.delete(String(d.from));notify();}
+      else if(d.t==='auth'){const was=Net.gmName;Net.gmName=typeof d.gm==='string'?d.gm:null;if(Net.gmName&&!was&&activeScreen===TownScreen&&TownScreen.ch) TownScreen.log('sys',null,'GameMaster mode · /gm lists the commands');}};
     ws.onclose=()=>{ws=null;setConn(false);if(others.size){others.clear();notify();}if(dead) return;
       if(!opened&&++tries>=2){finish(null);return;}                       // nothing listening there: play single-player
       setTimeout(open,Math.min(15000,1000*2**Math.min(4,tries++)));};};   // lost the connection: keep trying
   const R={presence(patch){for(const [k,v] of Object.entries(patch)){if(v===null) delete mine[k];else mine[k]=v;}snap=null;if(document.hidden){clearTimeout(pend);send();}else if(!pend) pend=setTimeout(send,60);return Promise.resolve();},
     peers(){return snap||(snap=Object.freeze([Object.freeze({peer:me||'me',isMe:true,sameTab:true,kind:'viewer',by:null,guest:false,presence:Object.freeze({...mine}),updatedAt:Date.now()}),...others.values()]));},
     onPeers(fn){subs.add(fn);return()=>subs.delete(fn);},connected:()=>conn,onConnection(fn){connSubs.add(fn);setTimeout(()=>fn(conn),0);return()=>connSubs.delete(fn);},
+    auth(t){tk=t||null;if(ws&&ws.readyState===1) try{ws.send(JSON.stringify({t:'auth',tk}));}catch(e){}},
     emit:()=>Promise.resolve(),on:()=>()=>{},kind:'server'};
   setInterval(()=>{if(!dead) send();},2000);           // keeps the server's copy fresh (it forgets everything when it sleeps)
   open();setTimeout(()=>finish(null),12000);});}
@@ -6287,7 +6425,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13v';
+const BUILD='2026-11-13w';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
@@ -6306,10 +6444,12 @@ const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:
       else{const u=serverUrl();if(u){kind='server';this.where=u.replace(/^wss?:\/\//,'').split('/')[0];r=await wsRoom(u);}}}catch(e){r=null;}
     this.busy=false;
     if(!r){if(kind==='server'){this.tries++;setTimeout(()=>this.init(),Math.min(60000,10000*this.tries));}return;}
-    this.room=r;this.kind=kind;this.since=performance.now();
+    this.room=r;this.kind=kind;this.since=performance.now();this.auth();
     if(this.tries&&activeScreen===TownScreen&&TownScreen.ch){TownScreen.log('sys',null,'Connected to the game server · other players can see you now');toast('Online');}
     try{r.onConnection(c=>{this.conn=c;},()=>{this.room=null;this.conn=false;});}catch(e){}
     this.set({v:1});},
+  /* tell the game server who signed in (it marks GameMasters); null after signing out */
+  auth(){if(this.room&&this.room.auth) this.room.auth(Cloud.token||null);if(!Cloud.token) this.gmName=null;},
   label(){if(this.me) return this.me;if(!this.room) return null;const p=this.room.peers().find(p=>p.isMe&&p.sameTab);
     if(!p) return null;if(this.room.kind==='server') return p.peer;return this.me=p.peer;},   // the server gives a new name after a reconnect
   others(){if(!this.room) return [];return this.room.peers().filter(p=>!p.sameTab&&p.kind==='viewer'&&p.presence&&p.presence.v===1);},
@@ -6337,6 +6477,7 @@ const Screens={'screen-login':LoginScreen,'screen-select':SelectScreen,'screen-c
   Cloud.init();LoginScreen.init();SelectScreen.init();CreateScreen.init();IntroScreen.init();TownScreen.init();Net.init();Updates.init();FS.init();
   PatchNotes.init();
   if(Auth.restore()){Store.useAccount(Auth.user);afterAssets(()=>showScreen(Store.load().length?'screen-select':'screen-create'));
+    if(Cloud.token){Cloud.whoami();}
     if(Cloud.token) Cloud.pull().then(r=>{if(r.status===401){Cloud.forget();Auth.logout();Store.mem=null;showScreen('screen-login');toast('Please sign in again',4000);}
       else if(r.changed&&(activeScreen===SelectScreen||activeScreen===CreateScreen)) showScreen(Store.load().length?'screen-select':'screen-create');});}
   else showScreen('screen-login');

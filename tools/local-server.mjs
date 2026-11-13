@@ -30,8 +30,11 @@ const storage = {
   async put(k, v) { mem.set(k, structuredClone(v)); persist(); },
   async delete(k) { const r = mem.delete(k); persist(); return r; },
 };
-const accounts = new mod.AccountStore({ storage }, {});
-const env = { ACCOUNTS: { idFromName: () => 'main', get: () => accounts } };
+// GameMasters: GM_USERS from the environment, else the "vars" in wrangler.jsonc (as on Cloudflare)
+const vars = (() => { try { return JSON.parse(fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '')).vars || {}; } catch (e) { return {}; } })();
+const GM_USERS = process.env.GM_USERS ?? vars.GM_USERS ?? '';
+const accounts = new mod.AccountStore({ storage }, { GM_USERS });
+const env = { ACCOUNTS: { idFromName: () => 'main', get: () => accounts }, GM_USERS };
 
 const rooms = new Map();
 function room(name) {
@@ -41,7 +44,7 @@ function room(name) {
     acceptWebSocket(s) { sockets.add(s); },
     getWebSockets() { return [...sockets].filter(s => s.readyState <= 1); },
   };
-  const obj = new GameRoom(ctx, {});
+  const obj = new GameRoom(ctx, env);
   const r = { obj, sockets }; rooms.set(name, r); return r;
 }
 // wraps a real socket with the hibernation-API calls the worker uses

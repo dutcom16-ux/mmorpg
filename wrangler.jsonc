@@ -8,5 +8,7 @@
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }, { "name": "ACCOUNTS", "class_name": "AccountStore" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }, { "tag": "v2", "new_sqlite_classes": ["AccountStore"] }],
+  // GameMaster accounts (usernames, comma-separated): their games may use the GM commands (/gm in the chat)
+  "vars": { "GM_USERS": "johnx089" },
   "observability": { "enabled": true }
 }
