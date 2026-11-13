@@ -1,1 +1,1 @@
-build: 2026-11-13l (Lava Dragon Golem and brood twice as big, Golem defence halved again)
+build: 2026-11-13m (Golem 1.2x, Queen 1.35x, summons follow; Queen summon anchor fix)
