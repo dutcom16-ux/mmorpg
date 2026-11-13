@@ -1,1 +1,1 @@
-build: 2026-11-13g (bosses heal 15% every 10 s)
+build: 2026-11-13h (boss summons hit 50% harder)

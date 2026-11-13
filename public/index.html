@@ -2119,6 +2119,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13h',date:'2026-11-13',title:'Fiercer summons',
+    balance:['The Slime King and the Molten Brood (baby imps, drakes and obsidian golems) hit 50% harder']},
   {v:'2026-11-13g',date:'2026-11-13',title:'Bosses heal harder',
     balance:['The Slime Queen and the Lava Dragon Golem now heal 15% of their health every 10 seconds once hurt (below 75% and 70%). Bring a big party, and stun them during the heal\'s cast bar to stop it']},
   {v:'2026-11-13f',date:'2026-11-13',title:'Guild ranks and join requests',
@@ -2838,7 +2840,7 @@ const BOSS_TUNE={
   hp:{slimequeen:10630,lavagolem:6730},     // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
   dmg:2001,                              // x the boss's damage
   vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
-  minion:{hp:2010,dmg:601},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  minion:{hp:2010,dmg:901.5},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
   def:.5},                               // x the boss's armour and magic resistance (half)             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
   CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
@@ -5840,7 +5842,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13g';
+const BUILD='2026-11-13h';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
