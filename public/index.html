@@ -372,6 +372,12 @@ html.mobile .nw-list{max-height:none;overflow:visible}html.mobile .newswin .nw-f
 .pcard.on{display:block}.pcard p{margin:0 0 10px;font-weight:800;font-size:14px}.pcard p small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 .pcard .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.pcard .btn{min-height:34px;padding:5px 14px;font-size:13px}
 .shopwin{width:min(680px,96vw)}
+.tradewin{width:min(820px,96vw)}.tr-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}.tr-col h4{margin:0 0 6px;font:900 12.5px Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--aether);display:flex;justify-content:space-between}.tr-col h4 span{color:var(--muted)}
+.tr-offer{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;padding:8px;border-radius:12px;border:1px solid var(--line);background:rgba(10,16,38,.35)}.tr-offer.lock{border-color:#6fe39b;box-shadow:0 0 0 1px rgba(111,227,155,.35) inset}
+.tr-gold{display:flex;gap:6px;align-items:center;margin-top:8px;font-weight:800;font-size:12.5px;flex-wrap:wrap}.tr-gold b{color:var(--gold)}.tr-gold input{width:96px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:rgba(8,14,30,.7);color:#eaf6ff;font:800 13px Nunito,sans-serif}
+.tr-status{margin:10px 0 2px;padding:8px 10px;border-radius:10px;background:rgba(120,200,255,.08);border:1px solid var(--line);font-weight:700;font-size:13px}.tr-status.ok{border-color:#6fe39b;color:#b8f5cd}.tr-status.warn{border-color:#f7c552;color:#ffe9a8}
+.tr-bag{margin-top:12px}.tr-bag h4{margin:0 0 6px;font:900 12.5px Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--aether);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.tr-bag h4 .btn{min-height:26px;padding:1px 9px;font-size:12px}.tr-acts{display:flex;gap:8px;margin:8px 0 2px;flex-wrap:wrap}
+html.phone .tr-cols{grid-template-columns:1fr;gap:10px}html.phone .tr-bag .vw-grid{grid-template-columns:repeat(8,1fr)}
 .vaultwin{width:min(780px,96vw)}.vw-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
 .vw-col h4{margin:0 0 6px;font:900 12.5px Nunito,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--aether);display:flex;justify-content:space-between}.vw-col h4 span{color:var(--muted)}
 .vw-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
@@ -1107,6 +1113,10 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
       <div class="head"><div><h3 id="gw-title">Guild</h3><div class="sub" id="gw-sub"></div></div><button class="btn x" data-close>Close</button></div>
       <div id="gw-body"></div>
     </div>
+    <div class="charwin glass tradewin" id="tradewin" role="dialog" aria-modal="false" aria-labelledby="tr-title">
+      <div class="head"><div><h3 id="tr-title">Trade</h3><div class="sub" id="tr-sub"></div></div><button class="btn x" data-close>Cancel trade</button></div>
+      <div id="tr-body"></div>
+    </div>
     <div class="charwin glass vaultwin" id="vaultwin" role="dialog" aria-modal="false" aria-labelledby="vw-title">
       <div class="head"><div><h3 id="vw-title">Vault</h3><div class="sub" id="vw-sub"></div></div><button class="btn x" data-close>Close</button></div>
       <div id="vw-body"></div>
@@ -1222,6 +1232,7 @@ const SKILLS={
 const HEAD_FRONT_DIRS=[0,1,7],HEAD_CHIN_Y=72,MAX_BASE=100;
 /* wings: drawn over the body when the character faces away (rows 3-5), behind it otherwise */
 const WING_FRONT_DIRS=[3,4,5];
+const TRADE={near:150,far:380,slots:6,idle:9000,inv:20000,hb:900};   // trades: stand this close to start, break off when this far apart, offer slots, silence that ends it (ms)
 const WING_SC=.72,WING_NECK=6;   // painted wings: drawn at this scale; their crest sits this far (head-cell px) below the chin
 const WING_LOOK=[{kind:'feather',n:6,len:30,c1:'#f4f7ff',c2:'#c9d6ef',c3:'rgba(120,140,180,.5)'},
   {kind:'feather',n:7,len:36,c1:'#fff4c8',c2:'#f1c25a',c3:'rgba(190,140,40,.6)',glow:'#ffd76a',motes:'#fff1b0'},
@@ -2139,6 +2150,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13q',date:'2026-11-13',title:'Trading',
+    new:['Trade with other players: tap a player next to you and choose Trade (or type /trade name). They accept, and you both put gold, materials, potions and gear on the table (up to 6 things each, gear must be taken off first)','Nothing changes hands until you both press Lock offer. Locked things are held aside so they can\'t be sold or offered twice, and if either side changes anything, both locks reset. Cancelling, walking away or losing the connection gives everything back, even after a restart']},
   {v:'2026-11-13p',date:'2026-11-13',title:'Painted wings',
     new:['All five kinds of wings are now painted sprites (Feather, Seraph, Drake, Phoenix, and Celestial in pale ice blue), with a four-frame flap that is faster when you run','The wings are fixed to your neck: your head sits exactly between the left and right wing in every direction, and they move with your body through every attack swing. Other players see the same on you']},
   {v:'2026-11-13o',date:'2026-11-13',title:'Cracks in the bosses',
@@ -3191,7 +3204,7 @@ const TownScreen={
     this.res=this.maxRes();this.cds={};this.shots=[];this.wfx=[];this.drops=[];this.decals=[];this.queued=null;this.veilUntil=0;this.nextCrit=false;
     c.auto.range=c.auto.range||320;c.auto={prio:'near',defend:true,skip:[],maxAbove:0,lootOrder:'each',loot:{gold:true,pots:true,mats:true,gear:true,gearMin:0},order:[],off:[],tonic:false,tonicAt:30,elixir:true,...c.auto};c.auto.loot={gold:true,pots:true,mats:true,gear:true,gearMin:0,...c.auto.loot};if(!c.auto.lootV){c.auto.lootV=1;c.auto.pick=true;}   // AUTO picks loot up unless you turn it offc.skills=c.skills||{};
     if(!Array.isArray(c.hotbar)||c.hotbar.length!==10) c.hotbar=this.defaultBar();
-    this.initGear();this.dirtyMods();
+    this.initGear();this.tradeRestore();this.dirtyMods();
     if(c.hp==null||c.hp<=0) c.hp=this.maxHp();c.hp=Math.min(c.hp,this.maxHp());this.res=this.maxRes();
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
     this.dlg=null;this.keys.clear();this.dead=null;this.travelling=false;$('#map-fade').classList.remove('on');
@@ -4034,7 +4047,7 @@ const TownScreen={
     const n=Math.ceil(el/.05);for(let i=1;i<=n;i++) this.update(el/n,t0+(now-t0)*i/n);},
   update(dt,now){
     if(Net.room&&!this.travelling) this.netTick(now);
-    this.duelTick(now);
+    this.duelTick(now);this.tradeTick(now);
     if(now>(this.bhT||0)){this.bhT=now+500;this.bossHud();this.renderGuild();if(this.pendingG&&now>this.pendingG.until){this.pendingG=null;$('#pinvite').classList.remove('on');}}
     this.updateRemotes(dt);this.tickLater(now);this.tickDots(now);this.tickZones(now);this.tickBuffs(now);this.tickDrops(now);
     if(this.dlg||this.travelling){this.moving=false;if(this.dlg&&this.others&&this.others.size) this.updateMobs(dt,now);return;}
@@ -4414,6 +4427,7 @@ const TownScreen={
     if(t==='pv'||t==='pvk'||t==='ginv'||t==='gacc'){this.pkEvent(from,P,e,now,nm);return;}
     if(t==='greq'||t==='gok'||t==='gno'||t==='gq'||t==='grk'||t==='gkk'){this.guildEvent(t,from,P,e,now,nm);return;}
     if(t==='dinv'||t==='dacc'||t==='ddec'||t==='dend'){this.duelEvent(t,from,P,e,now,nm);return;}
+    if(t==='tinv'||t==='tacc'||t==='tdec'||t==='tof'||t==='tst'||t==='tend'){this.tradeEvent(t,from,P,e,now,nm);return;}
     if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
       this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
@@ -4556,9 +4570,9 @@ const TownScreen={
   /* tap another player on the map: party members become your support target, others get a card with Invite */
   hitRemote(x,y){if(!this.others) return null;let best=null,bd=1e9;for(const o of this.others.values()){if(this.hid(o.x,o.y)||Math.abs(x-o.x)>16||y<o.y-58||y>o.y+6) continue;const d=Math.abs(x-o.x)+Math.abs(y-(o.y-26))*.4;if(d<bd){bd=d;best=o;}}return best;},
   playerCard(o){const P=o.P,id=P.id,el=$('#pcard'),pa=this.party,can=!pa||this.isLeader();
-    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&this.gCanManage()&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&!this.duel?`<button class="btn" id="pc-duel" title="Challenge ${esc(o.n)} to a duel (stand next to them)">Duel</button>`:''}${id&&(this.mapId!=='town'||this.duelOn(id,performance.now()))?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">${GUILD_RANKS[o.gd[2]]} of ‹${esc(o.gd[1])}›</small>`:''}`;
+    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&this.gCanManage()&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&!this.trade?`<button class="btn" id="pc-trade" title="Trade items and gold with ${esc(o.n)} (stand next to them)">Trade</button>`:''}${id&&!this.duel?`<button class="btn" id="pc-duel" title="Challenge ${esc(o.n)} to a duel (stand next to them)">Duel</button>`:''}${id&&(this.mapId!=='town'||this.duelOn(id,performance.now()))?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">${GUILD_RANKS[o.gd[2]]} of ‹${esc(o.gd[1])}›</small>`:''}`;
     el.classList.add('on');clearTimeout(this.pcT);this.pcT=setTimeout(()=>el.classList.remove('on'),8000);
-    const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};{const g=$('#pc-ginv');if(g) g.onclick=()=>{el.classList.remove('on');this.guildInvite(id,o.n);};const k=$('#pc-pk');if(k) k.onclick=()=>{el.classList.remove('on');this.pvpTarget(o);};const du=$('#pc-duel');if(du) du.onclick=()=>{el.classList.remove('on');this.duelInvite(o);};}$('#pc-x').onclick=()=>el.classList.remove('on');},
+    const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};{const g=$('#pc-ginv');if(g) g.onclick=()=>{el.classList.remove('on');this.guildInvite(id,o.n);};const k=$('#pc-pk');if(k) k.onclick=()=>{el.classList.remove('on');this.pvpTarget(o);};const du=$('#pc-duel');if(du) du.onclick=()=>{el.classList.remove('on');this.duelInvite(o);};const tr=$('#pc-trade');if(tr) tr.onclick=()=>{el.classList.remove('on');this.tradeInvite(o);};}$('#pc-x').onclick=()=>el.classList.remove('on');},
   /* ---------- multiplayer: the others in this map, the map's host, shared monsters, chat (see Net) ---------- */
   netReset(){this.laters=[];this.zones=[];this.dots=[];this.casting=null;this.queued=null;this.others=new Map();this.mp={amHost:!Net.room,joinT:performance.now(),host:null,hits:[],vf:[],mk:[],mh:[],at:[0,0],dmg:new Map(),pubT:0,readT:0,lastSnap:null,lastPub:''};},
   pushRing(key,e,max){const r=this.mp&&this.mp[key];if(!r) return;r.push(e);if(r.length>max) r.shift();},
@@ -5004,11 +5018,11 @@ const TownScreen={
   toggleAuto(on){const a=this.ch.auto;a.on=on??!a.on;this.syncAuto();toast(a.on?'AUTO on · hunting nearby monsters':'AUTO off');if(!a.on){this.target=null;this.path=null;}this.save();},
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
-  openWin(id){if(id&&this.win===id) id=null;this.win=id;document.body.classList.toggle('skills-open',id==='skillwin');
-    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin','guildwin','newswin']) $('#'+w).classList.toggle('on',w===id);
+  openWin(id){if(id&&this.win===id) id=null;const prevWin=this.win;this.win=id;if(prevWin==='tradewin'&&id!=='tradewin'&&this.trade&&this.trade.state==='open'&&!this.trade.done) this.tradeEnd('closed',true);document.body.classList.toggle('skills-open',id==='skillwin');
+    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin','guildwin','newswin','tradewin']) $('#'+w).classList.toggle('on',w===id);
     $$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.win===id));
     if(id==='charwin') this.renderChar();else if(id==='invwin') this.renderInv();else if(id==='skillwin') this.renderSkills();
-    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();else if(id==='guildwin') this.renderGuild(true);else if(id==='newswin'){this.newsBase=this.newsSeen();this.newsMark();this.newsAll=false;this.renderNews();}},
+    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();else if(id==='guildwin') this.renderGuild(true);else if(id==='tradewin') this.renderTrade();else if(id==='newswin'){this.newsBase=this.newsSeen();this.newsMark();this.newsAll=false;this.renderNews();}},
   toggleChar(on){this.openWin(on===false?null:'charwin');},
   /* ---------- equipment: c.equip (worn, one per slot), c.bag (gear you carry); potions and materials stay in c.items ---------- */
   initGear(){const c=this.ch;
@@ -5158,6 +5172,141 @@ const TownScreen={
     const A=this.chainActive();if(A){const p=(q.prog||{})[A.id]||[],g=A.goals&&A.goals.find((g,i)=>(p[i]||0)<g[2]);
       out.push({id:A.id,title:A.title,from:TOWN_NPCS[A.from]?TOWN_NPCS[A.from].name:'the Guild',desc:A.desc,obj:this.goalText(A),reward:this.rewardText(A),dest:g?{map:g[1],kind:g[0]}:null});}
     return out;},
+  /* ---------- trading: invite (stand next to each other), both put gold, items and gear on the table, both lock, then it swaps ----------
+     Everything goes through the party-event relay (Net.pe) like duels do. Locking puts my offer aside (c.escrow, saved) so it
+     can't be sold, worn or offered twice; the swap happens once each side has locked, has seen the other's lock for the
+     offer on the table, and has been told the other has seen its own. Changing an offer unlocks the other side. */
+  tradeOther(){const T=this.trade;if(!T||!this.others) return null;for(const o of this.others.values()) if(o.P&&o.P.id===T.id) return o;return null;},
+  tradeInvite(o){const now=performance.now(),P=o&&o.P||{};if(!Net.room||!P.id) return;
+    if(this.trade){toast(this.trade.state==='out'?`Waiting for ${this.trade.n} to answer`:'You are already trading');return;}
+    if(this.duel&&(this.duel.state==='count'||this.duel.state==='on')){toast('Not during a duel');return;}
+    if(this.dead||o.dead){toast('Nobody can trade while down');return;}
+    if(Math.hypot(o.x-this.p.x,o.y-this.p.y)>TRADE.near){toast(`Stand next to ${o.n} to trade`);return;}
+    this.trade={id:P.id,n:o.n,state:'out',until:now+TRADE.inv,map:this.mapId,tid:Math.random().toString(36).slice(2,10)};
+    this.partySend('tinv',P.id,this.mapId,this.trade.tid);AudioFX.sfx('ui');toast(`Trade request sent to ${o.n}`);this.log('sys',null,`Trade · you asked ${o.n} to trade; they have 20 seconds to answer`);},
+  tradeAnswer(yes){const T=this.trade,el=$('#pinvite');el.classList.remove('on');if(!T||T.state!=='in') return;
+    if(!yes){this.partySend('tdec',T.id,T.tid,'no');this.trade=null;return;}
+    const o=this.tradeOther();if(!o||Math.hypot(o.x-this.p.x,o.y-this.p.y)>TRADE.near*1.6){toast(`Stand next to ${T.n} to trade`);el.classList.add('on');return;}
+    this.partySend('tacc',T.id,T.tid);this.tradeOpen();},
+  tradeOpen(){const T=this.trade,now=performance.now();if(!T) return;
+    Object.assign(T,{state:'open',t0:now,mine:{g:0,s:{},w:[]},rev:1,theirs:{rev:0,g:0,s:[],w:[]},lock:false,lockRev:0,peer:null,peerLock:false,peerSl:false,esc:null,hbAt:0,sentAt:0,commit:false,done:false,gotAt:now,qty:1});
+    this.log('sys',null,`Trade · trading with ${T.n}`);AudioFX.sfx('quest');this.openWin('tradewin');this.tradeSend(now);},
+  /* what is on the table, as small as it can be (one presence packet is at most 6000 characters) */
+  tradeGear(){const T=this.trade,c=this.ch;return T.mine.w.map(u=>c.bag.find(g=>g.uid===u)||(T.esc&&T.esc.w.find(g=>g.uid===u))).filter(Boolean);},
+  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0])});},
+  tradeSend(now){const T=this.trade;if(!T||T.state!=='open') return;this.partySend('tof',T.id,T.tid,T.rev,this.tradePack());T.sentAt=now||performance.now();},
+  /* what the other player says is on the table: only well-formed, in-range things are accepted */
+  tradeParse(str){let o;try{o=JSON.parse(String(str).slice(0,4000));}catch(e){return null;}if(!o||typeof o!=='object') return null;
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,Math.floor(+v||0))),out={g:clamp(o.g,0,1e9),s:[],w:[]};
+    for(const x of (Array.isArray(o.s)?o.s:[]).slice(0,TRADE.slots)){if(Array.isArray(x)&&itemDef(String(x[0]))&&clamp(x[1],0,99999)>0) out.s.push([String(x[0]),clamp(x[1],1,99999)]);}
+    for(const x of (Array.isArray(o.w)?o.w:[]).slice(0,TRADE.slots)){if(!Array.isArray(x)) continue;const B=GEAR_BASES[x[0]];if(!B) continue;
+      const g={base:String(x[0]),slot:B.slot,lvl:clamp(x[1],1,MAX_BASE),rar:clamp(x[2],0,4),enh:clamp(x[3],0,ENH_MAX),name:String(x[4]||B.names[0]).replace(/[<>&"']/g,'').slice(0,40),bonus:{}};
+      if(B.slot==='weapon') g.atk=clamp(x[5],1,9999);else{if(x[6]) g.def=clamp(x[6],0,5000);if(x[7]) g.hp=clamp(x[7],0,50000);}
+      if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);
+      if(x[8]&&typeof x[8]==='object') for(const k of STAT_KEYS) if(x[8][k]) g.bonus[k]=clamp(x[8][k],0,200);
+      if(B.slot==='wings') g.wing=clamp(x[9],0,4);out.w.push(g);}
+    if(out.s.length+out.w.length>TRADE.slots) return null;return out;},
+  tradeEvent(t,from,P,e,now,nm){const T=this.trade;
+    if(t==='tinv'){if(T||(this.duel&&(this.duel.state==='count'||this.duel.state==='on'))||this.dead){this.partySend('tdec',from,String(e[4]||''),'busy');return;}if(String(e[3])!==this.mapId) return;
+      this.trade={id:from,n:nm,state:'in',until:now+TRADE.inv,map:this.mapId,tid:String(e[4]||'').slice(0,12)};AudioFX.sfx('quest');const el=$('#pinvite');
+      el.innerHTML=`<p>${esc(nm)} wants to trade<small>Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · you both choose what to give, then both lock; nothing changes hands until then</small></p><div class="row"><button class="btn primary" id="tr-yes">Trade</button><button class="btn" id="tr-no">No thanks</button></div>`;
+      el.classList.add('on');$('#tr-yes').onclick=()=>this.tradeAnswer(true);$('#tr-no').onclick=()=>this.tradeAnswer(false);this.log('sys',null,`Trade · ${nm} wants to trade (stand next to them and accept)`);return;}
+    if(!T||T.id!==from||T.tid!==String(e[3]||'')) return;
+    if(t==='tacc'){if(T.state==='out') this.tradeOpen();return;}
+    if(t==='tdec'){if(T.state!=='out') return;this.trade=null;toast(e[4]==='busy'?`${T.n} is busy right now`:`${T.n} declined the trade`);return;}
+    if(T.state!=='open') return;
+    if(t==='tend'){if(T.commit) return;this.tradeEnd('them',false);return;}
+    if(t==='tof'){const r=e[4]|0;if(r<=T.theirs.rev) return;const o=this.tradeParse(e[5]);if(!o) return;T.theirs={rev:r,...o};T.peerLock=false;T.peerSl=false;T.gotAt=now;
+      if(T.lock&&!T.commit) this.tradeUnlock(`${T.n} changed their offer: look again, then lock`);
+      else if(this.win==='tradewin') this.renderTrade();return;}
+    if(t==='tst'){const was=[T.peerLock,T.peerSl,T.theirs.rev];T.peer={rev:e[4]|0,seen:e[5]|0,lock:e[6]|0,sl:e[7]|0,commit:e[8]|0,lockRev:e[9]|0,at:now};T.gotAt=now;
+      T.peerLock=T.peer.lock===1&&T.peer.rev===T.theirs.rev&&T.peer.lockRev===T.rev;T.peerSl=T.peerLock&&T.peer.sl===1&&T.peer.seen===T.rev;
+      if(T.lock&&!T.commit&&T.peerLock&&(T.peerSl||T.peer.commit===1)) this.tradeCommit(now);
+      else if(was[0]!==T.peerLock||was[1]!==T.peerSl){if(this.win==='tradewin') this.renderTrade();}return;}},
+  tradeHb(now){const T=this.trade;if(!T||T.state!=='open'||now-T.hbAt<TRADE.hb) return;T.hbAt=now;
+    this.partySend('tst',T.id,T.tid,T.rev,T.theirs.rev,T.lock?1:0,(T.peerLock&&T.lock)?1:0,T.commit?1:0,T.lockRev);
+    if(T.peer&&T.peer.seen!==T.rev&&now-T.sentAt>1200) this.tradeSend(now);},
+  tradeTick(now){const T=this.trade;if(!T) return;
+    if((T.state==='out'||T.state==='in')&&now>T.until){const was=T.state;this.trade=null;if(was==='in') $('#pinvite').classList.remove('on');else toast(`${T.n} didn't answer the trade`);return;}
+    if(T.state!=='open') return;
+    if(T.done){if(now>T.doneAt+6500){this.trade=null;}else this.tradeHb(now);return;}
+    const o=this.tradeOther();
+    if(this.mapId!==T.map||this.dead||this.travelling){this.tradeEnd('left',true);return;}
+    if(!o){T.miss=T.miss||now;if(now-T.miss>4000){this.tradeEnd('lost',false);return;}}else{T.miss=0;if(Math.hypot(o.x-this.p.x,o.y-this.p.y)>TRADE.far){this.tradeEnd('apart',true);return;}}
+    if(now-T.gotAt>TRADE.idle&&!T.commit){this.tradeEnd('lost',false);return;}
+    this.tradeHb(now);},
+  /* edit my side of the table (only while unlocked) */
+  tradeAdd(kind,id,qty){const T=this.trade,c=this.ch;if(!T||T.state!=='open'||T.lock||T.done) return;
+    const used=Object.keys(T.mine.s).length+T.mine.w.length;
+    if(kind==='w'){if(T.mine.w.includes(id)||!c.bag.some(g=>g.uid===id)) return;if(used>=TRADE.slots){toast('Six things at most per trade');return;}T.mine.w.push(id);}
+    else{const have=(c.items[id]|0)-(T.mine.s[id]|0);if(have<=0||!itemDef(id)) return;if(!(id in T.mine.s)&&used>=TRADE.slots){toast('Six things at most per trade');return;}T.mine.s[id]=(T.mine.s[id]|0)+Math.min(have,qty>=1e6?have:qty);}
+    this.tradeChanged();},
+  tradeRemove(kind,id,qty){const T=this.trade;if(!T||T.state!=='open'||T.lock||T.done) return;
+    if(kind==='w') T.mine.w=T.mine.w.filter(u=>u!==id);else{const n=(T.mine.s[id]|0)-(qty>=1e6?1e9:qty);if(n>0) T.mine.s[id]=n;else delete T.mine.s[id];}this.tradeChanged();},
+  tradeGold(v){const T=this.trade;if(!T||T.state!=='open'||T.lock||T.done) return;const g=Math.max(0,Math.min(this.ch.gold|0,Math.floor(+v||0)));if(g===T.mine.g){this.renderTrade();return;}T.mine.g=g;this.tradeChanged();},
+  tradeChanged(){const T=this.trade;T.rev++;T.peerSl=false;this.tradeSend();this.renderTrade();},
+  /* lock: put my offer aside; unlock gives it back */
+  tradeLock(){const T=this.trade,c=this.ch;if(!T||T.state!=='open'||T.lock||T.done) return;
+    if(!T.theirs.rev){toast(`Waiting for ${T.n}'s offer`);return;}
+    const m=T.mine,empty=!m.g&&!Object.keys(m.s).length&&!m.w.length&&!T.theirs.g&&!T.theirs.s.length&&!T.theirs.w.length;if(empty){toast('Nothing is on the table yet');return;}
+    if((c.gold|0)<m.g){toast('You no longer have that much gold');m.g=Math.min(m.g,c.gold|0);this.tradeChanged();return;}
+    for(const [id,n] of Object.entries(m.s)) if((c.items[id]|0)<n){toast('Something you offered is gone: check your offer');this.renderTrade();return;}
+    const gear=m.w.map(u=>c.bag.find(g=>g.uid===u));if(gear.some(g=>!g)){toast('A piece you offered is gone: check your offer');this.renderTrade();return;}
+    c.gold-=m.g;for(const [id,n] of Object.entries(m.s)){c.items[id]-=n;if(c.items[id]<=0) delete c.items[id];}c.bag=c.bag.filter(g=>!m.w.includes(g.uid));
+    T.esc={tid:T.tid,g:m.g,s:{...m.s},w:gear};c.escrow=T.esc;T.lock=true;T.lockRev=T.theirs.rev;T.hbAt=0;this.save();AudioFX.sfx('ui');this.renderTrade();this.tradeHb(performance.now());
+    if(this.bagUsed()+T.theirs.w.length+T.theirs.s.filter(([id])=>!(c.items[id]>0)).length>BAG_SIZE){toast('Your bag is nearly full: make room or the new things will not fit (I)');}},
+  tradeUnlock(msg){const T=this.trade;if(!T||!T.lock||T.commit) return;this.tradeRelease();T.lock=false;T.peerSl=false;T.hbAt=0;if(msg){toast(msg);this.log('sys',null,`Trade · ${msg}`);}this.renderTrade();this.tradeHb(performance.now());},
+  /* give my offer back (cancel, unlock, or after a crash) */
+  tradeRelease(){const T=this.trade,c=this.ch,E=T?T.esc:null;if(!E) return;c.gold=(c.gold|0)+E.g;for(const [id,n] of Object.entries(E.s)) c.items[id]=(c.items[id]|0)+n;for(const g of E.w) c.bag.unshift(g);T.esc=null;c.escrow=null;this.save();},
+  tradeRestore(){const c=this.ch,E=c.escrow;if(!E) return;c.gold=(c.gold|0)+(E.g|0);for(const [id,n] of Object.entries(E.s||{})) if(itemDef(id)) c.items[id]=(c.items[id]|0)+(n|0);for(const g of E.w||[]) if(g&&g.uid) c.bag.unshift(g);c.escrow=null;this.save();
+    setTimeout(()=>{if(activeScreen===this){toast('A trade was interrupted: what you offered is back in your bag');this.log('sys',null,'Trade · an interrupted trade: your offer was returned');}},2500);},
+  tradeEnd(why,notify){const T=this.trade;if(!T) return;if(T.state==='open'){if(!T.commit) this.tradeRelease();if(notify) this.partySend('tend',T.id,T.tid,why);}
+    this.trade=null;$('#pinvite').classList.remove('on');const msg={them:`${T.n} cancelled the trade`,left:'The trade was called off: you moved away',apart:`The trade was called off: you and ${T.n} moved too far apart`,lost:`The trade with ${T.n} was lost: they stopped answering`,closed:'You cancelled the trade'}[why]||'The trade was called off';
+    toast(msg);this.log('sys',null,`Trade · ${msg}`);if(this.win==='tradewin'){this.win=null;$('#tradewin').classList.remove('on');$$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed','false'));}},
+  /* both locked and both know it: hand over what they put on the table */
+  tradeCommit(now){const T=this.trade,c=this.ch;if(!T||!T.lock||T.commit) return;const O=T.theirs,E=T.esc;
+    c.gold=(c.gold|0)+O.g;for(const [id,n] of O.s) c.items[id]=(c.items[id]|0)+n;
+    for(const g0 of O.w){const g={...g0,bonus:{...g0.bonus},uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8)};c.bag.unshift(g);}
+    T.esc=null;c.escrow=null;T.commit=true;T.done=true;T.doneAt=now;T.hbAt=0;
+    const got=[...(O.g?[`${O.g} gold`]:[]),...O.s.map(([id,n])=>`${n} ${itemDef(id).name}`),...O.w.map(g=>gearName(g))],gave=[...(E.g?[`${E.g} gold`]:[]),...Object.entries(E.s).map(([id,n])=>`${n} ${itemDef(id).name}`),...E.w.map(g=>gearName(g))];
+    AudioFX.sfx('quest');toast(`Trade complete with ${T.n}`);this.log('sys',null,`Trade · with ${T.n}: you gave ${gave.join(', ')||'nothing'}; you got ${got.join(', ')||'nothing'}`);
+    T.summary={got,gave};this.gearChanged&&this.gearChanged();this.save();this.renderTrade();this.tradeHb(now);},
+  tradeTip(g){const b=Object.entries(g.bonus||{}).filter(([k,v])=>v).map(([k,v])=>`+${v} ${k}`);return `${RARITY[g.rar].name} ${gearName(g)} · item Lv ${g.lvl}${g.atk?` · ATK ${g.atk}`:''}${g.def?` · DEF ${g.def}`:''}${g.hp?` · HP ${g.hp}`:''}${b.length?' · '+b.join(' '):''}`;},
+  renderTrade(){if(this.win!=='tradewin') return;const T=this.trade,B=$('#tr-body');if(!T||T.state!=='open'){B.innerHTML='';return;}
+    const c=this.ch,m=T.mine,O=T.theirs;
+    const cell=(attrs,inner,cls,title)=>`<button class="islot has ${cls||''}" ${attrs} title="${esc(title)}" aria-label="${esc(title)}" ${T.lock||T.done?'disabled':''}>${inner}</button>`;
+    const mineCells=[];for(const [id,n] of Object.entries(m.s)) mineCells.push(cell(`data-rm="s|${id}"`,`${itemIcon(id)}<span class="n">${n}</span>`,'',`${itemDef(id).name} x${n} · tap to take one back`));
+    for(const g of this.tradeGear()) mineCells.push(cell(`data-rm="w|${g.uid}"`,`${gearIcon(g)}<span class="lv">${g.lvl}</span>${g.enh?`<span class="enh">+${g.enh}</span>`:''}`,'gear r'+g.rar,`${this.tradeTip(g)} · tap to take back`));
+    const theirCells=[];for(const [id,n] of O.s) theirCells.push(`<div class="islot has" title="${esc(itemDef(id).name)} x${n}">${itemIcon(id)}<span class="n">${n}</span></div>`);
+    for(const g of O.w) theirCells.push(`<div class="islot has gear r${g.rar}" title="${esc(this.tradeTip(g))}">${gearIcon(g)}<span class="lv">${g.lvl}</span>${g.enh?`<span class="enh">+${g.enh}</span>`:''}</div>`);
+    const pad=a=>{while(a.length<TRADE.slots) a.push('<div class="islot" aria-hidden="true"></div>');return a.join('');};
+    const bag=[];for(const id of Object.keys(c.items).filter(k=>(c.items[k]|0)-(m.s[k]|0)>0&&itemDef(k))) bag.push(cell(`data-add="s|${id}"`,`${itemIcon(id)}<span class="n">${(c.items[id]|0)-(m.s[id]|0)}</span>`,'',`${itemDef(id).name} · tap to offer ${T.qty>=1e6?'all':T.qty}`));
+    for(const g of c.bag.filter(g=>!m.w.includes(g.uid))) bag.push(cell(`data-add="w|${g.uid}"`,`${gearIcon(g)}<span class="lv">${g.lvl}</span>${g.enh?`<span class="enh">+${g.enh}</span>`:''}`,'gear r'+g.rar,`${this.tradeTip(g)} · tap to offer`));
+    while(bag.length<12) bag.push('<div class="islot" aria-hidden="true"></div>');
+    let st,cls='';
+    if(T.done){st=`Trade complete! You gave ${(T.summary&&T.summary.gave.join(', '))||'nothing'}; you got ${(T.summary&&T.summary.got.join(', '))||'nothing'}.`;cls='ok';}
+    else if(T.lock&&T.peerLock){st='Both locked: finishing the trade…';cls='ok';}
+    else if(T.lock){st=`Locked. Waiting for ${esc(T.n)} to lock theirs.`;}
+    else if(T.peerLock){st=`${esc(T.n)} has locked their offer. Look it over, then lock yours to finish.`;cls='warn';}
+    else if(!O.rev) st=`Waiting for ${esc(T.n)}…`;
+    else st='Choose what to give, check what you get, then press Lock offer. It finishes when you both have locked.';
+    const free=BAG_SIZE-this.bagUsed();
+    B.innerHTML=`<div class="tr-status ${cls}" role="status">${st}</div>
+      <div class="tr-acts">${T.done?'<button class="btn primary" id="tr-close">Close</button>':`${T.lock?`<button class="btn" id="tr-unlock" ${T.peerSl?'disabled title="Both sides have seen the locks: it is finishing"':''}>Unlock to change</button>`:`<button class="btn primary" id="tr-lock">Lock offer</button>`}<button class="btn" id="tr-cancel">Cancel trade</button>`}</div>
+      <div class="tr-cols"><div class="tr-col"><h4>Your offer <span>${m.w.length+Object.keys(m.s).length}/${TRADE.slots}${T.lock?' · locked':''}</span></h4><div class="tr-offer ${T.lock?'lock':''}">${pad(mineCells)}</div>
+        <div class="tr-gold">Gold <input type="number" id="tr-gold" min="0" max="${c.gold|0}" value="${m.g}" ${T.lock||T.done?'disabled':''} aria-label="Gold to give"> <span>of <b>${(c.gold|0)+(T.esc?T.esc.g:0)}</b></span> <button class="btn" id="tr-gmax" ${T.lock||T.done?'disabled':''}>All</button></div></div>
+      <div class="tr-col"><h4>${esc(T.n)} offers <span>${O.w.length+O.s.length}/${TRADE.slots}${T.peerLock?' · locked':''}</span></h4><div class="tr-offer ${T.peerLock?'lock':''}">${pad(theirCells)}</div>
+        <div class="tr-gold">Gold <b>${O.g}</b></div></div></div>
+      ${T.done?'':`<div class="tr-bag"><h4><span>Your bag · ${this.bagUsed()}/${BAG_SIZE} (${free} free)</span><span>Offer ${[[1,'1'],[10,'10'],[1e9,'All']].map(([q,l])=>`<button class="btn tab" data-q="${q}" aria-pressed="${T.qty===q}" ${T.lock?'disabled':''}>${l}</button>`).join('')} at a time</span></h4><div class="vw-grid">${bag.join('')}</div></div>`}
+      <p class="note">Things you lock are held aside until the trade ends, so they can't be sold or offered twice. If anything on the table changes, both locks reset. Worn gear stays on you: take it off first (I). A trade ends if either of you walks away.</p>`;
+    $('#tr-sub').textContent=`With ${T.n} · Lv ${(this.tradeOther()&&this.tradeOther().lv)||'?'}`;
+    $$('#tr-body [data-add]').forEach(b=>b.onclick=()=>{const [k,id]=b.dataset.add.split('|');this.tradeAdd(k,id,T.qty);});
+    $$('#tr-body [data-rm]').forEach(b=>b.onclick=()=>{const [k,id]=b.dataset.rm.split('|');this.tradeRemove(k,id,T.qty);});
+    $$('#tr-body [data-q]').forEach(b=>b.onclick=()=>{T.qty=+b.dataset.q;this.renderTrade();});
+    const gi2=$('#tr-gold');if(gi2){gi2.onchange=()=>this.tradeGold(gi2.value);gi2.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();gi2.blur();}e.stopPropagation();};}
+    const gm=$('#tr-gmax');if(gm) gm.onclick=()=>this.tradeGold(c.gold|0);
+    const lk=$('#tr-lock');if(lk) lk.onclick=()=>this.tradeLock();const ul=$('#tr-unlock');if(ul) ul.onclick=()=>this.tradeUnlock('');
+    const cn=$('#tr-cancel');if(cn) cn.onclick=()=>this.tradeEnd('closed',true);const cl=$('#tr-close');if(cl) cl.onclick=()=>this.openWin(null);},
   /* ---------- duels: a challenge between two players standing side by side, a 5-second countdown, a fight in a ring ---------- */
   duelOther(){const D=this.duel;if(!D||!this.others) return null;for(const o of this.others.values()) if(o.P&&o.P.id===D.id) return o;return null;},
   duelOn(id,now){const D=this.duel;return D&&D.id===id&&(D.state==='on'||(D.state==='count'&&D.startAt-now<1000))?D:null;},      // a hit sent a moment before my countdown ends still counts
@@ -5385,6 +5534,7 @@ const TownScreen={
         this.log('gchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,'g:'+c.guild.i]);if(Net.says.length>5) Net.says.shift();}return;}
       else if(cmd==='pk'){const a=t.split(/\s+/).slice(1).join(' ').trim();if(!a) this.openWin('pkwin');else if(['peace','all','guild'].includes(a.toLowerCase())) this.setPk(a.toLowerCase());else this.setPk('target',a);}
       else if(cmd==='guild') this.openWin('guildwin');
+      else if(cmd==='trade'){const nm=t.split(/\s+/).slice(1).join(' ').trim().toLowerCase(),o=nm&&this.others&&[...this.others.values()].find(o=>String(o.n).toLowerCase()===nm);if(!nm) this.log('sys',null,'Trade: /trade name (stand next to them), or tap a player and choose Trade');else if(!o) this.log('sys',null,`Trade · nobody called ${nm} is here`);else this.tradeInvite(o);}
       else if(cmd==='patch'||cmd==='news') this.openWin('newswin');
       else if(cmd==='duel'){const nm=t.split(/\s+/).slice(1).join(' ').trim().toLowerCase(),o=nm&&this.others&&[...this.others.values()].find(o=>String(o.n).toLowerCase()===nm);if(!nm) this.log('sys',null,'Duel: /duel name (stand next to them)');else if(!o) this.log('sys',null,`Nobody called ${nm} is on this map`);else this.duelInvite(o);}
       else if(cmd==='party') this.openWin('partywin');
@@ -6007,7 +6157,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13p';
+const BUILD='2026-11-13q';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
