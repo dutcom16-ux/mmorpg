@@ -326,7 +326,14 @@ html:not(.mobile) .shortcuts .ib{flex:1 1 0;min-width:0;width:auto;max-width:36p
 .netpill i{width:8px;height:8px;border-radius:50%;background:#6b7590;flex:none}.netpill.on i{background:#6cf2a6;box-shadow:0 0 8px #6cf2a6}.netpill.on{color:#bff4d4}
 .chatlog .party{color:#b8ffc8}.chatlog .party .who{color:#7dff9a}
 .chatlog .gchat{color:#ffe2a8}.chatlog .gchat .who{color:#f7c552}.pkbtn.on{border-color:#ff7b7b;color:#ffb0b0;background:rgba(255,80,80,.16)}
-.pkwin{width:min(600px,96vw)}.newswin{width:min(640px,96vw)}html.mobile .newswin{width:min(430px,94vw)}
+.pkwin{width:min(600px,96vw)}
+.duelcd{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);z-index:12;pointer-events:none;font:700 120px Cinzel,serif;color:#ffe9a6;text-shadow:0 4px 0 #6a3d0a,0 0 28px rgba(255,190,90,.75);display:none}
+.duelcd.on{display:block;animation:duelpop .9s ease-out both}.duelcd.go{color:#ff9a7a;text-shadow:0 4px 0 #5a1208,0 0 32px rgba(255,90,60,.85)}
+@keyframes duelpop{0%{transform:translate(-50%,-50%) scale(1.7);opacity:0}25%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(.92);opacity:.9}}
+.duelbar{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:6px 14px;border-radius:999px;font:900 12.5px Nunito,sans-serif;color:#ffe2b0;display:none;white-space:nowrap;pointer-events:none}
+.duelbar.on{display:block}.duelbar.warn{color:#ffb0a0;border-color:rgba(255,120,100,.7)}
+html.mobile .duelcd{font-size:84px}html.phone .duelbar{top:auto;bottom:calc(var(--hbh,96px) + 64px);font-size:11.5px}
+@media (prefers-reduced-motion:reduce){.duelcd.on{animation:none}}.newswin{width:min(640px,96vw)}html.mobile .newswin{width:min(430px,94vw)}
 .nw-list{max-height:min(58vh,560px);overflow:auto;overscroll-behavior:contain;margin-top:6px;padding-right:4px}
 .nw-rel{padding:12px 2px;border-bottom:1px solid rgba(160,220,255,.1);display:grid;gap:9px}.nw-rel:last-child{border-bottom:0}.nw-rel .pn-head h2{font-size:17px}
 html.mobile .nw-list{max-height:none;overflow:visible}html.mobile .newswin .nw-foot{position:sticky;bottom:-12px;z-index:2;margin:8px -12px -12px;padding:8px 12px 10px;background:#0e122a;border-radius:0 0 16px 16px;flex-wrap:nowrap;gap:8px}html.mobile .nw-foot label{flex:1 1 auto;min-width:0;flex-wrap:nowrap;font-size:11px;white-space:nowrap}html.mobile .nw-foot select{flex:1 1 auto;min-width:0;font-size:11.5px;padding:4px 6px}html.mobile .nw-foot .btn{min-height:30px;padding:3px 12px;flex:none}html.mobile .nw-rel .pn-g li{font-size:12.5px}
@@ -1043,6 +1050,7 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
     <div class="party-frame glass" id="party-frame" aria-label="Your party"></div>
     <div class="pcard glass" id="pinvite" role="alertdialog" aria-live="assertive"></div>
     <div class="pcard glass" id="pcard" role="dialog"></div>
+    <div class="duelcd" id="duelcd" aria-live="assertive"></div><div class="duelbar glass" id="duelbar" role="status"></div>
     <div class="chatbox glass" id="chatbox">
       <div class="chat-top"><button class="netpill" id="net-pill" type="button" title="Who's online · party (P)"><i></i><span>Single-player</span></button>
         <span class="chat-btns"><button class="btn partybtn pkbtn" id="btn-pk" type="button" title="PK mode and guild (G)">Peace</button><button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button><button class="btn partybtn" id="btn-guild" type="button" title="Guild (O)">Guild</button>
@@ -2130,6 +2138,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13n',date:'2026-11-13',title:'Duels, faster blades, quicker spells',
+    new:['Duels: stand next to another player, tap them and choose Duel (or /duel name). If they accept, a 5-second countdown starts, then you fight inside a ring, anywhere, even in Oakhaven. The first who would fall loses at 1 HP (nobody dies), stepping out of the ring for 3 seconds loses, and after 3 minutes it is a draw. Your duel record shows in the PK window'],
+    balance:['Everyone attacks 15% faster','Magic attack skills come back 10% sooner (spell users swing slowly)','PvP: defence now takes a share off every hit (the more defence, the bigger the share, up to 60%) instead of a flat amount; no single hit takes more than 20% of someone\'s HP; Channelers, Hierophants and Arbiters deal 60% more damage to players']},
   {v:'2026-11-13m',date:'2026-11-13',title:'Resized bosses',
     balance:['The Lava Dragon Golem is 40% smaller than in the last update (1.2 times its first size), and its Molten Brood with it','The Slime Queen is 35% bigger, and so is the Slime King she summons','Their attacks reach out from their new body sizes'],
     fixes:['While summoning the Slime King, the Queen\'s picture no longer jumps to the side: she stays where she stands, and the King steps out exactly where the spell shows him']},
@@ -2341,7 +2352,8 @@ const LINES={
 /* job lines: max HP / SP multipliers and the base time between basic attacks (s) */
 const HP_MOD={Recruit:1,Melee:1.2,Stealth:.95,Ranged:.9,Magic:.8,Support:.9},SP_MOD={Recruit:1,Melee:.8,Stealth:.9,Ranged:1,Magic:1.5,Support:1.4};
 const ASPD_BASE={Recruit:.95,Melee:.85,Stealth:.75,Ranged:1,Magic:1.1,Support:1.05};
-const ASPD_BOOST=1.2,CAST_SCALE=.8;   // everyone attacks 20% faster and casts 20% quicker than the base formulas
+const ASPD_BOOST=1.2*1.15,CAST_SCALE=.8;   // everyone attacks 20% faster, then 15% faster again, and casts 20% quicker than the base formulas
+const SPELL_CD=.9;                            // magic attack skills (mag) come back 10% sooner: spell users swing slowly
 /* stat points: Floor((Lv-1)/5)+3 on reaching each level (48 at the start: 1,225 more by Level 99);
    raising a stat from X costs Floor((X-1)/10)+2; stats go up to 99 */
 const STAT_MAX=99,statGain=n=>Math.floor((n-1)/5)+3,raiseCost=x=>Math.floor((x-1)/10)+2;
@@ -3189,7 +3201,7 @@ const TownScreen={
     Sprites.ensure('skillfx').catch(()=>{});Sprites.ensure('dmgfx').catch(()=>{});
     this.hud();$('#dlg').classList.remove('on');this.save();this.questCheck();
     c.pk={mode:'peace',who:'',kills:0,deaths:0,...(c.pk||{})};this.pkFoes={};this.pkMine={};this.pkBadge();
-    this.gInit();this.gBadge();
+    this.gInit();this.gBadge();this.duel=null;this.duelUi(performance.now());
     this.mailSync();Mail.fetch().then(()=>{if(this.ch===c&&activeScreen===this) this.mailSync();});
     showScreen('screen-town');this.layoutHud();requestAnimationFrame(()=>requestAnimationFrame(()=>this.layoutHud()));setTimeout(()=>this.layoutHud(),400);
     this.newsAuto();
@@ -3278,7 +3290,7 @@ const TownScreen={
   aspd(){return Math.min(190,Math.round(200-this.swingCd()*50));},
   castMul(){const S=this.st(),M=this.mods();return Math.max(0,1-(S.DEX*2+S.INT)/530)*Math.max(.2,1-(M.castPct||0))*CAST_SCALE;},
   castTime(s,r){return SV(s.cast||0,r)*this.castMul();},
-  cdOf(s,r){return SV(s.cd,r)*(1-Math.min(.5,this.mods().cdPct||0));},
+  cdOf(s,r){return SV(s.cd,r)*(1-Math.min(.5,this.mods().cdPct||0))*(s.mag?SPELL_CD:1);},
   costOf(s,r){return Math.max(0,Math.round(SV(s.cost,r)));},
   skillRange(s,r){if(s.dash) return s.range;if(s.range) return s.range+(this.mods().range||0)*(this.reach()>40?1:0);
     const far=s.mag||s.shot||(s.k==='aoe'||s.k==='zone')&&s.at==='target';return far?Math.max(this.reach(),140):this.reach();},
@@ -3831,7 +3843,7 @@ const TownScreen={
         ctx.fillStyle=`rgba(60,40,20,${.22*a})`;ctx.beginPath();ctx.arc(0,0,d.r*.35,0,7);ctx.fill();}
       ctx.restore();}},
   /* everything flat on the ground, under the characters: marks, spell circles, your buff ring, loot */
-  drawGround(ctx,now){this.drawDecals(ctx,now);this.drawEncGround(ctx,now);
+  drawGround(ctx,now){this.drawDecals(ctx,now);this.drawEncGround(ctx,now);this.drawDuelRing(ctx,now);
     {const M=this.ally&&this.allyOk(this.ally);if(M){const o=M.o;ctx.save();ctx.strokeStyle='rgba(125,255,154,.85)';ctx.lineWidth=1.8;ctx.setLineDash([5,4]);ctx.lineDashOffset=-now/70;ctx.beginPath();ctx.ellipse(o.x,o.y,20,8,0,0,7);ctx.stroke();ctx.restore();}}
     if(this.aim&&this.aimAt){const A=this.aim,col=A.s.color||FX_COL[fxOf(A.s)],x=this.aimAt.x,y=this.aimAt.y,far=Math.hypot(x-this.p.x,y-this.p.y)>A.range;
       ctx.save();ctx.setLineDash([6,5]);ctx.lineDashOffset=-now/60;ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(this.p.x,this.p.y,A.range,A.range*.42,0,0,7);ctx.stroke();   // how far you can cast
@@ -4013,6 +4025,7 @@ const TownScreen={
     const n=Math.ceil(el/.05);for(let i=1;i<=n;i++) this.update(el/n,t0+(now-t0)*i/n);},
   update(dt,now){
     if(Net.room&&!this.travelling) this.netTick(now);
+    this.duelTick(now);
     if(now>(this.bhT||0)){this.bhT=now+500;this.bossHud();this.renderGuild();if(this.pendingG&&now>this.pendingG.until){this.pendingG=null;$('#pinvite').classList.remove('on');}}
     this.updateRemotes(dt);this.tickLater(now);this.tickDots(now);this.tickZones(now);this.tickBuffs(now);this.tickDrops(now);
     if(this.dlg||this.travelling){this.moving=false;if(this.dlg&&this.others&&this.others.size) this.updateMobs(dt,now);return;}
@@ -4391,6 +4404,7 @@ const TownScreen={
   partyEvent(from,L,P,e,now){const t=e[1],pa=this.party,nm=Net.name(P.n);
     if(t==='pv'||t==='pvk'||t==='ginv'||t==='gacc'){this.pkEvent(from,P,e,now,nm);return;}
     if(t==='greq'||t==='gok'||t==='gno'||t==='gq'||t==='grk'||t==='gkk'){this.guildEvent(t,from,P,e,now,nm);return;}
+    if(t==='dinv'||t==='dacc'||t==='ddec'||t==='dend'){this.duelEvent(t,from,P,e,now,nm);return;}
     if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
       this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
@@ -4533,9 +4547,9 @@ const TownScreen={
   /* tap another player on the map: party members become your support target, others get a card with Invite */
   hitRemote(x,y){if(!this.others) return null;let best=null,bd=1e9;for(const o of this.others.values()){if(this.hid(o.x,o.y)||Math.abs(x-o.x)>16||y<o.y-58||y>o.y+6) continue;const d=Math.abs(x-o.x)+Math.abs(y-(o.y-26))*.4;if(d<bd){bd=d;best=o;}}return best;},
   playerCard(o){const P=o.P,id=P.id,el=$('#pcard'),pa=this.party,can=!pa||this.isLeader();
-    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&this.gCanManage()&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&this.mapId!=='town'?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">${GUILD_RANKS[o.gd[2]]} of ‹${esc(o.gd[1])}›</small>`:''}`;
+    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&this.gCanManage()&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&!this.duel?`<button class="btn" id="pc-duel" title="Challenge ${esc(o.n)} to a duel (stand next to them)">Duel</button>`:''}${id&&(this.mapId!=='town'||this.duelOn(id,performance.now()))?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">${GUILD_RANKS[o.gd[2]]} of ‹${esc(o.gd[1])}›</small>`:''}`;
     el.classList.add('on');clearTimeout(this.pcT);this.pcT=setTimeout(()=>el.classList.remove('on'),8000);
-    const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};{const g=$('#pc-ginv');if(g) g.onclick=()=>{el.classList.remove('on');this.guildInvite(id,o.n);};const k=$('#pc-pk');if(k) k.onclick=()=>{el.classList.remove('on');this.pvpTarget(o);};}$('#pc-x').onclick=()=>el.classList.remove('on');},
+    const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};{const g=$('#pc-ginv');if(g) g.onclick=()=>{el.classList.remove('on');this.guildInvite(id,o.n);};const k=$('#pc-pk');if(k) k.onclick=()=>{el.classList.remove('on');this.pvpTarget(o);};const du=$('#pc-duel');if(du) du.onclick=()=>{el.classList.remove('on');this.duelInvite(o);};}$('#pc-x').onclick=()=>el.classList.remove('on');},
   /* ---------- multiplayer: the others in this map, the map's host, shared monsters, chat (see Net) ---------- */
   netReset(){this.laters=[];this.zones=[];this.dots=[];this.casting=null;this.queued=null;this.others=new Map();this.mp={amHost:!Net.room,joinT:performance.now(),host:null,hits:[],vf:[],mk:[],mh:[],at:[0,0],dmg:new Map(),pubT:0,readT:0,lastSnap:null,lastPub:''};},
   pushRing(key,e,max){const r=this.mp&&this.mp[key];if(!r) return;r.push(e);if(r.length>max) r.shift();},
@@ -4689,6 +4703,7 @@ const TownScreen={
     const M=PK_MODES.find(x=>x[0]===mode);this.log('sys',null,`PK mode · ${M[1]}${mode==='target'?` (${c.pk.who})`:''}`);toast(`PK mode · ${M[1]}${mode==='target'?` · ${c.pk.who}`:''}`);this.pkBadge();this.save();if(this.win==='pkwin') this.renderPk();},
   /* why you can't attack this player right now ('' = you can) */
   pkWhy(o,now){const c=this.ch,P=o.P||{},pk=c.pk||{mode:'peace'};
+    if(this.duel&&this.duel.id===P.id){if(this.duel.state==='on') return '';if(this.duel.state==='count') return `The duel starts in ${Math.max(1,Math.ceil((this.duel.startAt-now)/1000))}`;}
     if(this.mapId==='town') return 'Oakhaven is a safe zone';if(o.dead) return `${o.n} is down`;if(this.inParty(P.id)) return 'You cannot attack your own party';
     if((this.pkFoes||{})[P.id]>now) return '';                                    // they hit you first: self-defence
     if((c.baseLevel||1)<PK_MIN_LV) return `PK opens at Base Level ${PK_MIN_LV}`;if(o.lv<PK_MIN_LV) return `${o.n} is under Base Level ${PK_MIN_LV} and protected`;
@@ -4705,19 +4720,22 @@ const TownScreen={
     if(!fixed&&!o.mag&&!o.noMiss&&!crit&&Math.random()*100>=Math.max(20,Math.min(95,this.hitRate()+(o.hitB||0)-this.mobFlee({lvl:O.lv})))){this.fx.push({x:O.x,y:O.y-54,miss:true,sty:'miss',t0:now});AudioFX.sfx('miss');return {miss:true};}
     if(crit) this.nextCrit=false;
     let d;if(fixed) d=o.fixed;else if(o.mag){const [a,b]=this.matk();d=(a+Math.random()*(b-a))*(o.mult??1);}else d=this.atkPower()*(.9+Math.random()*.2)*(o.mult??1);
-    if(crit) d*=this.critMul();d*=PK_SCALE;{const df=Array.isArray(O.P.df)?O.P.df:[0,0];d=o.mag?Math.max(d*.25,d-Math.max(0,+df[1]||0)*.6):Math.max(d*.25,d-Math.max(0,+df[0]||0)*.5);}
+    if(crit) d*=this.critMul();d*=PK_SCALE*(PVP_TUNE.line[this.line()]||1);
+    {const df=Array.isArray(O.P.df)?O.P.df:[0,0],v=Math.max(0,+(o.mag?df[1]:df[0])||0);d*=1-Math.min(PVP_TUNE.cap,v/(v+PVP_TUNE.k+PVP_TUNE.kl*(this.ch.baseLevel||1)));}
     if(O.j!=='recruit') d*=CHAR_HP_X;      // other jobs have 301x HP, so hits on them count 301x: a duel lasts as long as before (Recruits are unchanged)
     const dmg=Math.max(1,Math.round(d)),sty=crit?'crit':o.num||(o.src==='basic'?'normal':'skill');
     this.numFx(O.x+(Math.random()-.5)*12,O.y-54,dmg,sty,now);if(o.src!=='dot'){this.impact(m,sty,now);AudioFX.sfx(crit?'crit':'hit');}O.hurtT=now;
-    this.pkMine[O.P.id]=now+PK_GRACE;this.partySend('pv',O.P.id,dmg,(crit?1:0)|(o.mag?2:0));return {dmg,crit};},
+    if(!this.duelOn(O.P.id,now)) this.pkMine[O.P.id]=now+PK_GRACE;this.partySend('pv',O.P.id,dmg,(crit?1:0)|(o.mag?2:0));return {dmg,crit};},
   pkEvent(from,P,e,now,nm){const c=this.ch,t=e[1];
-    if(t==='pv'){   // someone hit me: only players in a PK mode, or ones I attacked, and never in town or in my party
-      if(this.dead||this.travelling||this.mapId==='town'||P.m!==this.mapId||this.inParty(from)) return;
-      if(!((P.pk|0)>0)&&!((this.pkMine||{})[from]>now)) return;const o=this.others&&[...this.others.values()].find(x=>x.P&&x.P.id===from);if(!o) return;
-      this.pkFoes[from]=now+PK_GRACE;const M=this.mods(),raw=Math.max(1,Math.min(this.maxHp()*.6,e[3]|0)),mag=(e[4]|0)&2;
+    if(t==='pv'){   // someone hit me: only players in a PK mode, or ones I attacked, and never in town or in my party (a duel allows both)
+      const du=this.duelOn(from,now);if(this.dead||this.travelling||P.m!==this.mapId) return;
+      if(!du){if(this.mapId==='town'||this.inParty(from)) return;if(!((P.pk|0)>0)&&!((this.pkMine||{})[from]>now)) return;}
+      const o=this.others&&[...this.others.values()].find(x=>x.P&&x.P.id===from);if(!o) return;
+      if(!du) this.pkFoes[from]=now+PK_GRACE;const M=this.mods(),raw=Math.max(1,Math.min(this.maxHp()*PVP_TUNE.hitCap,e[3]|0)),mag=(e[4]|0)&2;
       let dmg=raw;if(M.dr) dmg*=1-Math.min(.6,M.dr);dmg=Math.max(1,Math.round(dmg));      // the attacker already took my published defence off
       if(this.barrier&&this.barrier.hp>0){const ab=Math.min(this.barrier.hp,dmg);this.barrier.hp-=ab;dmg-=ab;if(this.barrier.hp<=0) this.barrier=null;this.renderBuffs(now);if(dmg<=0) return;}
       c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});
+      if(du){if(c.hp<=0){c.hp=1;this.duelOver('lost',now);}this.hudBars();return;}      // a duel never kills: the one who would fall loses
       if(now>(this._pkWarn||0)){this._pkWarn=now+20000;this.log('sys',null,`${nm} is attacking you! You can fight back (tap them).`);toast(`${nm} is attacking you!`);}
       if(c.hp<=0){c.hp=0;this.dead={until:now+2400};this.target=null;this.atk=null;this.path=null;this.casting=null;for(const m of this.mobs) if(!m.tgt||m.tgt==='me') m.hostile=false;
         c.pk.deaths=(c.pk.deaths|0)+1;AudioFX.sfx('death');this.partySend('pvk',from);this.log('sys',null,`You were defeated by ${nm}. The Waystone's light carries you home.`);toast(`Defeated by ${nm} · returning to Oakhaven Sanctuary`);this.save();}
@@ -4843,12 +4861,12 @@ const TownScreen={
     const ds=$('#gw-disband');if(ds) ds.onclick=()=>this.arm(ds,'Tap again to disband',()=>this.gQuit(true));
     const lv=$('#gw-leave');lv.onclick=()=>{if(my===0&&g.m.length>1){toast('Make someone else Guild Leader first (♛), or disband the guild');return;}this.arm(lv,'Tap again to leave',()=>this.gQuit(false));};},
   renderPk(){if(this.win!=='pkwin') return;const c=this.ch,pk=c.pk,L=c.baseLevel||1,ppl=[...this.people().values()].filter(x=>x.P.id!==this.pid());
-    $('#pk-sub').textContent=`${PK_MODES.find(x=>x[0]===pk.mode)[1]}${c.guild?` · ‹${c.guild.n}›`:''} · ${pk.kills|0} wins, ${pk.deaths|0} defeats`;
+    $('#pk-sub').textContent=`${PK_MODES.find(x=>x[0]===pk.mode)[1]}${c.guild?` · ‹${c.guild.n}›`:''} · ${pk.kills|0} wins, ${pk.deaths|0} defeats · duels ${pk.dw|0}-${pk.dl|0}`;
     
     $('#pk-body').innerHTML=`<div class="pw-sec"><h4>PK mode</h4>${PK_MODES.map(([k,n,d])=>`<label class="pk-mode"><input type="radio" name="pkm" value="${k}" ${pk.mode===k?'checked':''}><span><b>${n}${k==='target'&&pk.who?` · ${esc(pk.who)}`:''}</b><small>${d}</small></span></label>`).join('')}
         <div class="pk-row"><input type="text" id="pk-who" maxlength="16" placeholder="Character name" value="${esc(pk.who||'')}" aria-label="PK target: character name"><button class="btn" id="pk-set">Set as my target</button></div>
         ${ppl.length?`<div class="pk-row" style="margin-top:0">${ppl.slice(0,10).map(x=>`<button class="btn" data-who="${esc(Net.name(x.P.n))}">${esc(Net.name(x.P.n))}</button>`).join('')}</div>`:''}
-        <p class="pw-note">${L<PK_MIN_LV?`<b style="color:#ffb0b0">PK opens at Base Level ${PK_MIN_LV} (you are ${L}).</b> `:''}Tap a player to attack when your mode allows it. Oakhaven is a safe zone, your party can never be hit, and players under Base Level ${PK_MIN_LV} are protected. Anyone you hit may hit you back for 30 seconds, whatever their mode. Players deal half damage to each other; area skills only hit monsters. Falling to a player sends you back to Oakhaven like any defeat: nothing is lost.</p></div>
+        <p class="pw-note">${L<PK_MIN_LV?`<b style="color:#ffb0b0">PK opens at Base Level ${PK_MIN_LV} (you are ${L}).</b> `:''}Tap a player to attack when your mode allows it. Oakhaven is a safe zone, your party can never be hit, and players under Base Level ${PK_MIN_LV} are protected. Anyone you hit may hit you back for 30 seconds, whatever their mode. Players deal half damage to each other, defence takes a share off every hit, and no single hit takes more than ${Math.round(PVP_TUNE.hitCap*100)}% of someone's HP; area skills only hit monsters. Falling to a player sends you back to Oakhaven like any defeat: nothing is lost.</p><p class="pw-note"><b style="color:#ffd76a">Duels:</b> stand next to someone, tap them and choose Duel (or /duel name). If they accept, a ${DUEL.count}-second countdown starts, then you fight inside a ring, anywhere, town included. The first who would fall loses (nobody dies); leaving the ring for 3 seconds loses; after ${DUEL.time/60} minutes it's a draw.</p></div>
       <div class="pw-sec"><h4>Guild</h4><div class="pw-row"><div class="nm"><b>${c.guild?`‹${esc(c.guild.n)}›`:'No guild'}</b><small>${c.guild?`${GUILD_RANKS[this.gMy()]} · ${c.guild.m.length} members · guild chat: /g message`:'Found a guild, or ask one to take you in'}</small></div><button class="btn" id="g-open">Guild window (O)</button></div></div>`;
     const B=$('#pk-body');B.querySelectorAll('input[name=pkm]').forEach(r=>r.onchange=()=>{this.setPk(r.value,r.value==='target'?$('#pk-who').value:undefined);this.renderPk();});
     $('#pk-set').onclick=()=>this.setPk('target',$('#pk-who').value);B.querySelectorAll('[data-who]').forEach(b=>b.onclick=()=>{$('#pk-who').value=b.dataset.who;this.setPk('target',b.dataset.who);});
@@ -5127,6 +5145,58 @@ const TownScreen={
     const A=this.chainActive();if(A){const p=(q.prog||{})[A.id]||[],g=A.goals&&A.goals.find((g,i)=>(p[i]||0)<g[2]);
       out.push({id:A.id,title:A.title,from:TOWN_NPCS[A.from]?TOWN_NPCS[A.from].name:'the Guild',desc:A.desc,obj:this.goalText(A),reward:this.rewardText(A),dest:g?{map:g[1],kind:g[0]}:null});}
     return out;},
+  /* ---------- duels: a challenge between two players standing side by side, a 5-second countdown, a fight in a ring ---------- */
+  duelOther(){const D=this.duel;if(!D||!this.others) return null;for(const o of this.others.values()) if(o.P&&o.P.id===D.id) return o;return null;},
+  duelOn(id,now){const D=this.duel;return D&&D.id===id&&(D.state==='on'||(D.state==='count'&&D.startAt-now<1000))?D:null;},      // a hit sent a moment before my countdown ends still counts
+  duelInvite(o){const now=performance.now(),P=o&&o.P||{};if(!Net.room||!P.id) return;if(this.duel){toast(this.duel.state==='out'?`Waiting for ${this.duel.n} to answer`:'You are already in a duel');return;}
+    if(this.dead||o.dead){toast('Nobody can duel while down');return;}if(Math.hypot(o.x-this.p.x,o.y-this.p.y)>DUEL.near){toast(`Stand next to ${o.n} to challenge them`);return;}
+    this.duel={id:P.id,n:o.n,state:'out',until:now+20000,map:this.mapId};this.partySend('dinv',P.id,this.mapId);AudioFX.sfx('ui');
+    toast(`You challenged ${o.n} to a duel`);this.log('sys',null,`Duel · you challenged ${o.n}; they have 20 seconds to accept`);this.duelUi(now);},
+  duelAnswer(yes){const D=this.duel,el=$('#pinvite');el.classList.remove('on');if(!D||D.state!=='in') return;const now=performance.now();
+    if(!yes){this.partySend('ddec',D.id,'no');this.duel=null;this.duelUi(now);return;}
+    const o=this.duelOther();if(!o||Math.hypot(o.x-this.p.x,o.y-this.p.y)>DUEL.near*1.5){toast(`Stand next to ${D.n} to accept`);el.classList.add('on');return;}
+    Object.assign(D,{state:'count',startAt:now+DUEL.count*1000,tick:0});this.partySend('dacc',D.id);this.log('sys',null,`Duel · you accepted ${D.n}'s challenge`);this.duelUi(now);},
+  duelEvent(t,from,P,e,now,nm){const D=this.duel;
+    if(t==='dinv'){if(D&&!(D.id===from&&D.state==='in')){this.partySend('ddec',from,'busy');return;}if(this.dead||String(e[3])!==this.mapId) return;
+      this.duel={id:from,n:nm,state:'in',until:now+20000,map:this.mapId};AudioFX.sfx('quest');const el=$('#pinvite');
+      el.innerHTML=`<p>${esc(nm)} challenges you to a duel<small>Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · 5 second countdown, then fight until one would fall (nobody dies)</small></p><div class="row"><button class="btn primary" id="du-yes">Accept</button><button class="btn" id="du-no">Decline</button></div>`;
+      el.classList.add('on');$('#du-yes').onclick=()=>this.duelAnswer(true);$('#du-no').onclick=()=>this.duelAnswer(false);
+      this.log('sys',null,`Duel · ${nm} challenges you (stand next to them and accept)`);return;}
+    if(!D||D.id!==from) return;
+    if(t==='dacc'){if(D.state!=='out') return;Object.assign(D,{state:'count',startAt:now+DUEL.count*1000,tick:0});this.log('sys',null,`Duel · ${D.n} accepted`);this.duelUi(now);return;}
+    if(t==='ddec'){if(D.state!=='out') return;this.duel=null;toast(e[3]==='busy'?`${D.n} is busy right now`:`${D.n} declined the duel`);this.duelUi(now);return;}
+    if(t==='dend'){const why=String(e[3]||'');this.duelFinish(why==='lost'||why==='left'?'win':why==='time'?'draw':'off',now,why);}},
+  /* something on my side ended it: tell the other one */
+  duelOver(why,now){const D=this.duel;if(!D) return;if(D.state==='count'||D.state==='on') this.partySend('dend',D.id,why);
+    this.duelFinish(why==='lost'||why==='left'?'lose':why==='time'?'draw':'off',now,why);},
+  duelFinish(res,now,why){const D=this.duel;if(!D) return;this.duel=null;const c=this.ch;c.pk=c.pk||{mode:'peace'};
+    if(this.target&&this.target.isPlayer&&this.target.o&&this.target.o.P&&this.target.o.P.id===D.id){this.target=null;this.atk=null;}
+    if(this.pkMine) delete this.pkMine[D.id];if(this.pkFoes) delete this.pkFoes[D.id];
+    let msg;if(res==='win'){c.pk.dw=(c.pk.dw|0)+1;msg=`You won the duel against ${D.n}!${why==='left'?' (they left the ring)':''}`;AudioFX.sfx('level');}
+    else if(res==='lose'){c.pk.dl=(c.pk.dl|0)+1;msg=`${D.n} won the duel${why==='left'?' (you left the ring)':''}`;AudioFX.sfx('ui');}
+    else if(res==='draw'){msg=`The duel with ${D.n} is a draw: time is up`;}else msg=`The duel with ${D.n} was called off`;
+    toast(msg);this.log('sys',null,`Duel · ${msg}`);this.duelUi(now);this.save();if(this.win==='pkwin') this.renderPk();},
+  duelTick(now){const D=this.duel;if(!D){if(this._duelShown) this.duelUi(now);return;}
+    if((D.state==='out'||D.state==='in')&&now>D.until){const was=D.state;this.duel=null;if(was==='in') $('#pinvite').classList.remove('on');else toast(`${D.n} didn't answer the duel`);this.duelUi(now);return;}
+    if(D.state==='count'||D.state==='on'){const o=this.duelOther();
+      if(this.mapId!==D.map||this.dead||this.travelling){this.duelOver('left',now);return;}
+      if(!o){D.miss=D.miss||now;if(now-D.miss>4000) this.duelFinish(D.state==='on'?'win':'off',now,'left');return;}D.miss=0;
+      if(D.state==='count'){if(Math.hypot(o.x-this.p.x,o.y-this.p.y)>DUEL.near*3){this.duelOver('apart',now);return;}
+        if(now>=D.startAt){Object.assign(D,{state:'on',t0:now,cx:(this.p.x+o.x)/2,cy:(this.p.y+o.y)/2,outT:0});AudioFX.sfx('level');this.log('sys',null,`Duel · fight! Stay inside the ring`);}}
+      else{if(Math.hypot(this.p.x-D.cx,this.p.y-D.cy)>DUEL.r){if(!D.outT){D.outT=now;AudioFX.sfx('ui');}else if(now-D.outT>3000){this.duelOver('left',now);return;}}else D.outT=0;
+        if(now-D.t0>DUEL.time*1000){this.duelOver('time',now);return;}}}
+    this.duelUi(now);},
+  duelUi(now){const D=this.duel,cd=$('#duelcd'),bar=$('#duelbar');if(!cd) return;let n='',txt='',warn=false;
+    if(D&&D.state==='count'){n=String(Math.max(1,Math.ceil((D.startAt-now)/1000)));txt=`Duel with ${D.n} · starts in ${n}`;}
+    else if(D&&D.state==='on'){if(now-D.t0<1000) n='FIGHT!';const left=Math.max(0,DUEL.time*1000-(now-D.t0));
+      if(D.outT){warn=true;txt=`Back into the ring! ${Math.max(0,Math.ceil((3000-(now-D.outT))/1000))}`;}else txt=`⚔ Duel with ${D.n} · ${fmtClock(left)} · stay in the ring`;}
+    else if(D&&D.state==='out') txt=`Waiting for ${D.n} to accept the duel…`;
+    if(n!==(cd.dataset.n||'')){cd.dataset.n=n;cd.textContent=n;cd.classList.remove('on','go');if(n){void cd.offsetWidth;cd.classList.add('on');if(n==='FIGHT!') cd.classList.add('go');else AudioFX.sfx('ui');}}
+    if(bar.textContent!==txt) bar.textContent=txt;bar.classList.toggle('on',!!txt);bar.classList.toggle('warn',warn);this._duelShown=!!(n||txt);},
+  drawDuelRing(ctx,now){const D=this.duel;if(!D||(D.state!=='count'&&D.state!=='on')) return;const o=this.duelOther();
+    const cx=D.state==='on'?D.cx:o?(this.p.x+o.x)/2:this.p.x,cy=D.state==='on'?D.cy:o?(this.p.y+o.y)/2:this.p.y,t=REDUCED?0:now/1000,col=D.state==='on'?'#ff8a5a':'#ffd76a';
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=hexA(col,.16);ctx.lineWidth=10;ctx.beginPath();ctx.ellipse(cx,cy,DUEL.r,DUEL.r,0,0,7);ctx.stroke();
+    ctx.strokeStyle=hexA(col,.6+.15*Math.sin(t*3));ctx.lineWidth=2;ctx.setLineDash([16,10]);ctx.lineDashOffset=-t*14;ctx.beginPath();ctx.ellipse(cx,cy,DUEL.r,DUEL.r,0,0,7);ctx.stroke();ctx.restore();},
   /* ---------- World Bosses panel: where each boss lives, whether it is up, when it comes back; Go walks you there ---------- */
   bossState(k){const E=this.enc;if(E&&E.boss.kind===k){const b=E.boss,now=performance.now();
       if(b.state==='dead') return {t:'down',left:Math.max(0,b.respawnAt-now)};return {t:b.hostile?'fight':'up'};}
@@ -5295,7 +5365,7 @@ const TownScreen={
   /* ---------- chat ---------- */
   say(t){const c=this.ch,now=performance.now();
     if(t[0]==='/'){const cmd=t.slice(1).split(/\s+/)[0].toLowerCase();
-      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /patch (what is new), /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
+      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /patch (what is new), /duel name, /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
       else if(cmd==='p'){const msg=t.slice(2).trim().slice(0,120);if(!this.party){this.log('sys',null,'You are not in a party (P opens the Party window)');return;}if(!msg) return;
         this.log('pchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,this.party.i]);if(Net.says.length>5) Net.says.shift();}return;}
       else if(cmd==='g'){const msg=t.slice(2).trim().slice(0,120);if(!c.guild){this.log('sys',null,'You are not in a guild (O opens the Guild window)');return;}if(!msg) return;
@@ -5303,6 +5373,7 @@ const TownScreen={
       else if(cmd==='pk'){const a=t.split(/\s+/).slice(1).join(' ').trim();if(!a) this.openWin('pkwin');else if(['peace','all','guild'].includes(a.toLowerCase())) this.setPk(a.toLowerCase());else this.setPk('target',a);}
       else if(cmd==='guild') this.openWin('guildwin');
       else if(cmd==='patch'||cmd==='news') this.openWin('newswin');
+      else if(cmd==='duel'){const nm=t.split(/\s+/).slice(1).join(' ').trim().toLowerCase(),o=nm&&this.others&&[...this.others.values()].find(o=>String(o.n).toLowerCase()===nm);if(!nm) this.log('sys',null,'Duel: /duel name (stand next to them)');else if(!o) this.log('sys',null,`Nobody called ${nm} is on this map`);else this.duelInvite(o);}
       else if(cmd==='party') this.openWin('partywin');
       else if(cmd==='leave') this.partyLeave();
       else if(cmd==='invite'){const q=t.split(/\s+/).slice(1).join(' ').toLowerCase();const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===q);
@@ -5681,7 +5752,7 @@ const TownScreen={
     this.drawEncBars(ctx,S);
     if(this.others) for(const o of this.others.values()){if(this.hid(o.x,o.y)) continue;const [px,py]=S(o.x,o.y-60),mate=o.P&&this.inParty(o.P.id);
       if(o.speech&&now-o.speech.t<4000) this.bubble(ctx,px,py-14,o.speech.text,Math.min(1,(4000-(now-o.speech.t))/400));
-      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=mate?'#9fd8ff':o.pkm>0&&this.mapId!=='town'?'#ff9a9a':'#b8ffc8';const t=`${mate?'◆ ':''}${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
+      ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=mate?'#9fd8ff':o.pkm>0&&this.mapId!=='town'?'#ff9a9a':'#b8ffc8';const duo=this.duel&&o.P&&this.duel.id===o.P.id&&(this.duel.state==='on'||this.duel.state==='count');if(duo) ctx.fillStyle='#ffb88a';const t=`${duo?'⚔ ':mate?'◆ ':''}${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
       if(o.gd){ctx.font='900 10px Nunito,sans-serif';ctx.fillStyle='#f7c552';const g=`${o.gd[2]===0?'♛ ':''}‹${o.gd[1]}›`;ctx.strokeText(g,px,py-13);ctx.fillText(g,px,py-13);}
       if(o.hp<100&&(this.mapId!=='town'||mate)||mate||o===this.hoverP){this.barNum(ctx,px,py+4,56,9,o.hp/100,'#e0475c',o.hm?`${fmtN(o.hp*o.hm/100)} / ${fmtN(o.hm)}`:`${o.hp}%`);
         if(o.mp&&(mate||o===this.hoverP)) this.barNum(ctx,px,py+14,56,8,o.mp[1]?o.mp[0]/o.mp[1]:0,'#3a86e0',`${fmtN(o.mp[0])} / ${fmtN(o.mp[1])}`);}}
@@ -5799,6 +5870,14 @@ function heroSilhouette(comp,ci,dir,col){const C=comp._sil||(comp._sil=new Map()
 const PK_MODES=[['peace','Peace','You attack no one. If someone attacks you, you can still fight back.'],['all','Attack all','Any player outside town can be attacked: tap them.'],
   ['target','One character','Only the character you name can be attacked.'],['guild','Guild','Everyone can be attacked except members of your own guild.']];
 const PK_MIN_LV=15,PK_SCALE=.5,PK_GRACE=30000,GUILD_COST=500,GUILD_MIN_LV=10;
+/* PvP balance. Defence cuts a hit by a share that grows with it but levels off: def / (def + k + kl x attacker level), at
+   most cap; a single hit takes at most hitCap of the target's maximum HP (no one-shots); line: damage multipliers per
+   job line (healers deal about a third of what others do, so theirs is raised). */
+const PVP_TUNE={k:60,kl:3,cap:.6,hitCap:.2,line:{Support:1.6}};
+/* duels: challenge a player standing next to you (near px); after they accept, a count-second countdown, then a fight
+   inside a ring (r px around where it started) until one would fall (they stay at 1 HP), someone stays outside the ring
+   for 3 s (they lose), or time seconds pass (a draw). Allowed anywhere, town included, at any level, party members too. */
+const DUEL={near:90,count:5,r:280,time:180};
 /* guild ranks, highest first. Leader: everything, passes leadership, disbands. Vice Leader and Officer: invite, accept join
    requests, promote, demote and kick members ranked below them. Member and Novice: guild chat. Newcomers start as Novice. */
 const GUILD_RANKS=['Guild Leader','Vice Leader','Officer','Member','Novice'],GUILD_MAX=30;
@@ -5901,7 +5980,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13m';
+const BUILD='2026-11-13n';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

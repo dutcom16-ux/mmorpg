@@ -1,1 +1,1 @@
-build: 2026-11-13m (Golem 1.2x, Queen 1.35x, summons follow; Queen summon anchor fix)
+build: 2026-11-13n (duels, PvP balance, +15% attack speed, -10% spell cooldowns)
