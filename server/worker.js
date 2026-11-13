@@ -215,7 +215,7 @@ export class AccountStore extends DurableObject {
       if (JSON.stringify(it.data).length > MAX_CHAR_SIZE) { skipped.push(id); continue; }
       if ((ix.gone[id] || 0) >= t) { skipped.push(id); continue; }               // deleted after this copy was made
       if ((ix.ids[id] || 0) > t) { skipped.push(id); continue; }                  // a newer copy is already here
-      if (!(id in ix.ids) && Object.keys(ix.ids).length >= MAX_CHARS) { skipped.push(id); continue; }
+      if (!(id in ix.ids) && id !== '__vault__' && Object.keys(ix.ids).filter(k => k !== '__vault__').length >= MAX_CHARS) { skipped.push(id); continue; }   // the account vault rides along as a record but is not a character slot
       await S.put('d:' + me.u + ':' + id, { t, data: it.data });
       ix.ids[id] = t;
     }

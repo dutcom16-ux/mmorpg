@@ -1569,8 +1569,8 @@ const FaceMarks={
 
 /* -------------------------------- Store -------------------------------- */
 const Store={
-  base:'mmorpg-online.characters.v1', key:'mmorpg-online.characters.v1', mem:null, MAX:4,
-  useAccount(id){this.key=this.base+'.'+id;this.mem=null;},          // each account keeps its own characters
+  base:'mmorpg-online.characters.v1', key:'mmorpg-online.characters.v1', mem:null, MAX:4, vrec:null, VID:'__vault__',   // the account's vault travels in the same list as a record of its own (it is not a character)
+  useAccount(id){this.key=this.base+'.'+id;this.mem=null;this.vrec=null;},          // each account keeps its own characters
   /* characters made before accounts existed move to the first account created on this device */
   claimLegacy(id){try{const raw=localStorage.getItem(this.base),L=raw&&JSON.parse(raw);if(!Array.isArray(L)||!L.length) return 0;
     const k=this.base+'.'+id;if(localStorage.getItem(k)) return 0;localStorage.setItem(k,raw);localStorage.removeItem(this.base);
@@ -1578,10 +1578,24 @@ const Store={
   load(){
     if(this.mem) return this.mem;
     let list=[];try{const raw=localStorage.getItem(this.key);if(raw) list=JSON.parse(raw)||[];}catch(e){}
-    this.mem=list.filter(c=>c&&c.id&&c.name).map(c=>({...c,appearance:APPEARANCE.normalize(c.appearance)}));
+    this.vrec=list.find(c=>c&&c.id===this.VID)||null;
+    this.mem=list.filter(c=>c&&c.id&&c.name&&c.id!==this.VID).map(c=>({...c,appearance:APPEARANCE.normalize(c.appearance)}));
     return this.mem;
   },
-  saveLocal(){try{localStorage.setItem(this.key,JSON.stringify(this.mem));}catch(e){}},
+  saveLocal(){this.syncVault();try{localStorage.setItem(this.key,JSON.stringify([...this.mem,...(this.vrec?[this.vrec]:[])]));}catch(e){}},
+  /* the account vault: shared by every character. Another tab may have changed it: the newer copy wins before every use and every write */
+  syncVault(){try{const raw=localStorage.getItem(this.key),L=raw&&JSON.parse(raw),r=Array.isArray(L)&&L.find(c=>c&&c.id===this.VID);if(r&&(!this.vrec||(r.savedAt||0)>(this.vrec.savedAt||0))) this.vrec=r;}catch(e){}},
+  getVault(){this.load();this.syncVault();if(!this.vrec) this.vrec={id:this.VID,name:'Account vault',savedAt:0,vault:{bag:[],items:{},gold:0}};
+    const v=this.vrec.vault=this.vrec.vault||{};if(!Array.isArray(v.bag)) v.bag=[];v.items=v.items||{};v.gold=v.gold|0;return v;},
+  touchVault(){this.getVault();this.vrec.savedAt=Date.now();this.saveLocal();Cloud.schedule(1500);},
+  /* vaults that characters carried before the vault became the account's: pour them all into the account vault, once */
+  mergeVaults(){const V=this.getVault();let n=0;
+    for(const c of this.load()){const o=c.vault;if(o===undefined) continue;
+      if(o&&typeof o==='object'){const has=(o.bag&&o.bag.length)||(o.gold|0)||Object.values(o.items||{}).some(x=>x>0);
+        if(has){for(const g of o.bag||[]) if(g&&g.uid&&!V.bag.some(x=>x.uid===g.uid)) V.bag.push(g);
+          for(const [k,v] of Object.entries(o.items||{})) if(v>0&&itemDef(k)) V.items[k]=(V.items[k]|0)+(v|0);V.gold=(V.gold|0)+(o.gold|0);n++;}}
+      delete c.vault;c.savedAt=Date.now();n+=0;this._vm=true;}
+    if(this._vm){this._vm=false;this.vrec.savedAt=Date.now();this.saveLocal();Cloud.schedule(1500);}return n;},
   save(){this.saveLocal();Cloud.schedule();},                        // with an online account the server gets a copy too
   add(c){c.savedAt=Date.now();this.load().push(c);this.saveLocal();Cloud.schedule(300);},
   remove(id){this.mem=this.load().filter(c=>c.id!==id);this.saveLocal();Cloud.drop(id);},
@@ -1645,7 +1659,9 @@ const Cloud={base:null,token:null,name:null,key:'mmorpg-online.cloud.v1',sent:{}
   forget(){clearTimeout(this.timer);this.timer=0;this.token=null;this.name=null;this.sent={};this.gone.clear();try{localStorage.removeItem(this.key);sessionStorage.removeItem(this.key);}catch(e){}},
   /* this browser's characters and the server's come together: the newer copy of each wins, deletions stick */
   async pull(){const r=await this.api('chars');if(!r.ok) return r;const L=Store.load(),gone=r.gone||{};let changed=false;
-    for(const it of r.chars||[]){const c=it.data;if(!c||!c.id) continue;c.savedAt=it.t;const i=L.findIndex(x=>x.id===c.id),n={...c,appearance:APPEARANCE.normalize(c.appearance)};
+    for(const it of r.chars||[]){const c=it.data;if(!c||!c.id) continue;
+      if(c.id===Store.VID){const cur=Store.vrec;if(!cur||(cur.savedAt||0)<it.t){Store.vrec={...c,savedAt:it.t};changed=true;this.sent[c.id]=JSON.stringify(Store.vrec);}else if((cur.savedAt||0)===it.t) this.sent[c.id]=JSON.stringify(cur);else delete this.sent[c.id];continue;}
+      c.savedAt=it.t;const i=L.findIndex(x=>x.id===c.id),n={...c,appearance:APPEARANCE.normalize(c.appearance)};
       if(i<0||(L[i].savedAt||0)<it.t){if(i<0) L.push(n);else L[i]=n;changed=true;this.sent[c.id]=JSON.stringify(n);}   // took the server's copy
       else if((L[i].savedAt||0)===it.t) this.sent[c.id]=JSON.stringify(L[i]);else delete this.sent[c.id];}             // ours is newer: it goes up
     for(let i=L.length-1;i>=0;i--){const g=gone[L[i].id];if(g&&g>=(L[i].savedAt||0)){L.splice(i,1);changed=true;}}
@@ -1654,7 +1670,7 @@ const Cloud={base:null,token:null,name:null,key:'mmorpg-online.cloud.v1',sent:{}
   schedule(ms=8000){if(!this.token||this.timer) return;this.timer=setTimeout(()=>{this.timer=0;this.push();},ms);},
   drop(id){if(!this.token) return;this.gone.add(id);clearTimeout(this.timer);this.timer=0;this.push();},
   async push(leaving){if(!this.token) return;if(this.busy){this.again=true;return;}this.busy=true;
-    try{const put=[];for(const c of Store.load()){const j=JSON.stringify(c);if(this.sent[c.id]!==j) put.push({id:c.id,t:c.savedAt||Date.now(),data:c,j});}
+    try{const put=[];for(const c of [...Store.load(),...(Store.vrec?[Store.vrec]:[])]){const j=JSON.stringify(c);if(this.sent[c.id]!==j) put.push({id:c.id,t:c.savedAt||Date.now(),data:c,j});}
       const del=[...this.gone];if(!put.length&&!del.length) return;
       const r=await this.api('chars',{put:put.slice(0,10).map(({id,t,data})=>({id,t,data})),del},leaving);
       if(r.ok){for(const p of put.slice(0,10)) this.sent[p.id]=p.j;for(const d of del) this.gone.delete(d);if(put.length>10) this.again=true;}
@@ -2150,6 +2166,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13r',date:'2026-11-13',title:'One vault for your whole account',
+    new:['Odo\'s vault is now shared by all the characters on your account: deposit with one, withdraw with another. Anything your characters already stored is poured into the shared vault the next time you log in, and it follows your account to other devices']},
   {v:'2026-11-13q',date:'2026-11-13',title:'Trading',
     new:['Trade with other players: tap a player next to you and choose Trade (or type /trade name). They accept, and you both put gold, materials, potions and gear on the table (up to 6 things each, gear must be taken off first)','Nothing changes hands until you both press Lock offer. Locked things are held aside so they can\'t be sold or offered twice, and if either side changes anything, both locks reset. Cancelling, walking away or losing the connection gives everything back, even after a restart']},
   {v:'2026-11-13p',date:'2026-11-13',title:'Painted wings',
@@ -3110,7 +3128,7 @@ const TOWN_NPCS={
   vault:{name:'Odo',title:'Vault Keeper · Storage',shop:'Storage',sprite:'guard',tint:'hue-rotate(200deg) saturate(.85) brightness(1.08)',
     barks:['Safe as stone, your things.','Deposits and withdrawals, this way.','Nothing leaves the vault without its owner.'],
     talk(c){return {opts:[{label:'Open my vault',action:t=>{t.closeDialogue();t.openWin('vaultwin');return {pages:['']};}}],
-      pages:['Odo, keeper of the Oakhaven vault. Gear, materials, potions and gold: leave them with me and they stay yours.',`Your vault holds ${VAULT_SIZE} spaces, {name}. What will it be?`]};}},
+      pages:['Odo, keeper of the Oakhaven vault. Gear, materials, potions and gold: leave them with me and they stay yours, whichever of your characters comes to collect.',`Your account's vault holds ${VAULT_SIZE} spaces, {name}, and every one of your characters shares it. What will it be?`]};}},
   artificer:{name:'Dorin',title:'Master Artificer · Crafting',shop:'Crafting',sprite:'scholar',tint:'hue-rotate(155deg) saturate(1.25) brightness(1.05)',
     barks:['Wings, blades, plate. Bring me the makings.','Feathers from the clouds, scales from the fire...','The finest work in Terago, if you have the stuff.'],
     talk(c){return {opts:[{label:'Show me what you can craft',action:t=>{t.closeDialogue();t.openShop('craft');return {pages:['']};}}],
@@ -3204,7 +3222,7 @@ const TownScreen={
     this.res=this.maxRes();this.cds={};this.shots=[];this.wfx=[];this.drops=[];this.decals=[];this.queued=null;this.veilUntil=0;this.nextCrit=false;
     c.auto.range=c.auto.range||320;c.auto={prio:'near',defend:true,skip:[],maxAbove:0,lootOrder:'each',loot:{gold:true,pots:true,mats:true,gear:true,gearMin:0},order:[],off:[],tonic:false,tonicAt:30,elixir:true,...c.auto};c.auto.loot={gold:true,pots:true,mats:true,gear:true,gearMin:0,...c.auto.loot};if(!c.auto.lootV){c.auto.lootV=1;c.auto.pick=true;}   // AUTO picks loot up unless you turn it offc.skills=c.skills||{};
     if(!Array.isArray(c.hotbar)||c.hotbar.length!==10) c.hotbar=this.defaultBar();
-    this.initGear();this.tradeRestore();this.dirtyMods();
+    Store.mergeVaults();this.initGear();this.tradeRestore();this.dirtyMods();
     if(c.hp==null||c.hp<=0) c.hp=this.maxHp();c.hp=Math.min(c.hp,this.maxHp());this.res=this.maxRes();
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
     this.dlg=null;this.keys.clear();this.dead=null;this.travelling=false;$('#map-fade').classList.remove('on');
@@ -3989,7 +4007,7 @@ const TownScreen={
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
       baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
-      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,vault:c.vault,mail:c.mail,mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
+      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
     this.tracker();this.save();this.questCheck();},
@@ -4896,26 +4914,26 @@ const TownScreen={
     $('#g-open').onclick=()=>this.openWin('guildwin');
     B.querySelectorAll('input[type=text]').forEach(i=>i.addEventListener('keydown',e=>e.stopPropagation()));},
   /* ---------- vault: Odo keeps gear, items and gold for this character ---------- */
-  vault(){const c=this.ch;if(!c.vault||!Array.isArray(c.vault.bag)) c.vault={bag:[],items:{},gold:0};c.vault.items=c.vault.items||{};return c.vault;},
+  vault(){return Store.getVault();},
   vaultUsed(){const v=this.vault();return v.bag.length+Object.keys(v.items).filter(k=>v.items[k]>0&&itemDef(k)).length;},
   vaultMove(dir,kind,id){const c=this.ch,v=this.vault(),full=()=>{toast(dir==='in'?'The vault is full':'Your bag is full');return true;},noRoom=()=>dir==='in'?this.vaultUsed()>=VAULT_SIZE:this.bagUsed()>=BAG_SIZE;
     if(kind==='gear'){const from=dir==='in'?c.bag:v.bag,to=dir==='in'?v.bag:c.bag,i=from.findIndex(g=>g.uid===id);if(i<0) return;if(noRoom()&&full()) return;to.unshift(from.splice(i,1)[0]);}
     else{const from=dir==='in'?c.items:v.items,to=dir==='in'?v.items:c.items,n=from[id]|0;if(n<=0||!itemDef(id)) return;if(!(to[id]>0)&&noRoom()&&full()) return;to[id]=(to[id]|0)+n;from[id]=0;}
-    AudioFX.sfx('pick');this.invSel=null;this.save();this.renderVault();this.renderHotbar();},
+    AudioFX.sfx('pick');this.invSel=null;Store.touchVault();this.save();this.renderVault();this.renderHotbar();},
   vaultGold(dir,n){const c=this.ch,v=this.vault(),have=dir==='in'?(c.gold||0):(v.gold||0);n=Math.min(have,n);if(n<=0){toast(dir==='in'?'You have no gold to deposit':'There is no gold in the vault');return;}
-    if(dir==='in'){c.gold-=n;v.gold=(v.gold||0)+n;}else{v.gold-=n;c.gold=(c.gold||0)+n;}AudioFX.sfx('coin');this.tracker();this.save();this.renderVault();},
+    if(dir==='in'){c.gold-=n;v.gold=(v.gold||0)+n;}else{v.gold-=n;c.gold=(c.gold||0)+n;}AudioFX.sfx('coin');this.tracker();Store.touchVault();this.save();this.renderVault();},
   renderVault(){if(this.win!=='vaultwin') return;const c=this.ch,v=this.vault();
     const cells=(bag,items,dir,size)=>{const out=[];
       for(const id of Object.keys(items).filter(k=>items[k]>0&&itemDef(k))){const d=itemDef(id);out.push(`<button class="islot has" data-v="${dir}|item|${id}" aria-label="${esc(d.name)} x${items[id]}" title="${esc(d.name)}">${itemIcon(id)}<span class="n">${items[id]}</span></button>`);}
       for(const g of bag) out.push(`<button class="islot has gear r${g.rar}" data-v="${dir}|gear|${g.uid}" aria-label="${RARITY[g.rar].name} ${esc(gearName(g))}" title="${esc(gearName(g))} · item Lv ${g.lvl}">${gearIcon(g)}<span class="lv">${g.lvl}</span>${g.enh?`<span class="enh">+${g.enh}</span>`:''}</button>`);
       for(let i=out.length;i<size;i++) out.push('<div class="islot" aria-hidden="true"></div>');return out.join('');};
     const bu=this.bagUsed(),vu=this.vaultUsed(),gb=(dir,list)=>list.map(n=>`<button class="btn" data-vg="${dir}|${n}">${n>=1e9?'All':n}</button>`).join('');
-    $('#vw-sub').textContent=`Odo keeps it safe for ${c.name} · ${vu}/${VAULT_SIZE} stored`;
+    $('#vw-sub').textContent=`Odo keeps it safe for every character on your account · ${vu}/${VAULT_SIZE} stored`;
     $('#vw-body').innerHTML=`<div class="vw-cols"><div class="vw-col"><h4>Your bag <span>${bu}/${BAG_SIZE}</span></h4><div class="vw-grid">${cells(c.bag,c.items,'in',Math.max(18,Math.ceil((bu+1)/6)*6))}</div>
         <div class="vw-gold">Gold <b>${c.gold||0}</b> · deposit ${gb('in',[100,1000,1e9])}</div></div>
       <div class="vw-col"><h4>Vault <span>${vu}/${VAULT_SIZE}</span></h4><div class="vw-grid">${cells(v.bag,v.items,'out',Math.max(18,Math.ceil((vu+1)/6)*6))}</div>
         <div class="vw-gold">Gold <b>${v.gold||0}</b> · withdraw ${gb('out',[100,1000,1e9])}</div></div></div>
-      <p class="note">Tap a piece or a stack to move it across. Worn gear stays on you: take it off first (I). The vault belongs to this character and is saved with it.</p>`;
+      <p class="note">Tap a piece or a stack to move it across. Worn gear stays on you: take it off first (I). The vault is shared by every character on this account: put something in with one, take it out with another.</p>`;
     $$('#vw-body [data-v]').forEach(b=>b.onclick=()=>{const [dir,kind,id]=b.dataset.v.split('|');this.vaultMove(dir,kind,id);});
     $$('#vw-body [data-vg]').forEach(b=>b.onclick=()=>{const [dir,n]=b.dataset.vg.split('|');this.vaultGold(dir,+n);});},
   /* ---------- mail: letters with gold, items and gear; the icon flashes while something is unread or unclaimed ---------- */
@@ -6157,7 +6175,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13q';
+const BUILD='2026-11-13r';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
