@@ -1,1 +1,1 @@
-build: 2026-11-13o (boss magic resistance halved, critical hits can stun bosses)
+build: 2026-11-13p (painted wings)
