@@ -2119,6 +2119,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13j',date:'2026-11-13',title:'Bosses fall when they should',
+    new:['Your guild name now shows above your own name too'],
+    fixes:["Online, a boss could sit at 0 HP and never die: hits of more than 10 million from players who weren't hosting the map were cut down to 10 million. Every hit now counts in full, and a boss's health bar follows the host whenever the two disagree"]},
   {v:'2026-11-13i',date:'2026-11-13',title:'Summons feed their master',
     balance:['Boss summons hit 50% harder again','When you kill a summon, its life flows back to the boss: +25% of the boss\'s total health. Weigh every kill']},
   {v:'2026-11-13h',date:'2026-11-13',title:'Fiercer summons',
@@ -3605,7 +3608,7 @@ const TownScreen={
     if(this.res<rm) this.res=Math.min(rm,this.res+(1+rm/150+S.INT/15)*(1+(M.spRegen||0))*(calm>1?2.2:1)*dt);
     if(!this.resT||now>this.resT){this.resT=now+200;this.hudBars();}},
   /* ---------- multiplayer: another player's hits and effects ---------- */
-  netHitIn(o,e,now){const m=this.mobs[e[1]|0];if(!m||m.state==='dead') return;const dmg=Math.max(0,Math.min(9999999,e[2]|0));
+  netHitIn(o,e,now){const m=this.mobs[e[1]|0];if(!m||m.state==='dead') return;const dmg=Math.max(0,Math.min(2e9,Math.floor(+e[2]||0)));      // boss hits run to tens of millions: no 10-million cap, no 32-bit wrap
     if(m.def.acts&&this.enc&&!this.arenaIn(o.x,o.y,this.enc.cfg.arena.tol+10)) return;        // hits from outside the arena don't count
     const sty=e[3]?'crit':NUM_STYLES[e[7]|0]||'normal';m.hitT=now;if(!this.hid(m.x,m.y)){this.numFx(m.x+(Math.random()-.5)*10,m.y-m.def.h-4,dmg,sty,now,{remote:true});this.impact(m,sty,now);}
     if(e[8]) m.blindUntil=now+Math.min(100,e[8]|0)*100;if(e[9]){m.brkUntil=now+Math.min(100,e[9]|0)*100;m.brkPct=Math.min(.6,(e[11]|0)/100)||.15;}
@@ -4564,7 +4567,7 @@ const TownScreen={
       if(m.state==='dead'){m.state='idle';m.x=+e[1]||m.x;m.y=+e[2]||m.y;m.bornT=now;m.occ=null;}
       if(Number.isFinite(+e[1])&&Number.isFinite(+e[2])){m.tx=+e[1];m.ty=+e[2];}
       if(m.def.acts&&+e[12]>0) m.maxHp=Math.min(4e9,Math.round(+e[12]));      // a boss's maximum health comes from the host too, so its bar is right even if versions differ
-      const hp=Math.max(0,Math.min(m.maxHp,e[3]|0));m.hp=now-m.hitT<600?Math.min(m.hp,hp):hp;
+      const hp=Math.max(0,Math.min(m.maxHp,Math.floor(+e[3]||0)));m.hp=now-m.hitT<600&&!(m.def.acts&&hp-m.hp>m.maxHp*.05)?Math.min(m.hp,hp):hp;      // our own fresh hits show at once, but a boss follows the host when the two differ a lot
       m.hostile=!!(f&2);m.stunUntil=f&4?now+250:0;m.frozen=!!(f&8);m.slowUntil=f&16?now+250:0;m.sdir=(e[5]|0)&7;if(m.def.acts) this.actorSnap(m,e,now);}},
   newRemote(peer,P){const x=+P.x||0,y=+P.y||0;return {peer,P,x,y,tx:x,ty:y,dir:0,moving:false,mv:false,walkT:0,atkT:-1e9,atS:undefined,hurtT:-1e9,hp:100,seen:{},occ:null,key:null,comp:null,pk:.35,speech:null};},
   syncRemote(o,P,now){o.P=P;o.n=Net.name(P.n);o.lv=Math.max(1,Math.min(999,P.lv|0));o.pkm=Math.max(0,Math.min(3,P.pk|0));o.hm=Math.max(0,Math.min(1e9,P.hm|0));o.mp=Array.isArray(P.mp)&&P.mp[1]>0?[Math.max(0,P.mp[0]|0),Math.max(1,P.mp[1]|0)]:null;{const d=gdOf(P);o.gd=d?[String(d[0]).slice(0,24),Net.name(String(d[1]||'Guild')).slice(0,16),Number.isInteger(d[2])?Math.max(0,Math.min(4,d[2])):3]:null;}
@@ -5649,6 +5652,7 @@ const TownScreen={
     if(this.casting){const C=this.casting,e=Math.max(0,Math.min(1,(now-C.t0)/(C.until-C.t0))),bw=56,bx=me[0]-bw/2,by=me[1]-30;ctx.save();ctx.fillStyle='rgba(8,12,28,.82)';ctx.fillRect(bx-2,by-2,bw+4,9);
       ctx.fillStyle=C.s.color||'#9fe8ff';ctx.fillRect(bx,by,bw*e,5);ctx.font='800 10px Nunito,sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.9)';ctx.fillStyle='#e8f4ff';
       ctx.strokeText(C.s.name,me[0],by-4);ctx.fillText(C.s.name,me[0],by-4);ctx.restore();}ctx.font='900 12.5px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#bff4ff';ctx.strokeText(this.ch.name,me[0],me[1]);ctx.fillText(this.ch.name,me[0],me[1]);
+    if(this.ch.guild){ctx.font='900 10px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#f7c552';const g=`${this.gMy()===0?'♛ ':''}‹${this.ch.guild.n}›`;ctx.strokeText(g,me[0],me[1]-13);ctx.fillText(g,me[0],me[1]-13);}
     {const mx=this.maxHp(),f=Math.max(0,Math.min(1,this.ch.hp/mx));if(f<.999&&this.mapId!=='town'||now-this.hurtT<3000){const bw=40;ctx.fillStyle='rgba(8,12,28,.8)';ctx.fillRect(me[0]-bw/2-1,me[1]+4,bw+2,5);ctx.fillStyle='#ff5d6f';ctx.fillRect(me[0]-bw/2,me[1]+5,bw*f,3);}}
     this.fx=this.fx.filter(f=>now-f.t0<1000);
     if(this.speech&&now-this.speech.t<3500){const [px,py]=S(this.p.x,this.p.y-74);this.bubble(ctx,px,py,this.speech.text,Math.min(1,(3500-(now-this.speech.t))/400));}
@@ -5857,7 +5861,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13i';
+const BUILD='2026-11-13j';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
