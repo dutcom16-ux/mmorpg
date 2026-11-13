@@ -2130,6 +2130,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13l',date:'2026-11-13',title:'A giant in the Citadel',
+    balance:['The Lava Dragon Golem is twice as big, and so is its Molten Brood; their attacks reach out from their bigger bodies','The Lava Dragon Golem\'s armour and magic resistance are halved again (12.5% and 11.25%)']},
   {v:'2026-11-13k',date:'2026-11-13',title:"What's New, in the game",
     new:["A What's New window opens when you enter the world, with every update since you last looked marked NEW","Choose whether it opens on every log-in, only after an update, or never (in the window itself), and open it any time from Settings or with /patch"]},
   {v:'2026-11-13j',date:'2026-11-13',title:'Bosses fall when they should',
@@ -2855,11 +2857,12 @@ const healWait=H=>(Array.isArray(H.every)?H.every[0]+Math.random()*(H.every[1]-H
    the Slime King, whose health follows the Queen's) count 201x, so a fight lasts about as long as it did before. Every
    character has +30,000% HP (x301), flat heals grow with it, and critical chance is 25 points higher for everyone. */
 const BOSS_TUNE={
-  hp:{slimequeen:10630,lavagolem:6730},     // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
+  hp:{slimequeen:10630,lavagolem:6730},  // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
   dmg:2001,                              // x the boss's damage
   vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
-  minion:{hp:2010,dmg:1352.25,deathHeal:.25},     // deathHeal: a summon killed by players gives the boss this share of its maximum health             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
-  def:.5},                               // x the boss's armour and magic resistance (half)             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  minion:{hp:2010,dmg:1352.25,deathHeal:.25},   // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's), x damage;
+                                         // deathHeal: a summon killed by players gives the boss this share of its maximum health
+  def:{slimequeen:.5,lavagolem:.25}},    // x the boss's armour and magic resistance
   CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
 /* when each boss next appears, as far as this game knows: seen on the boss's own map, or heard from another player on
@@ -2895,26 +2898,26 @@ Object.assign(MOB_DEFS,{
       {id:'spit',kind:'proj',range:[60,340],cd:4.5,windup:.5,recover:.5,dmg:.85,mag:true,speed:195,pr:10,life:2.2,color:'#a8ff5a',from:[30,-24],anim:{set:'kingAtk',row:1,flip:true,seq:[[0,0],[1,.1],[2,.3],[3,.44],[5,.62]]}},
       {id:'beam',kind:'beam',range:[60,360],cd:9,windup:.9,track:.5,active:.35,recover:.6,dmg:1.5,mag:true,len:380,wd:22,major:true,color:'#7fd0ff',from:[4,-52],anim:{set:'kingAtk',row:2,flip:true,seq:[[0,0],[1,.2],[2,.5],[5,1.4]]}},
       {id:'spin',kind:'spin',range:[0,70],cd:7,windup:.45,active:1.6,tick:.4,recover:.6,dmg:.55,r:58,major:true,drift:.5,color:'#ffe27a',anim:{set:'kingAtk',row:3,loop:[2,3,.45,2.05],seq:[[0,0],[1,.15],[2,.45],[4,2.05],[5,2.4]]}}]},
-  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:MAX_BASE-1,hp:48,atk:1.5,exp:160,speed:[45,63],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
-    sheet:'lavaboss',set:'lava',walkFps:6,body:40,keep:[0,74],
+  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:MAX_BASE-1,hp:48,atk:1.5,exp:160,speed:[45,63],sight:0,reach:44,cd:9,h:244,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
+    sheet:'lavaboss',set:'lava',walkFps:6,size:2,body:80,keep:[0,114],
     heal:{every:10,below:.70,channel:2.5,amount:.15,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
-    summon:{first:6,cd:24,name:'Call of the Molten Brood',spots:{babygolem:[-44,16],babyimp:[5,22],babydrake:[50,16]}},
+    summon:{first:6,cd:24,name:'Call of the Molten Brood',spots:{babygolem:[-85,10],babyimp:[2,12],babydrake:[90,10]}},
     acts:[
-      {id:'cleave',kind:'cone',range:[0,100],cd:3,windup:.6,recover:.6,dmg:1.3,len:122,arc:112,color:'#ff8a2a',slash:true,anim:{set:'lavaAtk',row:0,flip:true,seq:[[0,0],[1,.1],[2,.36],[3,.6],[4,.8],[5,1]]}},
-      {id:'slam',kind:'slam',self:true,range:[0,135],cd:8,windup:1,recover:.8,dmg:1.9,r:138,major:true,shake:true,color:'#ff6a1a',anim:{set:'lavaAtk',row:1,seq:[[0,0],[1,.3],[2,.62],[3,1],[4,1.14],[5,1.5]]}},
-      {id:'breath',kind:'cone',range:[60,235],cd:10,windup:.9,active:1.5,tick:.3,recover:.7,dmg:.5,mag:true,len:240,arc:44,major:true,flame:true,color:'#ff7a1a',anim:{set:'lavaAtk',row:2,flip:true,seq:[[0,0],[1,.3],[2,.9],[5,2.45]]}},
+      {id:'cleave',kind:'cone',range:[0,140],cd:3,windup:.6,recover:.6,dmg:1.3,len:162,arc:112,color:'#ff8a2a',slash:true,anim:{set:'lavaAtk',row:0,flip:true,seq:[[0,0],[1,.1],[2,.36],[3,.6],[4,.8],[5,1]]}},
+      {id:'slam',kind:'slam',self:true,range:[0,175],cd:8,windup:1,recover:.8,dmg:1.9,r:178,major:true,shake:true,color:'#ff6a1a',anim:{set:'lavaAtk',row:1,seq:[[0,0],[1,.3],[2,.62],[3,1],[4,1.14],[5,1.5]]}},
+      {id:'breath',kind:'cone',range:[100,275],cd:10,windup:.9,active:1.5,tick:.3,recover:.7,dmg:.5,mag:true,len:280,arc:44,major:true,flame:true,color:'#ff7a1a',anim:{set:'lavaAtk',row:2,flip:true,seq:[[0,0],[1,.3],[2,.9],[5,2.45]]}},
       {id:'summon',kind:'summon',special:true,windup:1.5,recover:.6,anim:{set:'lavaAtk',row:3,hold:4,seq:[[0,0],[1,.3],[2,.62],[3,.95],[4,1.25],[0,1.5]]}}]},
-  babyimp:{el:'fire',name:'Baby Ember Imp',lvl:MAX_BASE-1,hp:.9,atk:.7,exp:.5,speed:[90,132],sight:0,reach:20,cd:9,h:40,respawn:[1,1],barks:['Hee hee! Burn!'],
-    sheet:'lavaboss',set:'imp',body:11,keep:[115,195],
-    acts:[{id:'fireball',kind:'proj',range:[50,270],cd:2.5,windup:.45,recover:.35,dmg:.8,mag:true,speed:205,pr:8,life:1.9,color:'#ff9a3a',from:[8,-22],lunge:-5}]},
-  babydrake:{el:'fire',name:'Baby Lava Drake',lvl:MAX_BASE-1,hp:1.8,atk:.9,exp:.7,speed:[66,102],sight:0,reach:24,cd:9,h:40,respawn:[1,1],barks:['*snap snap*'],
-    sheet:'lavaboss',set:'drake',body:15,keep:[0,26],
-    acts:[{id:'bite',kind:'cone',range:[0,36],cd:1.8,windup:.35,recover:.35,dmg:.9,len:42,arc:84,lunge:10,quiet:true},
-      {id:'burst',kind:'cone',range:[24,84],cd:7,windup:.6,recover:.5,dmg:1.1,mag:true,len:90,arc:52,flame:true,color:'#ff7a2a'}]},
-  babygolem:{el:'earth',name:'Baby Obsidian Golem',lvl:MAX_BASE-1,hp:3.4,atk:1.1,exp:1,speed:[36,57],sight:0,reach:26,cd:9,h:44,respawn:[1,1],barks:['*grinding stone*'],
-    sheet:'lavaboss',set:'obsidian',body:17,keep:[0,28],
-    acts:[{id:'punch',kind:'cone',range:[0,38],cd:2.6,windup:.7,recover:.5,dmg:1.3,len:46,arc:74,lunge:11},
-      {id:'stomp',kind:'slam',self:true,range:[0,58],cd:8,windup:.9,recover:.6,dmg:1.2,r:60,color:'#ffb060'}]}});
+  babyimp:{el:'fire',name:'Baby Ember Imp',lvl:MAX_BASE-1,hp:.9,atk:.7,exp:.5,speed:[90,132],sight:0,reach:20,cd:9,h:80,respawn:[1,1],barks:['Hee hee! Burn!'],
+    sheet:'lavaboss',set:'imp',size:2,body:22,keep:[130,210],
+    acts:[{id:'fireball',kind:'proj',range:[50,270],cd:2.5,windup:.45,recover:.35,dmg:.8,mag:true,speed:205,pr:8,life:1.9,color:'#ff9a3a',from:[16,-44],lunge:-10}]},
+  babydrake:{el:'fire',name:'Baby Lava Drake',lvl:MAX_BASE-1,hp:1.8,atk:.9,exp:.7,speed:[66,102],sight:0,reach:24,cd:9,h:80,respawn:[1,1],barks:['*snap snap*'],
+    sheet:'lavaboss',set:'drake',size:2,body:30,keep:[0,41],
+    acts:[{id:'bite',kind:'cone',range:[0,51],cd:1.8,windup:.35,recover:.35,dmg:.9,len:57,arc:84,lunge:20,quiet:true},
+      {id:'burst',kind:'cone',range:[39,99],cd:7,windup:.6,recover:.5,dmg:1.1,mag:true,len:105,arc:52,flame:true,color:'#ff7a2a'}]},
+  babygolem:{el:'earth',name:'Baby Obsidian Golem',lvl:MAX_BASE-1,hp:3.4,atk:1.1,exp:1,speed:[36,57],sight:0,reach:26,cd:9,h:88,respawn:[1,1],barks:['*grinding stone*'],
+    sheet:'lavaboss',set:'obsidian',size:2,body:34,keep:[0,45],
+    acts:[{id:'punch',kind:'cone',range:[0,55],cd:2.6,windup:.7,recover:.5,dmg:1.3,len:63,arc:74,lunge:22},
+      {id:'stomp',kind:'slam',self:true,range:[0,75],cd:8,windup:.9,recover:.6,dmg:1.2,r:77,color:'#ffb060'}]}});
 Object.assign(MOB_ARMOR,{slimequeen:[1.1,1.2],slimeking:[1.2,1],lavagolem:[1.5,1.1],babyimp:[.6,1.3],babydrake:[1,1],babygolem:[1.7,.7]});
 for(const D of Object.values(MOB_DEFS)) if(D.acts){if(D.heal) D.acts.push({id:'heal',kind:'heal',special:true,windup:D.heal.channel,recover:.35});
   for(const a of D.acts) a.total=a.windup+(a.jump||0)+(a.active||0)+a.recover;}
@@ -4072,7 +4075,7 @@ const TownScreen={
   spawnBoss(){const C=ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
     const mk=(kind,x,y)=>{const D=MOB_DEFS[kind],st=mobStats(kind,D.lvl),m={kind,def:D,zone:{kind,x,y,r:8,n:1},...st,maxHp:st.hp,x,y,dir:0,state:'idle',until:0,walkT:0,moving:false,hostile:false,nextHit:0,
       hitT:-1e9,deadT:-1e9,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*6,bornT:-1e9,barkAt:0,bubble:null,cds:{},act:null,actSeq:0,i:this.mobs.length};this.mobs.push(m);return m;};
-    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));b.dp*=BOSS_TUNE.def;b.mp*=BOSS_TUNE.def;const slots=[];
+    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));{const df=BOSS_TUNE.def[C.boss]??1;b.dp*=df;b.mp*=df;}const slots=[];
     for(const [kind,n] of C.summons) for(let i=0;i<n;i++){const s=mk(kind,C.at[0],C.at[1]);s.minion=true;s.state='dead';s.respawnAt=1e15;
       s.maxHp=s.hp=s.def.hpOfBoss?Math.round(b.maxHp*s.def.hpOfBoss):Math.round(s.maxHp*BOSS_TUNE.minion.hp);s.atk=s.atk.map(v=>Math.round(v*BOSS_TUNE.minion.dmg));slots.push(s);}
     this.enc={cfg:C,boss:b,slots,cx:C.at[0],cy:C.at[1],t0:0,seen:0,nextHeal:0,nextSummon:0,majorUntil:0,minorNext:0,resets:0,resetsSeen:0,resetT:-1e9,targets:[],inside:false};
@@ -4232,7 +4235,7 @@ const TownScreen={
     if(A){const a=A.def;if(a.kind==='slam'&&a.jump){const u=(t-a.windup)/a.jump;if(u>0&&u<1) z=Math.sin(u*Math.PI)*(a.height||30);}
       if(a.lunge){const L=t<a.windup?-3*Math.min(1,t/a.windup):a.lunge*Math.max(0,1-(t-a.windup)/.2),dx=A.ax-m.x,dy=A.ay-m.y,l=Math.hypot(dx,dy)||1;ox=dx/l*L;oy=dy/l*L;}
       if(!a.anim&&a.kind!=='heal'&&(A.ax!==m.x||A.ay!==m.y)) row=dirOf(A.ax-m.x,A.ay-m.y);}
-    const R=M[set].rows[row]||M[set].rows[0],F=R[fi]||R[0],k=M[set].scale*((M[set].rowScale||[])[row]||1),stun=now<(m.stunUntil||0);
+    const R=M[set].rows[row]||M[set].rows[0],F=R[fi]||R[0],k=M[set].scale*((M[set].rowScale||[])[row]||1)*(D.size||1),stun=now<(m.stunUntil||0);
     if(A&&A.def.kind==='heal') this.drawHealAura(ctx,m,now,t/A.def.windup,false);
     ctx.save();ctx.globalAlpha=.28*al;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(m.x,m.y,D.body*1.25*(1-z/90),D.body*.42*(1-z/90),0,0,7);ctx.fill();ctx.restore();
     ctx.save();ctx.globalAlpha=al;if(now-m.hitT<140) ctx.filter='brightness(1.8)';else if(stun&&m.frozen) ctx.filter='saturate(.35) brightness(1.25) hue-rotate(170deg)';else if(now<(m.slowUntil||0)) ctx.filter='saturate(.6)';
@@ -4289,7 +4292,7 @@ const TownScreen={
   /* cast bars for channels (screen space) */
   drawEncBars(ctx,S){const E=this.enc;if(!E||(E.cfg.arena.hide&&!E.inside)) return;const now=performance.now();
     for(const m of [E.boss,...E.slots]){const B=m.act;if(!B||m.state==='dead'||(B.def.kind!=='heal'&&B.def.kind!=='summon')) continue;const tt=(now-B.t0)/1000;if(tt>=B.def.windup) continue;
-      const D=m.def,label=B.def.kind==='heal'?D.heal.name:D.summon.name,col=B.def.kind==='heal'?D.heal.color:E.cfg.arena.color,[px,py]=S(m.x,m.y-D.h-34),w=150,f=tt/B.def.windup;
+      const D=m.def,label=B.def.kind==='heal'?D.heal.name:D.summon.name,col=B.def.kind==='heal'?D.heal.color:E.cfg.arena.color,[px,py0]=S(m.x,m.y-D.h-34),py=m.boss?Math.max(py0,34):py0,w=150,f=tt/B.def.windup;
       ctx.save();ctx.fillStyle='rgba(8,12,28,.85)';ctx.fillRect(px-w/2-1,py-1,w+2,13);ctx.fillStyle=col;ctx.fillRect(px-w/2,py,w*f,11);ctx.font='900 9.5px Nunito,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=2.6;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.fillStyle='#fff';ctx.strokeText(label,px,py+6);ctx.fillText(label,px,py+6);ctx.restore();}},
   spawnMobs(){for(const z of this.meta.monsters) for(let i=0;i<z.n;i++){const m=this.newMob(z);m.i=this.mobs.length;this.mobs.push(m);}},   // same list on every player's game: index = id
   freeSpot(z){for(let t=0;t<60;t++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*z.r,x=z.x+Math.cos(a)*r,y=z.y+Math.sin(a)*r*.8;
@@ -5666,7 +5669,7 @@ const TownScreen={
     for(const p of this.meta.portals||[]){const [px,py]=S(p.x,p.y-74*Math.max(1,(p.r||20)/20));ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle='#d9c6ff';
       const t=p.closed?`${p.label} · sealed`:`Portal · ${p.label}`;if(p.closed) ctx.fillStyle='#b8bccb';ctx.strokeText(t,px,py);ctx.fillText(t,px,py);}
     for(const m of this.mobs){if(m.state==='dead'||this.hid(m.x,m.y)) continue;const D=m.def,show=m===this.target||m.boss||(SETTINGS.names&&(m===this.hover||m.hostile||m.hp<m.maxHp));
-      const [px,py]=S(m.x,m.y-D.h-6);
+      const [px,py0]=S(m.x,m.y-D.h-6),py=m.boss?Math.max(py0,62):py0;      // a tall boss keeps its name and bar on screen
       if(m.bubble&&now-m.bubble.t<2600){this.bubble(ctx,px,py-16,m.bubble.text,Math.min(1,(2600-(now-m.bubble.t))/400),true);}
       if(!show) continue;
       ctx.font='800 11px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=m.hostile?'#ffb0b0':'#f2f2f2';
@@ -5895,7 +5898,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13k';
+const BUILD='2026-11-13l';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

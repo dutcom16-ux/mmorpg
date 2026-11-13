@@ -1,1 +1,1 @@
-build: 2026-11-13k (What's New window in the game)
+build: 2026-11-13l (Lava Dragon Golem and brood twice as big, Golem defence halved again)
