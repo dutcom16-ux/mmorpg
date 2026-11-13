@@ -1243,9 +1243,10 @@ const WING_FRONT_DIRS=[3,4,5];
 /* wing kinds 5 and 6 are the god-tier wings (godwings atlas, cut from the reference sheets): a back layer and a front
    layer per direction. No wings flap: the painted kinds 0-4 hold one frame of their sheet (WING_POSE). */
 const GOD_WING=5,WING_POSE=1,GOD_WING_ICONS=['godwingsNight','godwingsDawn'];
-/* where wings attach: this far (x the 54 px figure) below the neck, on the upper back between the shoulder blades;
-   and how much bigger than their art's own size they are drawn */
-const WING_DROP=.12,WING_GROW=1.15;
+/* where wings attach: this far (x the 54 px figure) below the neck, at the top of the back; how much bigger than their
+   art's own size they are drawn; and the lowest their tips may reach (x the figure above the feet). A kind whose art
+   hangs lower (the Phoenix's flames, the Drake's tail) is drawn smaller so its tips stay above the feet. */
+const WING_DROP=.035,WING_GROW=1.15,WING_FLOOR=.13,WING_MIN=.85,WING_FADE=.14;   // fade: over this much (x figure) above the floor
 const TRADE={near:150,far:380,slots:6,idle:9000,inv:20000,hb:900};   // trades: stand this close to start, break off when this far apart, offer slots, silence that ends it (ms)
 const WING_SC=.72,WING_NECK=6;   // painted wings: drawn at this scale; their crest sits this far (head-cell px) below the chin
 const WING_LOOK=[{kind:'feather',n:6,len:30,c1:'#f4f7ff',c2:'#c9d6ef',c3:'rgba(120,140,180,.5)'},
@@ -1788,7 +1789,7 @@ function drawAvatarWings(ctx,composed,av,x,y,s,now,tier,front){
   const ds=m.displayScale||1,ph=REDUCED?0:Math.sin(now/560),bob=av.anim==='idle'?ph*1.1:0,br=av.anim==='idle'?1+ph*.007:1,hsc=(m.headScaleG&&m.headScaleG[g])||m.headScale||1;
   const k=s*ds,nx=x+(hp[0]+60*hsc-m.anchor[0])*k,ny=y+(hp[1]+(HEAD_CHIN_Y+WING_NECK)*hsc-m.anchor[1]+bob)*k*br;
   const fh=composed.fh||(composed.fh=TownScreen.figureHeight(composed));
-  TownScreen.drawWings(ctx,nx,ny,av.dir,tier,false,now,front,k*fh/54);}
+  TownScreen.drawWings(ctx,nx,ny,av.dir,tier,false,now,front,k*fh/54,y);}
 function drawAvatar(ctx,composed,av,x,y,s,now){
   const meta=composed.meta,[CW,CH]=meta.cell,[ax,ay]=meta.anchor;
   const ph=REDUCED?0:Math.sin(now/560);
@@ -2196,6 +2197,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13z',date:'2026-11-13',title:'Wings stay on the back',
+    fixes:['Wings no longer hang down to the feet on shorter characters: they attach at the top of the back, just below the neck, in every direction, while standing, walking and attacking. Long wings are drawn a little smaller on short characters, and their tips fade out above the knees']},
   {v:'2026-11-13y',date:'2026-11-13',title:'Hand-drawn walking, wings on the back',
     new:['New hand-drawn walking for the Recruit, Vanguard, Bulwark, Juggernaut, Elementalist, Chrono-Mage, Pyromancer, Wayfinder, Skywarden, Channeler, Hierophant and Arbiter, in all 8 directions. Weapons are put away while you walk and come back when you stop or fight'],
     fixes:['Wings attach lower, on the upper back below the neck, in every direction, and are a little bigger']},
@@ -5217,11 +5220,19 @@ const TownScreen={
       const F=GW?Math.min(F0,W*1.5/Math.max(1,this.wingSpan(e[3]))):F0;s*=F/F0;
       const m=this.comp.meta,A=m.anim||{idle:[0]},fr=(A.idle||[0])[0],g=this.comp.g||'m',hp=m.headPlace&&m.headPlace[g]&&m.headPlace[g][0]&&m.headPlace[g][0][fr],hsc=(m.headScaleG&&m.headScaleG[g])||m.headScale||1,sk=s*ds;
       const nx=hp?W/2+(hp[0]+60*hsc-m.anchor[0])*sk:W/2,ny=hp?H*.94+(hp[1]+(HEAD_CHIN_Y+WING_NECK)*hsc-m.anchor[1])*sk:H*.94-34*sk;
-      if(GW){this.drawWings(x,nx,ny,0,e[3],false,0,false,F);}
+      if(GW){this.drawWings(x,nx,ny,0,e[3],false,0,false,F,H*.94);}
       else{const f=F0,WL=WING_LOOK[e[3]]||WING_LOOK[0],sh=H*.94-34*f,f2=Math.min(f,W*.48/(WL.len*(WL.kind==='membrane'?1.05:.64)),(sh-4)/(WL.len*(WL.kind==='membrane'?.8:.98)));x.save();x.translate(W/2,sh);x.scale(f2,f2);this.drawWingHalo(x,0,34,e[3],0);this.drawWingsCode(x,0,34,0,e[3],false,0,false);x.restore();}}   // wings show on the paper doll too
     drawAvatar(x,this.comp,{anim:'idle',dir:0,frame:0},W/2,H*.94,s,0);
     if(e[3]>=GOD_WING&&Sprites.godwings){const m=this.comp.meta,g=this.comp.g||'m',hp=m.headPlace[g][0][(m.anim.idle||[0])[0]],hsc=(m.headScaleG&&m.headScaleG[g])||m.headScale||1,sk=s*ds,F=s*ds*this.figureHeight(this.comp)/54;
-      this.drawWings(x,W/2+(hp[0]+60*hsc-m.anchor[0])*sk,H*.94+(hp[1]+(HEAD_CHIN_Y+WING_NECK)*hsc-m.anchor[1])*sk,0,e[3],false,0,true,F);}},   // the god wings' front layer (empty facing the camera)
+      this.drawWings(x,W/2+(hp[0]+60*hsc-m.anchor[0])*sk,H*.94+(hp[1]+(HEAD_CHIN_Y+WING_NECK)*hsc-m.anchor[1])*sk,0,e[3],false,0,true,F,H*.94);}},   // the god wings' front layer (empty facing the camera)
+  /* how far a wing kind hangs below its crest (world px at its art's size), any direction, measured once from the art */
+  wingBelow(t){this.wbl=this.wbl||{};if(this.wbl[t]!==undefined) return this.wbl[t];const god=t>=GOD_WING,S=god?Sprites.godwings:Sprites.wings;if(!S||!S.canvas) return 20;
+    const [CW,CH]=S.meta.cell,ay=S.meta.anchor[1],cols=god?[0,1]:[WING_POSE],R=Sprites.godwings&&Sprites.godwings.meta.root;let mx=0;
+    for(let d=0;d<8;d++){const row=god?(t-GOD_WING)*8+d:t*8+d;let lo=-1;
+      for(const c of cols){const px=S.canvas.getContext('2d',{willReadFrequently:true}).getImageData(c*CW,row*CH,CW,CH).data;
+        for(let y=CH-1;y>lo;y--){let hit=false;for(let i=0;i<CW;i++) if(px[(y*CW+i)*4+3]>60){hit=true;break;}if(hit){lo=y;break;}}}
+      if(lo>=0) mx=Math.max(mx,(lo-ay)*(god?54/S.meta.refH:WING_SC)+(!god&&R?R[d][1]*54:0));}
+    return this.wbl[t]=mx;},
   /* how wide a wing kind is in the world (px), measured once from its art (facing the camera) */
   wingSpan(t){this.wsp=this.wsp||{};if(this.wsp[t]!==undefined) return this.wsp[t];const god=t>=GOD_WING,S=god?Sprites.godwings:Sprites.wings;if(!S||!S.canvas) return 100;
     const [CW,CH]=S.meta.cell,row=god?(t-GOD_WING)*8:t*8,cols=god?[0,1]:[WING_POSE];let lo=CW,hi=-1;
@@ -6004,7 +6015,7 @@ const TownScreen={
     // the body leans and rocks while walking (meta.tilt, degrees per frame): the wings turn with it about the neck
     const tilt=wp&&m.tilt&&m.tilt[h.dir]?(m.tilt[h.dir][fr]||0)*Math.PI/180:0;
     const wf=wp?k*(comp.fh||(comp.fh=this.figureHeight(comp)))/54:1;   // the wings scale with the figure (54 px tall in the world)
-    const wings=front=>{if(tilt){ctx.save();ctx.translate(wp[0],wp[1]);ctx.rotate(tilt);ctx.translate(-wp[0],-wp[1]);}this.drawWings(ctx,wp[0],wp[1],h.dir,eq[3],h.moving,now,front,wf);if(tilt) ctx.restore();};
+    const wings=front=>{if(tilt){ctx.save();ctx.translate(wp[0],wp[1]);ctx.rotate(tilt);ctx.translate(-wp[0],-wp[1]);}this.drawWings(ctx,wp[0],wp[1],h.dir,eq[3],h.moving,now,front,wf,y);if(tilt) ctx.restore();};
     if(wingsBack) wings(false);   // after the glow, so the outline stays crisp
     ctx.save();if(h.dead){ctx.globalAlpha=.55;ctx.filter='grayscale(1) brightness(.8)';}else if(h.veil) ctx.globalAlpha=.42;else if(now-h.hurtT<130) ctx.filter='brightness(1.9) saturate(.5)';
     ctx.drawImage(comp.canvas,ci*CW,h.dir*CH,CW,CH,x-ax*k,y-ay*k+bob,CW*k,CH*k);ctx.restore();
@@ -6033,17 +6044,30 @@ const TownScreen={
      anchor, a back layer (front=false, behind the body) and a front layer (over it), scaled from the reference body
      to ours (54 px). f = screen px per world px (1 in the world, more on the character card). Before the atlases have
      loaded the old drawn wings stand in. */
-  drawWings(ctx,sx,sy,dir,tier,moving,now,front,f=1){sy+=WING_DROP*54*f;   // below the neck, on the upper back
+  drawWings(ctx,sx,sy,dir,tier,moving,now,front,f=1,feet){sy+=WING_DROP*54*f;   // just below the neck, at the top of the back
+    const grow=feet==null?WING_GROW:Math.max(WING_MIN,Math.min(WING_GROW,((feet-sy)/f-WING_FLOOR*54)/Math.max(1,this.wingBelow(tier))));   // long kinds a little smaller
+    const floorY=feet==null?null:feet-WING_FLOOR*54*f,fade=WING_FADE*54*f;   // and what still hangs lower fades out above the feet
     if(tier>=GOD_WING){const S=Sprites.godwings;if(!S||!S.canvas) return this.drawWingsCode(ctx,sx,sy+34,dir,tier,moving,now,front);
-      const m=S.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,k=54/m.refH*f*WING_GROW,row=(tier-GOD_WING)*8+(dir&7);
+      const m=S.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,k=54/m.refH*f*grow,row=(tier-GOD_WING)*8+(dir&7);
       ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-      ctx.drawImage(S.canvas,(front?1:0)*CW,row*CH,CW,CH,sx-ax*k,sy-ay*k,CW*k,CH*k);ctx.restore();return;}
+      this.wingBlit(ctx,S.canvas,(front?1:0)*CW,row*CH,CW,CH,sx-ax*k,sy-ay*k,CW*k,CH*k,floorY,fade);ctx.restore();return;}
     const S=Sprites.wings;
     if(!S||!S.canvas||tier>=S.meta.tiers.length) return this.drawWingsCode(ctx,sx,sy+34,dir,tier,moving,now,front);
     const R=(Sprites.godwings&&Sprites.godwings.meta.root[dir&7])||[0,0];
-    const m=S.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,k=WING_SC*f*WING_GROW,row=tier*8+(dir&7),x=sx+R[0]*54*f,y=sy+R[1]*54*f;
+    const m=S.meta,[CW,CH]=m.cell,[ax,ay]=m.anchor,k=WING_SC*f*grow,row=tier*8+(dir&7),x=sx+R[0]*54*f,y=sy+R[1]*54*f;
     ctx.save();if(front) ctx.globalAlpha=.95;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-    ctx.drawImage(S.canvas,WING_POSE*CW,row*CH,CW,CH,x-ax*k,y-ay*k,CW*k,CH*k);ctx.restore();},
+    this.wingBlit(ctx,S.canvas,WING_POSE*CW,row*CH,CW,CH,x-ax*k,y-ay*k,CW*k,CH*k,floorY,fade);ctx.restore();},
+  /* draw a wing cell; anything below floorY fades out over `fade` px above it (through a scratch canvas at the
+     screen's resolution) */
+  wingBlit(ctx,img,sx,sy,sw,sh,dx,dy,dw,dh,floorY,fade){
+    if(floorY==null||dy+dh<=floorY-fade){ctx.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);return;}
+    const T=ctx.getTransform(),sc=Math.max(.5,Math.min(4,Math.hypot(T.a,T.b))),W=Math.max(1,Math.ceil(dw*sc)),H=Math.max(1,Math.ceil(dh*sc));
+    const c=this.wScr||(this.wScr=makeCanvas(W,H));if(c.width<W) c.width=W;if(c.height<H) c.height=H;const x=c.getContext('2d');
+    x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation='source-over';x.clearRect(0,0,c.width,c.height);x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+    x.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+    const y1=(floorY-dy)*sc,y0=y1-fade*sc,g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');
+    x.globalCompositeOperation='destination-in';x.fillStyle=g;x.fillRect(0,0,W,H);x.globalCompositeOperation='source-over';
+    ctx.drawImage(c,0,0,W,H,dx,dy,dw,dh);},
   drawWingsCode(ctx,x,y,dir,tier,moving,now,front){const flap=0,W=WING_LOOK[tier]||WING_LOOK[0];   // no flapping
     const sx=x,sy=y-34,side=dir===2||dir===6,face=dir===2?-1:dir===6?1:0;ctx.save();if(front) ctx.globalAlpha=.92;
     const one=(m)=>{ctx.save();ctx.translate(sx-(side?face*5:0),sy);ctx.scale(m*(side?.62:1),1);ctx.rotate(-.18-flap);const L=W.len;
@@ -6433,7 +6457,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13y';
+const BUILD='2026-11-13z';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
