@@ -1,1 +1,1 @@
-build: 2026-11-13b (bosses have 50% more health)
+build: 2026-11-13c (World Bosses panel, Item Finder, boss x201 HP / x2001 damage, character x301 HP, crit +25)
