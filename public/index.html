@@ -326,7 +326,14 @@ html:not(.mobile) .shortcuts .ib{flex:1 1 0;min-width:0;width:auto;max-width:36p
 .netpill i{width:8px;height:8px;border-radius:50%;background:#6b7590;flex:none}.netpill.on i{background:#6cf2a6;box-shadow:0 0 8px #6cf2a6}.netpill.on{color:#bff4d4}
 .chatlog .party{color:#b8ffc8}.chatlog .party .who{color:#7dff9a}
 .chatlog .gchat{color:#ffe2a8}.chatlog .gchat .who{color:#f7c552}.pkbtn.on{border-color:#ff7b7b;color:#ffb0b0;background:rgba(255,80,80,.16)}
-.pkwin{width:min(600px,96vw)}.guildwin{width:min(580px,96vw)}html.mobile .guildwin{width:min(430px,94vw)}
+.pkwin{width:min(600px,96vw)}.newswin{width:min(640px,96vw)}html.mobile .newswin{width:min(430px,94vw)}
+.nw-list{max-height:min(58vh,560px);overflow:auto;overscroll-behavior:contain;margin-top:6px;padding-right:4px}
+.nw-rel{padding:12px 2px;border-bottom:1px solid rgba(160,220,255,.1);display:grid;gap:9px}.nw-rel:last-child{border-bottom:0}.nw-rel .pn-head h2{font-size:17px}
+html.mobile .nw-list{max-height:none;overflow:visible}html.mobile .newswin .nw-foot{position:sticky;bottom:-12px;z-index:2;margin:8px -12px -12px;padding:8px 12px 10px;background:#0e122a;border-radius:0 0 16px 16px;flex-wrap:nowrap;gap:8px}html.mobile .nw-foot label{flex:1 1 auto;min-width:0;flex-wrap:nowrap;font-size:11px;white-space:nowrap}html.mobile .nw-foot select{flex:1 1 auto;min-width:0;font-size:11.5px;padding:4px 6px}html.mobile .nw-foot .btn{min-height:30px;padding:3px 12px;flex:none}html.mobile .nw-rel .pn-g li{font-size:12.5px}
+.nw-more{margin-top:8px;width:100%;min-height:32px;font-size:12.5px}
+.nw-foot{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+.nw-foot label{font-size:12.5px;font-weight:800;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nw-foot select{padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:rgba(8,14,30,.7);color:#eaf6ff;font:800 12.5px Nunito,sans-serif}.guildwin{width:min(580px,96vw)}html.mobile .guildwin{width:min(430px,94vw)}
 .pw-sec h4 span{float:right;color:var(--muted);font-family:Nunito,sans-serif;font-size:11.5px;letter-spacing:.04em;text-transform:none}
 .gw-row .gw-act{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.gw-row .gw-act .btn{min-width:32px;padding:3px 8px}
 .grank{font-weight:900}.grank.r0{color:#ffd76a}.grank.r1{color:#ffb86a}.grank.r2{color:#9fd8ff}.grank.r3{color:#c8e6c9}.grank.r4{color:var(--muted)}
@@ -1083,6 +1090,10 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
     <div class="charwin glass pkwin" id="pkwin" role="dialog" aria-modal="false" aria-labelledby="kw2-title">
       <div class="head"><div><h3 id="kw2-title">PK &amp; Guild</h3><div class="sub" id="pk-sub"></div></div><button class="btn x" data-close>Close</button></div>
       <div id="pk-body"></div>
+    </div>
+    <div class="charwin glass newswin" id="newswin" role="dialog" aria-modal="false" aria-labelledby="nw-title">
+      <div class="head"><div><h3 id="nw-title">What's New</h3><div class="sub" id="nw-sub"></div></div><button class="btn x" data-close>Close</button></div>
+      <div id="nw-body"></div>
     </div>
     <div class="charwin glass guildwin" id="guildwin" role="dialog" aria-modal="false" aria-labelledby="gw-title">
       <div class="head"><div><h3 id="gw-title">Guild</h3><div class="sub" id="gw-sub"></div></div><button class="btn x" data-close>Close</button></div>
@@ -2119,6 +2130,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13k',date:'2026-11-13',title:"What's New, in the game",
+    new:["A What's New window opens when you enter the world, with every update since you last looked marked NEW","Choose whether it opens on every log-in, only after an update, or never (in the window itself), and open it any time from Settings or with /patch"]},
   {v:'2026-11-13j',date:'2026-11-13',title:'Bosses fall when they should',
     new:['Your guild name now shows above your own name too'],
     fixes:["Online, a boss could sit at 0 HP and never die: hits of more than 10 million from players who weren't hosting the map were cut down to 10 million. Every hit now counts in full, and a boss's health bar follows the host whenever the two disagree"]},
@@ -2565,7 +2578,7 @@ function numSheet(){const A=numAtlas(),keys=['0','1','2','3','4','5','6','7','8'
 const NUM_ANIM={normal:[.8,26],crit:[1,30],recv:[.85,24],heal:[1,18],miss:[.65,12]};
 /* ------------------------------ settings ------------------------------
    graphics, sound and HUD layout; saved on this device (not on the character) */
-const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8,touchInit:false,bossMin:null};
+const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,mmZoom:1.8,touchInit:false,bossMin:null,news:'login'};
   try{return {...D,...JSON.parse(localStorage.getItem('mmorpg-online.settings.v1')||'{}')};}catch(e){return D;}})();
 function saveSettings(){try{localStorage.setItem('mmorpg-online.settings.v1',JSON.stringify(SETTINGS));}catch(e){}}
 /* ------------------------------ sound ------------------------------
@@ -3173,6 +3186,7 @@ const TownScreen={
     this.gInit();this.gBadge();
     this.mailSync();Mail.fetch().then(()=>{if(this.ch===c&&activeScreen===this) this.mailSync();});
     showScreen('screen-town');this.layoutHud();requestAnimationFrame(()=>requestAnimationFrame(()=>this.layoutHud()));setTimeout(()=>this.layoutHud(),400);
+    this.newsAuto();
   },
   /* switch the world to a map: its art, depth, walk grid, townspeople or monsters; at = [x, y] to stand on */
   loadMap(id,at,dir){
@@ -4958,10 +4972,10 @@ const TownScreen={
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
   openWin(id){if(id&&this.win===id) id=null;this.win=id;document.body.classList.toggle('skills-open',id==='skillwin');
-    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin','guildwin']) $('#'+w).classList.toggle('on',w===id);
+    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin','guildwin','newswin']) $('#'+w).classList.toggle('on',w===id);
     $$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.win===id));
     if(id==='charwin') this.renderChar();else if(id==='invwin') this.renderInv();else if(id==='skillwin') this.renderSkills();
-    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();else if(id==='guildwin') this.renderGuild(true);},
+    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();else if(id==='guildwin') this.renderGuild(true);else if(id==='newswin'){this.newsBase=this.newsSeen();this.newsMark();this.newsAll=false;this.renderNews();}},
   toggleChar(on){this.openWin(on===false?null:'charwin');},
   /* ---------- equipment: c.equip (worn, one per slot), c.bag (gear you carry); potions and materials stay in c.items ---------- */
   initGear(){const c=this.ch;
@@ -5122,6 +5136,24 @@ const TownScreen={
     el.classList.toggle('min',min);const mb=$('#bh-min');if(mb){mb.textContent=min?'+':'−';mb.setAttribute('aria-expanded',!min);mb.title=min?'Show world bosses':'Minimize world bosses';}
     for(const s of $$('#hud-bosses [data-bs]')){const S=this.bossState(s.dataset.bs),txt=S.t==='down'?`Respawns in ${fmtClock(S.left)}`:S.t==='fight'?'● Fighting':'● Alive';
       if(s.textContent!==txt) s.textContent=txt;if(s.dataset.st!==S.t) s.dataset.st=S.t;}},
+  /* ---------- What's New: the patch notes in the game. Opens by itself when you enter the world (every log-in, or only
+     after an update: Settings > What's New), and any time from Settings or /patch. Releases you haven't seen are marked NEW. ---------- */
+  newsSeen(){try{return localStorage.getItem('mmo.newsSeen')||'';}catch(e){return '';}},
+  newsMark(){try{localStorage.setItem('mmo.newsSeen',BUILD);}catch(e){}},
+  newsAuto(){const mode=SETTINGS.news||'login',fresh=PATCH_NOTES.some(r=>r.v>this.newsSeen());
+    if(mode==='never'||(mode==='update'&&!fresh)){this.newsMark();return;}
+    const t0=performance.now(),go=()=>{if(activeScreen!==this||!this.ch||this.win==='newswin') return;
+      if((this.dlg||this.win||this.travelling)&&performance.now()-t0<60000){setTimeout(go,1500);return;}if(this.dlg||this.travelling) return;this.openWin('newswin');};
+    clearTimeout(this.newsT);this.newsT=setTimeout(go,1200);},
+  renderNews(){if(this.win!=='newswin') return;const base=this.newsBase||'',fresh=PATCH_NOTES.filter(r=>r.v>base),show=this.newsAll?PATCH_NOTES:PATCH_NOTES.slice(0,base?Math.max(1,Math.min(10,fresh.length)):1);      // first visit: just the latest
+    $('#nw-sub').textContent=fresh.length&&base?`${fresh.length} update${fresh.length>1?'s':''} since you last looked · version ${BUILD}`:`Version ${BUILD}`;
+    const mode=SETTINGS.news||'login',opt=[['login','every time I log in'],['update','only after an update'],['never','never (open it from Settings or /patch)']];
+    $('#nw-body').innerHTML=`<div class="nw-list" id="nw-list">${show.map(r=>`<article class="nw-rel">${PatchNotes.head(r,r.v>base,'h2')}${PatchNotes.groups(r,99)}</article>`).join('')}</div>`+
+      (show.length<PATCH_NOTES.length?`<button class="btn nw-more" id="nw-more">Show earlier updates (${PATCH_NOTES.length-show.length} more)</button>`:'')+
+      `<div class="nw-foot"><label for="nw-mode">Show this window <select id="nw-mode">${opt.map(([k,t])=>`<option value="${k}" ${mode===k?'selected':''}>${t}</option>`).join('')}</select></label><button class="btn primary" id="nw-ok">Got it</button></div>`;
+    $('#nw-list').scrollTop=0;const m=$('#nw-more');if(m) m.onclick=()=>{AudioFX.sfx('ui');this.newsAll=true;this.renderNews();};
+    const sel=$('#nw-mode');sel.onchange=()=>{SETTINGS.news=sel.value;saveSettings();toast(`What's New: ${opt.find(o=>o[0]===sel.value)[1]}`);};sel.addEventListener('keydown',e=>e.stopPropagation());
+    $('#nw-ok').onclick=()=>{AudioFX.sfx('ui');this.openWin(null);};},
   /* ---------- Item Finder (F): every item, where it comes from, and Go to walk there ---------- */
   locItems(){const c=this.ch,own=WEAPON_OF[this.line()],L=[];
     for(const id of Object.keys(CONSUMABLES)) L.push({key:id,cat:'Potions',name:CONSUMABLES[id].name,icon:itemIcon(id),have:c.items[id]||0});
@@ -5235,7 +5267,7 @@ const TownScreen={
     const rng=(k,label,min,max,step,unit='%')=>`<div class="set-row"><label for="st-${k}">${label}</label><input type="range" id="st-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}${unit}</output></div>`;
     const chk=(k,label)=>`<label class="set-chk"><input type="checkbox" data-c="${k}" ${S[k]?'checked':''}> ${label}</label>`;
     $('#sw-body').innerHTML=`<div class="set-sec"><h4>Game</h4><div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="st-select">Character Select</button><button class="btn" id="st-keys">Keyboard shortcuts</button><button class="btn" id="st-out">Sign out</button></div>
+        <button class="btn" id="st-select">Character Select</button><button class="btn" id="st-keys">Keyboard shortcuts</button><button class="btn" id="st-news">What's New</button><button class="btn" id="st-out">Sign out</button></div>
         <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:8px">Signed in as <b style="color:#fff">${esc(Auth.display())}</b></div></div>
       <div class="set-sec"><h4>Device</h4>
         <div class="set-row"><label for="st-layout">Layout</label><select id="st-layout"><option value="auto">Auto (detect)</option><option value="mobile">Mobile (touch)</option><option value="desktop">Desktop</option></select><span></span></div>
@@ -5250,19 +5282,21 @@ const TownScreen={
     $$('#sw-body input[data-c]').forEach(i=>i.onchange=()=>{S[i.dataset.c]=i.checked;saveSettings();AudioFX.apply();});
     $('#st-select').onclick=()=>{this.closeDialogue();this.openWin(null);this.save();AudioFX.play(null);this.netLeave();showScreen('screen-select');};
     $('#st-out').onclick=()=>{this.closeDialogue();this.openWin(null);this.save();AudioFX.play(null);this.netLeave();Auth.logout();Store.mem=null;showScreen('screen-login');};
+    $('#st-news').onclick=()=>{AudioFX.sfx('ui');this.openWin('newswin');};
     $('#st-keys').onclick=()=>toast('WASD / click move · E talk & fight · Z or click loot to pick it up · P party (/p party chat) · area skills: press, then click the ground (Esc cancels) · 1-9, 0 skill bar · Caps Lock AUTO · I inventory · K skills · J quests · C stats · M map · +/- map zoom · Enter chat · Esc settings',7000);},
   /* ---------- quest tracker (minimizable) ---------- */
   trackerMin(on){SETTINGS.trackerMin=on;saveSettings();$('#hud-tracker').classList.toggle('min',on);const b=$('#qt-min');if(b){b.textContent=on?'+':'−';b.setAttribute('aria-expanded',!on);b.title=on?'Show quests':'Minimize quests';}},
   /* ---------- chat ---------- */
   say(t){const c=this.ch,now=performance.now();
     if(t[0]==='/'){const cmd=t.slice(1).split(/\s+/)[0].toLowerCase();
-      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
+      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /patch (what is new), /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
       else if(cmd==='p'){const msg=t.slice(2).trim().slice(0,120);if(!this.party){this.log('sys',null,'You are not in a party (P opens the Party window)');return;}if(!msg) return;
         this.log('pchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,this.party.i]);if(Net.says.length>5) Net.says.shift();}return;}
       else if(cmd==='g'){const msg=t.slice(2).trim().slice(0,120);if(!c.guild){this.log('sys',null,'You are not in a guild (O opens the Guild window)');return;}if(!msg) return;
         this.log('gchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,'g:'+c.guild.i]);if(Net.says.length>5) Net.says.shift();}return;}
       else if(cmd==='pk'){const a=t.split(/\s+/).slice(1).join(' ').trim();if(!a) this.openWin('pkwin');else if(['peace','all','guild'].includes(a.toLowerCase())) this.setPk(a.toLowerCase());else this.setPk('target',a);}
       else if(cmd==='guild') this.openWin('guildwin');
+      else if(cmd==='patch'||cmd==='news') this.openWin('newswin');
       else if(cmd==='party') this.openWin('partywin');
       else if(cmd==='leave') this.partyLeave();
       else if(cmd==='invite'){const q=t.split(/\s+/).slice(1).join(' ').toLowerCase();const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===q);
@@ -5861,7 +5895,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13j';
+const BUILD='2026-11-13k';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

@@ -1,1 +1,1 @@
-build: 2026-11-13j (boss death fix for big hits online, own guild tag)
+build: 2026-11-13k (What's New window in the game)
