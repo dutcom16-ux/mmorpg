@@ -1,1 +1,1 @@
-build: 2026-11-13e (party-sized bosses, +1% heals every 10-15 s, hidden boss level, stronger faster summons, Recruits restored)
+build: 2026-11-13f (guild ranks and join requests, boss defence halved, boss health bar fix)

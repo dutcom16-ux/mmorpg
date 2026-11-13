@@ -326,17 +326,21 @@ html:not(.mobile) .shortcuts .ib{flex:1 1 0;min-width:0;width:auto;max-width:36p
 .netpill i{width:8px;height:8px;border-radius:50%;background:#6b7590;flex:none}.netpill.on i{background:#6cf2a6;box-shadow:0 0 8px #6cf2a6}.netpill.on{color:#bff4d4}
 .chatlog .party{color:#b8ffc8}.chatlog .party .who{color:#7dff9a}
 .chatlog .gchat{color:#ffe2a8}.chatlog .gchat .who{color:#f7c552}.pkbtn.on{border-color:#ff7b7b;color:#ffb0b0;background:rgba(255,80,80,.16)}
-.pkwin{width:min(600px,96vw)}.pk-mode{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:8px 6px;border-bottom:1px solid rgba(160,220,255,.1);cursor:pointer}
+.pkwin{width:min(600px,96vw)}.guildwin{width:min(580px,96vw)}html.mobile .guildwin{width:min(430px,94vw)}
+.pw-sec h4 span{float:right;color:var(--muted);font-family:Nunito,sans-serif;font-size:11.5px;letter-spacing:.04em;text-transform:none}
+.gw-row .gw-act{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.gw-row .gw-act .btn{min-width:32px;padding:3px 8px}
+.grank{font-weight:900}.grank.r0{color:#ffd76a}.grank.r1{color:#ffb86a}.grank.r2{color:#9fd8ff}.grank.r3{color:#c8e6c9}.grank.r4{color:var(--muted)}
+#btn-guild.on{border-color:rgba(247,213,142,.85);background:rgba(247,213,142,.22);color:#fff1cf}.pk-mode{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:8px 6px;border-bottom:1px solid rgba(160,220,255,.1);cursor:pointer}
 .pk-mode b{font-weight:900;font-size:14px}.pk-mode small{display:block;color:var(--muted);font-weight:700;font-size:12px;line-height:1.4}.pk-mode input{margin-top:3px;width:17px;height:17px;accent-color:#ff7b7b}
 .pk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.pk-row input[type=text]{flex:1;min-width:140px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:rgba(8,12,28,.6);color:var(--text);font:800 13px Nunito,sans-serif}
 .pk-row .btn{min-height:32px;padding:4px 12px;font-size:12.5px}
 .chatlog .pchat{color:#bfe3ff}.chatlog .pchat .who{color:#7fc8ff}
 .chat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.chat-btns{display:flex;align-items:center;gap:6px;flex:none}
+.chat-btns{display:flex;align-items:center;gap:4px;flex:none}.chat-top .netpill{flex:1 1 auto;min-width:0}.chat-top .netpill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chatmin{position:relative;min-width:26px;height:26px;padding:0 5px}.chatmin svg{width:15px;height:15px}
 .chatmin b{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff5d6f;color:#fff;font:900 10px/16px Nunito,sans-serif;text-align:center}
 .chatbox.min .chatlog,.chatbox.min #chat-form{display:none}
-.partybtn{min-height:26px;padding:2px 10px;font-size:11.5px;letter-spacing:.06em}
+.partybtn{min-height:26px;padding:2px 8px;font-size:11.5px;letter-spacing:.04em}html.phone .partybtn{padding:2px 6px;font-size:10.5px;letter-spacing:0}html.phone .chat-btns{gap:3px}html.phone .chat-top{gap:5px}
 .party-frame{display:none;position:absolute;left:14px;bottom:240px;width:210px;z-index:3;padding:6px 7px;overflow-y:auto;scrollbar-width:thin}
 .party-frame.on{display:block}
 .party-frame .ph{font:900 10.5px Nunito,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--aether);padding:1px 3px 4px;display:flex;justify-content:space-between;gap:6px}
@@ -1034,7 +1038,7 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
     <div class="pcard glass" id="pcard" role="dialog"></div>
     <div class="chatbox glass" id="chatbox">
       <div class="chat-top"><button class="netpill" id="net-pill" type="button" title="Who's online · party (P)"><i></i><span>Single-player</span></button>
-        <span class="chat-btns"><button class="btn partybtn pkbtn" id="btn-pk" type="button" title="PK mode and guild (G)">Peace</button><button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button>
+        <span class="chat-btns"><button class="btn partybtn pkbtn" id="btn-pk" type="button" title="PK mode and guild (G)">Peace</button><button class="btn partybtn" id="btn-party" type="button" title="Party (P)">Party</button><button class="btn partybtn" id="btn-guild" type="button" title="Guild (O)">Guild</button>
         <button class="ib chatmin" id="chat-min" type="button" title="Minimize chat" aria-label="Minimize chat" aria-pressed="false" aria-controls="chatlog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg><b hidden></b></button></span></div>
       <div class="chatlog" id="chatlog" aria-live="polite"></div>
       <form id="chat-form" autocomplete="off"><input id="chat-input" maxlength="120" placeholder="Press Enter to chat · /help" aria-label="Chat message"></form>
@@ -1079,6 +1083,10 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
     <div class="charwin glass pkwin" id="pkwin" role="dialog" aria-modal="false" aria-labelledby="kw2-title">
       <div class="head"><div><h3 id="kw2-title">PK &amp; Guild</h3><div class="sub" id="pk-sub"></div></div><button class="btn x" data-close>Close</button></div>
       <div id="pk-body"></div>
+    </div>
+    <div class="charwin glass guildwin" id="guildwin" role="dialog" aria-modal="false" aria-labelledby="gw-title">
+      <div class="head"><div><h3 id="gw-title">Guild</h3><div class="sub" id="gw-sub"></div></div><button class="btn x" data-close>Close</button></div>
+      <div id="gw-body"></div>
     </div>
     <div class="charwin glass vaultwin" id="vaultwin" role="dialog" aria-modal="false" aria-labelledby="vw-title">
       <div class="head"><div><h3 id="vw-title">Vault</h3><div class="sub" id="vw-sub"></div></div><button class="btn x" data-close>Close</button></div>
@@ -2111,6 +2119,10 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13f',date:'2026-11-13',title:'Guild ranks and join requests',
+    new:['Guild window (O, the Guild button by the chat, or Amelie): your whole guild with ranks and who is online, join requests, invites, and the controls your rank allows','Ranks: Guild Leader, Vice Leader, Officer, Member, Novice. The leader passes the leadership on and can disband; Vice Leaders and Officers invite, accept requests, and promote, demote or kick members ranked below them','Ask to join any guild you see online: its officers and leader get your request','The guild leader wears a crown next to the guild name'],
+    balance:['Boss armour and magic resistance are halved'],
+    fixes:["A boss's health bar now uses the map host's maximum health, so it reads correctly even when players are on different versions"]},
   {v:'2026-11-13e',date:'2026-11-13',title:'Bosses built for parties',
     balance:['The Slime Queen and the Lava Dragon Golem have far more health: one end-game character alone needs about 10 minutes, weaker characters much longer. Bring a party','Their heals are smaller but more frequent: +1% of their health every 10-15 seconds once hurt (stun them during the cast bar to stop it)','Boss and summon levels are no longer shown','Summons are much tougher and hit much harder, and every boss and summon moves 50% faster','Recruits are back to their original HP and critical chance (every other job keeps 301x HP and +25 critical chance)']},
   {v:'2026-11-13d',date:'2026-11-13',title:'Max-level bosses',
@@ -2824,7 +2836,8 @@ const BOSS_TUNE={
   hp:{slimequeen:10630,lavagolem:6730},     // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
   dmg:2001,                              // x the boss's damage
   vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
-  minion:{hp:2010,dmg:601}},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  minion:{hp:2010,dmg:601},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  def:.5},                               // x the boss's armour and magic resistance (half)             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
   CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
 /* when each boss next appears, as far as this game knows: seen on the boss's own map, or heard from another player on
@@ -3017,7 +3030,7 @@ const TOWN_NPCS={
               {label:'What happens at Level 10?',node:{pages:['Reach Base Level 10 and I\'ll set you the Ascension Trial. Pass it, and you\'ll choose your path: Vanguard, Elementalist, Wayfinder, Channeler or Specter.','Amelie at the town hall will register your new title. Your face stays your own, mind. Only the gear changes.']}}]};
     }},
   clerk:{name:'Amelie',title:'Guild Registrar',shop:'Guild',barks:['Next, please!','Paperwork never sleeps.','Founding a guild? Forms are on the left.'],
-    talk(c){return {opts:[{label:c.guild?`My guild · ${c.guild.n}`:'Found or join a guild',action:t=>{t.closeDialogue();t.openWin('pkwin');return {pages:['']};}}],pages:['Welcome to the Adventurers\' Guild desk! {name}, Recruit, Level 1. You\'re on my list.',
+    talk(c){return {opts:[{label:c.guild?`My guild · ${c.guild.n}`:'Found or join a guild',action:t=>{t.closeDialogue();t.openWin('guildwin');return {pages:['']};}}],pages:['Welcome to the Adventurers\' Guild desk! {name}, Recruit, Level 1. You\'re on my list.',
       'Job advancement is registered here. Reach Level 10, pass Elder Fin\'s Ascension Trial, and I\'ll stamp your new title. A second job opens at Base 40 and Job 40.']};}},
   innkeeper:{name:'Bram',title:'Innkeeper · The Gilded Tankard',barks:['Ale\'s fresh!','Stew\'s on the fire!','Room for one more by the hearth!'],
     talk(c){return {pages:['Welcome to the Gilded Tankard! Hot stew, cold ale, and a bed that doesn\'t move.',
@@ -3086,7 +3099,7 @@ const TownScreen={
       const x=v.x+(e.clientX-r.left)/r.width*v.w,y=v.y+(e.clientY-r.top)/r.height*v.h;if(whole) this.bigMap(false);this.walkTo(x,y,null);});
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
-    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.layoutHud());
+    $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-guild').onclick=()=>{AudioFX.sfx('ui');this.openWin('guildwin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.layoutHud());
     {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
@@ -3101,7 +3114,7 @@ const TownScreen={
         else if(/^[1-9]$/.test(k)){const b=$$('#dlg-opts button')[+k-1];if(b) b.click();}return;}
       if(e.key==='CapsLock'){e.preventDefault();this.toggleAuto();return;}
       if(/^[0-9]$/.test(k)&&!e.repeat){e.preventDefault();this.useSlot(k==='0'?9:+k-1);return;}
-      const W={c:'charwin',i:'invwin',k:'skillwin',j:'questwin',l:'questwin',p:'partywin',n:'mailwin',g:'pkwin',f:'locwin'};
+      const W={c:'charwin',i:'invwin',k:'skillwin',j:'questwin',l:'questwin',p:'partywin',n:'mailwin',g:'pkwin',f:'locwin',o:'guildwin'};
       if(W[k]&&!e.repeat){e.preventDefault();this.openWin(W[k]);return;}
       if(k==='m'&&!e.repeat){e.preventDefault();this.bigMap(!$('#bigmap').classList.contains('on'));return;}
       if(k==='z'&&!e.repeat){e.preventDefault();this.pickNearest();return;}
@@ -3148,6 +3161,7 @@ const TownScreen={
     Sprites.ensure('skillfx').catch(()=>{});Sprites.ensure('dmgfx').catch(()=>{});
     this.hud();$('#dlg').classList.remove('on');this.save();this.questCheck();
     c.pk={mode:'peace',who:'',kills:0,deaths:0,...(c.pk||{})};this.pkFoes={};this.pkMine={};this.pkBadge();
+    this.gInit();this.gBadge();
     this.mailSync();Mail.fetch().then(()=>{if(this.ch===c&&activeScreen===this) this.mailSync();});
     showScreen('screen-town');this.layoutHud();requestAnimationFrame(()=>requestAnimationFrame(()=>this.layoutHud()));setTimeout(()=>this.layoutHud(),400);
   },
@@ -3970,7 +3984,7 @@ const TownScreen={
     const n=Math.ceil(el/.05);for(let i=1;i<=n;i++) this.update(el/n,t0+(now-t0)*i/n);},
   update(dt,now){
     if(Net.room&&!this.travelling) this.netTick(now);
-    if(now>(this.bhT||0)){this.bhT=now+500;this.bossHud();}
+    if(now>(this.bhT||0)){this.bhT=now+500;this.bossHud();this.renderGuild();if(this.pendingG&&now>this.pendingG.until){this.pendingG=null;$('#pinvite').classList.remove('on');}}
     this.updateRemotes(dt);this.tickLater(now);this.tickDots(now);this.tickZones(now);this.tickBuffs(now);this.tickDrops(now);
     if(this.dlg||this.travelling){this.moving=false;if(this.dlg&&this.others&&this.others.size) this.updateMobs(dt,now);return;}
     if(this.dead){this.moving=false;this.atk=null;this.autoGo=null;this.qAt=null;if(this.aim) this.setAim(null);this.updateMobs(dt,now);if(now>=this.dead.until){this.dead=null;this.ch.hp=this.maxHp();this.hudBars();
@@ -4035,7 +4049,7 @@ const TownScreen={
   spawnBoss(){const C=ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
     const mk=(kind,x,y)=>{const D=MOB_DEFS[kind],st=mobStats(kind,D.lvl),m={kind,def:D,zone:{kind,x,y,r:8,n:1},...st,maxHp:st.hp,x,y,dir:0,state:'idle',until:0,walkT:0,moving:false,hostile:false,nextHit:0,
       hitT:-1e9,deadT:-1e9,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*6,bornT:-1e9,barkAt:0,bubble:null,cds:{},act:null,actSeq:0,i:this.mobs.length};this.mobs.push(m);return m;};
-    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));const slots=[];
+    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));b.dp*=BOSS_TUNE.def;b.mp*=BOSS_TUNE.def;const slots=[];
     for(const [kind,n] of C.summons) for(let i=0;i<n;i++){const s=mk(kind,C.at[0],C.at[1]);s.minion=true;s.state='dead';s.respawnAt=1e15;
       s.maxHp=s.hp=s.def.hpOfBoss?Math.round(b.maxHp*s.def.hpOfBoss):Math.round(s.maxHp*BOSS_TUNE.minion.hp);s.atk=s.atk.map(v=>Math.round(v*BOSS_TUNE.minion.dmg));slots.push(s);}
     this.enc={cfg:C,boss:b,slots,cx:C.at[0],cy:C.at[1],t0:0,seen:0,nextHeal:0,nextSummon:0,majorUntil:0,minorNext:0,resets:0,resetsSeen:0,resetT:-1e9,targets:[],inside:false};
@@ -4334,6 +4348,7 @@ const TownScreen={
   /* an event someone sent to me */
   partyEvent(from,L,P,e,now){const t=e[1],pa=this.party,nm=Net.name(P.n);
     if(t==='pv'||t==='pvk'||t==='ginv'||t==='gacc'){this.pkEvent(from,P,e,now,nm);return;}
+    if(t==='greq'||t==='gok'||t==='gno'||t==='gq'||t==='grk'||t==='gkk'){this.guildEvent(t,from,P,e,now,nm);return;}
     if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
       this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
@@ -4476,7 +4491,7 @@ const TownScreen={
   /* tap another player on the map: party members become your support target, others get a card with Invite */
   hitRemote(x,y){if(!this.others) return null;let best=null,bd=1e9;for(const o of this.others.values()){if(this.hid(o.x,o.y)||Math.abs(x-o.x)>16||y<o.y-58||y>o.y+6) continue;const d=Math.abs(x-o.x)+Math.abs(y-(o.y-26))*.4;if(d<bd){bd=d;best=o;}}return best;},
   playerCard(o){const P=o.P,id=P.id,el=$('#pcard'),pa=this.party,can=!pa||this.isLeader();
-    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&this.mapId!=='town'?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">Guild ‹${esc(o.gd[1])}›</small>`:''}`;
+    el.innerHTML=`<p>${esc(o.n)}<small>Lv ${o.lv} ${esc((JOBS[o.j]||JOBS.recruit).name)}${P.pt&&P.pt.i?' · in a party':''}</small></p><div class="row">${can&&id?`<button class="btn primary" id="pc-inv">Invite to party</button>`:''}${this.ch.guild&&this.gCanManage()&&!o.gd&&id?`<button class="btn" id="pc-ginv">Invite to guild</button>`:''}${id&&this.mapId!=='town'?`<button class="btn" id="pc-pk" title="${esc(this.pkWhy(o,performance.now())||'Attack')}">Attack</button>`:''}<button class="btn" id="pc-x">Close</button></div>${o.gd?`<small style="display:block;margin-top:6px;color:#f7c552;font-weight:800">${GUILD_RANKS[o.gd[2]]} of ‹${esc(o.gd[1])}›</small>`:''}`;
     el.classList.add('on');clearTimeout(this.pcT);this.pcT=setTimeout(()=>el.classList.remove('on'),8000);
     const b=$('#pc-inv');if(b) b.onclick=()=>{el.classList.remove('on');this.partyInvite(id,o.n);};{const g=$('#pc-ginv');if(g) g.onclick=()=>{el.classList.remove('on');this.guildInvite(id,o.n);};const k=$('#pc-pk');if(k) k.onclick=()=>{el.classList.remove('on');this.pvpTarget(o);};}$('#pc-x').onclick=()=>el.classList.remove('on');},
   /* ---------- multiplayer: the others in this map, the map's host, shared monsters, chat (see Net) ---------- */
@@ -4512,26 +4527,28 @@ const TownScreen={
     mp.amHost=host===me;mp.host=host;if(mp.amHost&&!was) for(const m of this.mobs) m.tgt=null;},
   netPublish(now){const c=this.ch,mp=this.mp,P={v:1,n:c.name,lv:c.baseLevel|0,j:c.job.classId,ap:c.appearance,m:this.mapId,rd:1,
       x:Math.round(this.p.x),y:Math.round(this.p.y),d:this.dir|0,mv:this.moving?1:0,hp:Math.round(100*Math.max(0,c.hp)/this.maxHp()),dd:this.dead?1:0,
-      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,bv:BUILD,eq:this.look(),pe:Net.pe,pk:Math.max(0,PK_MODES.findIndex(x=>x[0]===(c.pk&&c.pk.mode))),gd:c.guild?[c.guild.i,c.guild.n]:null,df:[Math.round(this.defence()),Math.round(this.mdef())],hm:this.maxHp()|0,mp:[Math.max(0,Math.round(this.res||0)),this.maxRes()],bf:Object.keys(this.buffs||{}).slice(0,12),bc:BossClock.pub(),
+      vl:now<this.veilUntil?1:0,h:mp.amHost?1:0,at:mp.at,hits:mp.hits,vf:mp.vf,say:Net.says,id:c.id,bv:BUILD,eq:this.look(),pe:Net.pe,pk:Math.max(0,PK_MODES.findIndex(x=>x[0]===(c.pk&&c.pk.mode))),gd:c.guild?[c.guild.i,c.guild.n,this.gMy(),c.guild.v|0]:this.gOut&&now<this.gOut.until?[this.gOut.doc.i,this.gOut.doc.n,-1,this.gOut.doc.v]:null,gr:c.guild&&now<(this.gPubUntil||0)?this.gDoc():this.gOut&&now<this.gOut.until?this.gOut.doc:null,df:[Math.round(this.defence()),Math.round(this.mdef())],hm:this.maxHp()|0,mp:[Math.max(0,Math.round(this.res||0)),this.maxRes()],bf:Object.keys(this.buffs||{}).slice(0,12),bc:BossClock.pub(),
       pt:this.party?(this.isLeader()?{i:this.party.i,l:this.party.l,n:this.party.n.slice(0,40),s:this.party.s||0,m:this.party.m}:{i:this.party.i,l:this.party.l}):null,
       mb:mp.amHost&&this.others.size&&this.mobs.length?this.snap(now):null,mk:mp.amHost?mp.mk:null,mh:mp.amHost?mp.mh:null};
     const enc=new TextEncoder();let t=JSON.stringify(P);
     for(const k of ['vf','hits','say','mh','mk','pe']) while(enc.encode(t).length>3800&&Array.isArray(P[k])&&P[k].length){P[k]=P[k].slice(1);t=JSON.stringify(P);}   // presence holds 4 KB
+    if(enc.encode(t).length>3800&&P.gr){P.gr=null;t=JSON.stringify(P);}      // the guild roster waits for a quieter moment (it is asked for again)
     if(t===mp.lastPub) return;mp.lastPub=t;Net.set(P);},
   /* host -> everyone: [id, x, y, hp (or tenths of a second to respawn), flags 1 dead 2 hostile 4 stunned 8 frozen 16 slowed, facing] */
   snap(now){return {s:++Net.seq,l:this.mobs.map(m=>{const dead=m.state==='dead';
     return [m.i,Math.round(m.x),Math.round(m.y),dead?Math.max(0,Math.round((m.respawnAt-now)/100)):Math.max(0,Math.round(m.hp)),
       (dead?1:0)|(m.hostile?2:0)|(now<(m.stunUntil||0)?4:0)|(m.frozen?8:0)|(now<(m.slowUntil||0)?16:0),m.dir|0,
-      ...(m.def.acts&&!dead?[m.act?m.def.acts.indexOf(m.act.def)+1:0,m.actSeq|0,m.act?Math.round((now-m.act.t0)/100):0,m.act?Math.round(m.act.ax):0,m.act?Math.round(m.act.ay):0,m.boss&&this.enc?this.enc.resets:0]:[])];})};},   // + the action of a boss or summon
+      ...(m.def.acts&&!dead?[m.act?m.def.acts.indexOf(m.act.def)+1:0,m.actSeq|0,m.act?Math.round((now-m.act.t0)/100):0,m.act?Math.round(m.act.ax):0,m.act?Math.round(m.act.ay):0,m.boss&&this.enc?this.enc.resets:0,Math.round(m.maxHp)]:[])];})};},   // + the action of a boss or summon
   applySnap(mb,now){if(!mb||!Array.isArray(mb.l)||mb.s===this.mp.lastSnap) return;this.mp.lastSnap=mb.s;
     for(const e of mb.l){const m=Array.isArray(e)&&this.mobs[e[0]|0];if(!m) continue;const f=e[4]|0;
       if(f&1){if(m.state!=='dead'){m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;if(this.target===m) this.target=null;}m.respawnAt=now+(e[3]|0)*100;continue;}
       if(m.state==='dead'){m.state='idle';m.x=+e[1]||m.x;m.y=+e[2]||m.y;m.bornT=now;m.occ=null;}
       if(Number.isFinite(+e[1])&&Number.isFinite(+e[2])){m.tx=+e[1];m.ty=+e[2];}
+      if(m.def.acts&&+e[12]>0) m.maxHp=Math.min(4e9,Math.round(+e[12]));      // a boss's maximum health comes from the host too, so its bar is right even if versions differ
       const hp=Math.max(0,Math.min(m.maxHp,e[3]|0));m.hp=now-m.hitT<600?Math.min(m.hp,hp):hp;
       m.hostile=!!(f&2);m.stunUntil=f&4?now+250:0;m.frozen=!!(f&8);m.slowUntil=f&16?now+250:0;m.sdir=(e[5]|0)&7;if(m.def.acts) this.actorSnap(m,e,now);}},
   newRemote(peer,P){const x=+P.x||0,y=+P.y||0;return {peer,P,x,y,tx:x,ty:y,dir:0,moving:false,mv:false,walkT:0,atkT:-1e9,atS:undefined,hurtT:-1e9,hp:100,seen:{},occ:null,key:null,comp:null,pk:.35,speech:null};},
-  syncRemote(o,P,now){o.P=P;o.n=Net.name(P.n);o.lv=Math.max(1,Math.min(999,P.lv|0));o.pkm=Math.max(0,Math.min(3,P.pk|0));o.hm=Math.max(0,Math.min(1e9,P.hm|0));o.mp=Array.isArray(P.mp)&&P.mp[1]>0?[Math.max(0,P.mp[0]|0),Math.max(1,P.mp[1]|0)]:null;o.gd=Array.isArray(P.gd)&&P.gd[0]?[String(P.gd[0]).slice(0,24),Net.name(String(P.gd[1]||'Guild')).slice(0,16)]:null;
+  syncRemote(o,P,now){o.P=P;o.n=Net.name(P.n);o.lv=Math.max(1,Math.min(999,P.lv|0));o.pkm=Math.max(0,Math.min(3,P.pk|0));o.hm=Math.max(0,Math.min(1e9,P.hm|0));o.mp=Array.isArray(P.mp)&&P.mp[1]>0?[Math.max(0,P.mp[0]|0),Math.max(1,P.mp[1]|0)]:null;{const d=gdOf(P);o.gd=d?[String(d[0]).slice(0,24),Net.name(String(d[1]||'Guild')).slice(0,16),Number.isInteger(d[2])?Math.max(0,Math.min(4,d[2])):3]:null;}
     const j=JOBS[P.j]?P.j:'recruit',key=j+'|'+JSON.stringify(P.ap||{});
     if(key!==o.key){o.key=key;o.j=j;try{o.comp=Sprites.compose(j,APPEARANCE.normalize(P.ap||{}),'all');this.pkc=this.pkc||new Map();
       if(!this.pkc.has(key)) this.pkc.set(key,54/this.figureHeight(o.comp));o.pk=this.pkc.get(key);}catch(e){o.comp=null;}}
@@ -4549,7 +4566,7 @@ const TownScreen={
     else{const t=this.others.get(e[2]);if(t){m.lx=t.x;m.ly=t.y;}}},
   /* who is online (every map) and the chat lines everyone sends */
   readLobby(peers,now){const seen=new Set(),quiet=now-Net.since<2500;
-    for(const p of peers){const P=p.presence;if(!P.n) continue;seen.add(p.peer);if(P.bc) BossClock.merge(P.bc);let L=Net.lobby.get(p.peer);const nm=Net.name(P.n);
+    for(const p of peers){const P=p.presence;if(!P.n) continue;seen.add(p.peer);if(P.bc) BossClock.merge(P.bc);try{this.gSync(P,now);}catch(err){console.error(err);}let L=Net.lobby.get(p.peer);const nm=Net.name(P.n);
       if(!L){L={say:0,pe:0,n:nm,map:P.m};Net.lobby.set(p.peer,L);if(Updates.newer(P.bv)) Updates.offer();if(!quiet) this.log('sys',null,`${nm} is online${P.m?' · '+(MAP_NAMES[P.m]||P.m):''}`);
         if(Array.isArray(P.say)) for(const e of P.say) if(Array.isArray(e)&&e[0]>L.say) L.say=e[0];
         if(Array.isArray(P.pe)) for(const e of P.pe) if(Array.isArray(e)&&e[0]>L.pe) L.pe=e[0];   // what they sent before we saw them is history
@@ -4665,34 +4682,135 @@ const TownScreen={
       else if(!this.target&&!this.path&&!this.keys.size&&!this.casting&&!this.lootPending(now)) this.target=this.pvDummy(o);      // fight back
       this.hudBars();return;}
     if(t==='pvk'){if(!((this.pkMine||{})[from]>now-60000)) return;c.pk.kills=(c.pk.kills|0)+1;AudioFX.sfx('quest');this.log('sys',null,`You defeated ${nm} in a duel of blades.`);toast(`You defeated ${nm}`);this.save();if(this.win==='pkwin') this.renderPk();return;}
-    if(t==='ginv'){if(c.guild) return;this.pendingG={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Guild')).slice(0,16),until:now+30000};AudioFX.sfx('quest');
+    if(t==='ginv'){if(c.guild||!(P.gd&&P.gd[0]===e[3])) return;this.pendingG={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Guild')).slice(0,16),until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to the guild<small>‹${esc(this.pendingG.n)}›</small></p><div class="row"><button class="btn primary" id="gi-yes">Join guild</button><button class="btn" id="gi-no">No thanks</button></div>`;
       el.classList.add('on');$('#gi-yes').onclick=()=>this.guildAnswer(true);$('#gi-no').onclick=()=>this.guildAnswer(false);this.log('sys',null,`Guild · ${nm} invites you to ‹${this.pendingG.n}›`);return;}
-    if(t==='gacc'){if(c.guild&&c.guild.i===e[3]){AudioFX.sfx('quest');toast(`${nm} joined ‹${c.guild.n}›`);this.log('sys',null,`Guild · ${nm} joined`);if(this.win==='pkwin') this.renderPk();}return;}},
+    if(t==='gacc'){const g=c.guild;if(g&&g.i===e[3]&&this.gCanManage()){if(!g.m.some(x=>x[0]===from)){if(g.m.length>=GUILD_MAX){toast('The guild is full');return;}this.gEdit(g=>g.m.push([from,nm,4]),`${nm} joined as ${GUILD_RANKS[4]}`);}AudioFX.sfx('quest');toast(`${nm} joined ‹${g.n}›`);}return;}},
   /* ---------- guilds: a name you found, others join by invitation; shown over your head, with its own chat (/g) ---------- */
   guildCreate(name){const c=this.ch;name=String(name||'').trim().replace(/\s+/g,' ');if(c.guild){toast('Leave your guild first');return;}
+    if([...this.people().values()].some(x=>{const d=gdOf(x.P);return d&&String(d[1]).toLowerCase()===name.toLowerCase();})){toast('A guild with that name is online already');return;}
     if(!/^[A-Za-z0-9 ]{3,16}$/.test(name)){toast('Guild names are 3-16 letters, numbers or spaces');return;}if((c.baseLevel||1)<GUILD_MIN_LV){toast(`Founding a guild needs Base Level ${GUILD_MIN_LV}`);return;}
     if((c.gold||0)<GUILD_COST){toast(`Founding a guild costs ${GUILD_COST} gold · you have ${c.gold||0}`);return;}
-    c.gold-=GUILD_COST;c.guild={i:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:name,lead:true};AudioFX.sfx('level');this.log('sys',null,`Guild founded · ‹${name}› (/g to talk to your guild)`);toast(`Guild founded · ‹${name}›`);this.tracker();this.save();this.renderPk();},
-  guildInvite(id,name){const c=this.ch;if(!c.guild||!Net.room) return;this.partySend('ginv',id,c.guild.i,c.guild.n);toast(`Invited ${name} to ‹${c.guild.n}›`);},
-  guildAnswer(yes){const v=this.pendingG;this.pendingG=null;$('#pinvite').classList.remove('on');if(!v||!yes) return;const c=this.ch;c.guild={i:v.i,n:v.n};this.partySend('gacc',v.from,v.i);
+    c.gold-=GUILD_COST;const me=this.pid();c.guild={i:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),n:name,l:me,v:1,t:Date.now(),m:[[me,c.name,0]]};AudioFX.sfx('level');this.log('sys',null,`Guild founded · ‹${name}›: you are its Guild Leader (/g to talk to your guild)`);toast(`Guild founded · ‹${name}›`);this.tracker();this.save();this.renderPk();this.renderGuild(true);},
+  guildInvite(id,name){const c=this.ch,g=c.guild;if(!g||!Net.room) return;if(!this.gCanManage()){toast('Only officers and up can invite');return;}if(g.m.length>=GUILD_MAX){toast(`The guild is full (${GUILD_MAX})`);return;}
+    this.partySend('ginv',id,g.i,g.n);toast(`Invited ${name} to ‹${g.n}›`);this.log('sys',null,`Guild · you invited ${name}`);},
+  guildAnswer(yes){const v=this.pendingG;this.pendingG=null;$('#pinvite').classList.remove('on');if(!v||!yes){this.renderGuild(true);return;}const c=this.ch;if(c.guild) return;c.guild={i:v.i,n:v.n,l:null,v:0,t:0,m:[[this.pid(),c.name,4]]};this.partySend('gacc',v.from,v.i);this.renderGuild(true);
     AudioFX.sfx('quest');toast(`You joined ‹${v.n}›`);this.log('sys',null,`Guild · you joined ‹${v.n}› (/g to talk to your guild)`);this.save();if(this.win==='pkwin') this.renderPk();},
-  guildLeave(){const c=this.ch;if(!c.guild) return;const n=c.guild.n;c.guild=null;if(c.pk.mode==='guild'){c.pk.mode='peace';this.pkBadge();}toast(`You left ‹${n}›`);this.log('sys',null,`Guild · you left ‹${n}›`);this.save();this.renderPk();},
+  guildLeave(){this.gQuit(false);},
+  /* ---------- guild roster: every member keeps c.guild = {i, n, l (leader), v (version), t, m: [[id, name, rank]]}. A change
+     bumps v, and the member who made it shows the whole roster in their presence (gr) for a few seconds; anyone holding
+     an older roster asks for it ('gq'). Ranks: 0 Guild Leader, 1 Vice Leader, 2 Officer, 3 Member, 4 Novice. ---------- */
+  gInit(){const c=this.ch,g=c.guild,me=this.pid();this.gReqs={};this.gAsked={};this.gOut=null;this.gPubUntil=0;this.gAskT={};this.gKicked={};if(!g) return;
+    if(!Array.isArray(g.m)){g.m=[[me,c.name,g.lead?0:3]];g.l=g.lead?me:null;g.v=g.lead?1:0;g.t=g.lead?Date.now():0;delete g.lead;}      // guilds from before ranks
+    const e=g.m.find(x=>x[0]===me);if(e) e[1]=c.name;},
+  gDoc(){const g=this.ch.guild;return {i:g.i,n:g.n,l:g.l||null,v:g.v|0,t:g.t||0,m:g.m};},
+  gRank(id){const g=this.ch.guild,e=g&&Array.isArray(g.m)&&g.m.find(x=>x[0]===id);return e?e[2]:4;},
+  gMy(){return this.ch&&this.ch.guild?this.gRank(this.pid()):9;},
+  gCanManage(){return this.gMy()<=2;},
+  gEdit(fn,why){const g=this.ch.guild;if(!g) return;fn(g);g.v=(g.v|0)+1;g.t=Date.now();this.gPubUntil=performance.now()+8000;
+    if(why) this.log('sys',null,`Guild · ${why}`);this.save();this.renderGuild(true);if(this.win==='pkwin') this.renderPk();},
+  gSetRank(id,r){const g=this.ch.guild,a=this.gMy(),e=g&&g.m.find(x=>x[0]===id);if(!e||id===this.pid()||a>2||e[2]<=a||r<=a||r<1||r>4) return;
+    const up=r<e[2];this.gEdit(g=>{g.m.find(x=>x[0]===id)[2]=r;},`${e[1]} is now ${GUILD_RANKS[r]}`);AudioFX.sfx(up?'quest':'ui');this.partySend('grk',id,g.i,r);},
+  gKick(id){const g=this.ch.guild,a=this.gMy(),e=g&&g.m.find(x=>x[0]===id);if(!e||id===this.pid()||a>2||e[2]<=a) return;
+    this.gKicked[id]=1;this.gEdit(g=>{g.m=g.m.filter(x=>x[0]!==id);},`${e[1]} was removed from the guild`);this.partySend('gkk',id,g.i);},
+  gLead(id){const g=this.ch.guild,me=this.pid(),e=g&&g.m.find(x=>x[0]===id);if(!e||this.gMy()!==0||id===me) return;
+    this.gEdit(g=>{g.m.find(x=>x[0]===me)[2]=1;g.m.find(x=>x[0]===id)[2]=0;g.l=id;},`${e[1]} leads the guild now; you are its Vice Leader`);AudioFX.sfx('quest');this.partySend('grk',id,g.i,0);},
+  /* leave, or disband (the leader): the last roster is shown for a few seconds so the others see the change */
+  gQuit(disband){const c=this.ch,g=c.guild;if(!g) return;const me=this.pid(),a=this.gMy(),others=g.m.filter(x=>x[0]!==me);
+    if(disband&&a!==0) return;if(!disband&&a===0&&others.length){toast('Make someone else Guild Leader first, or disband the guild');return;}
+    const doc={...this.gDoc(),m:disband?[]:others,v:(g.v|0)+1,t:Date.now()};if(disband||!others.length){doc.x=1;doc.m=[];}
+    this.gOut={doc,until:performance.now()+10000};c.guild=null;this.gReqs={};if(c.pk.mode==='guild'){c.pk.mode='peace';this.pkBadge();}
+    const msg=doc.x?`‹${g.n}› was disbanded`:`You left ‹${g.n}›`;toast(msg);this.log('sys',null,`Guild · ${msg}`);AudioFX.sfx('ui');this.save();this.renderGuild(true);if(this.win==='pkwin') this.renderPk();},
+  /* ask to join a guild seen online: the request goes to its officers and leader who are online */
+  gRequest(gi,gn){const c=this.ch;if(c.guild||!Net.room) return;if((c.baseLevel||1)<2){toast('Reach Base Level 2 to join a guild');return;}
+    const offs=[...this.people().values()].filter(x=>{const d=gdOf(x.P);return d&&d[0]===gi&&(d[2]==null||d[2]<=2);});
+    if(!offs.length){toast('No officer of that guild is online right now');return;}
+    for(const x of offs.slice(0,6)) this.partySend('greq',x.P.id,gi);this.gAsked[gi]=performance.now();
+    toast(`Asked to join ‹${gn}›`);this.log('sys',null,`Guild · you asked to join ‹${gn}›; an officer has to accept`);this.renderGuild(true);},
+  gAccept(id){const g=this.ch.guild,r=this.gReqs[id];if(!g||!r||!this.gCanManage()) return;if(g.m.length>=GUILD_MAX){toast(`The guild is full (${GUILD_MAX})`);return;}
+    delete this.gReqs[id];if(!g.m.some(x=>x[0]===id)) this.gEdit(g=>g.m.push([id,r.n,4]),`${r.n} joined as ${GUILD_RANKS[4]}`);this.partySend('gok',id,g.i,g.n);AudioFX.sfx('quest');},
+  gDecline(id){const g=this.ch.guild,r=this.gReqs[id];if(!g||!r) return;delete this.gReqs[id];this.partySend('gno',id,g.i,g.n);this.renderGuild(true);},
+  guildEvent(t,from,P,e,now,nm){const c=this.ch,g=c.guild,gi=String(e[3]||'');
+    if(t==='greq'){if(!g||g.i!==gi||!this.gCanManage()||g.m.some(x=>x[0]===from)) return;const fresh=!this.gReqs[from];this.gReqs[from]={n:nm,lv:P.lv|0,j:P.j,t:now};
+      if(fresh){AudioFX.sfx('quest');toast(`${nm} asks to join ‹${g.n}› (O)`);this.log('sys',null,`Guild · ${nm} (Lv ${P.lv|0}) asks to join · open the Guild window (O) to answer`);}this.renderGuild(true);return;}
+    if(t==='gok'){if(g||!this.gAsked[gi]) return;const n=Net.name(String(e[4]||'Guild')).slice(0,16);c.guild={i:gi,n,l:null,v:0,t:0,m:[[this.pid(),c.name,4]]};delete this.gAsked[gi];
+      AudioFX.sfx('quest');toast(`You joined ‹${n}›`);this.log('sys',null,`Guild · ${nm} accepted you into ‹${n}› (/g to talk to your guild)`);this.save();this.renderGuild(true);return;}
+    if(t==='gno'){if(!this.gAsked[gi]) return;delete this.gAsked[gi];toast(`‹${Net.name(String(e[4]||'The guild'))}› turned down your request`);this.renderGuild(true);return;}
+    if(t==='gq'){if(g&&g.i===gi) this.gPubUntil=Math.max(this.gPubUntil||0,now+6000);return;}
+    if(t==='grk'){if(g&&g.i===gi){const r=Math.max(0,Math.min(4,e[4]|0));toast(`${nm} made you ${GUILD_RANKS[r]} of ‹${g.n}›`);}return;}
+    if(t==='gkk'){if(g&&g.i===gi&&this.gRank(from)<this.gMy()){this.gEdit(g=>{g.m=g.m.filter(x=>x[0]!==this.pid());});const n=g.n;c.guild=null;if(c.pk.mode==='guild'){c.pk.mode='peace';this.pkBadge();}
+        toast(`${nm} removed you from ‹${n}›`);this.log('sys',null,`Guild · ${nm} removed you from ‹${n}›`);this.save();this.renderGuild(true);if(this.win==='pkwin') this.renderPk();}return;}},
+  /* every presence we read: newer rosters, members to add, requests that are no longer needed */
+  gSync(P,now){const c=this.ch,g=c&&c.guild,d=gdOf(P);if(!c) return;
+    if(g&&P.gr&&typeof P.gr==='object'&&P.gr.i===g.i) this.gAdopt(P.gr);
+    const G=c.guild;
+    if(G&&d&&d[0]===G.i&&P.id){const pv=+d[3]||0;
+      if(pv>(G.v|0)&&now>(this.gAskT[P.id]||0)){this.gAskT[P.id]=now+5000;this.partySend('gq',P.id,G.i);}
+      if(pv===0&&this.gCanManage()&&!G.m.some(x=>x[0]===P.id)&&!this.gKicked[P.id]&&G.m.length<GUILD_MAX&&now>(this.gAskT['+'+P.id]||0)){this.gAskT['+'+P.id]=now+15000;     // joined before ranks, or while no officer could add them
+        this.gEdit(G=>G.m.push([String(P.id).slice(0,40),Net.name(P.n),Number.isInteger(d[2])?Math.max(1,Math.min(4,d[2])):3]),`${Net.name(P.n)} is on the roster now`);}}
+    if(this.gReqs&&P.id&&this.gReqs[P.id]&&d){delete this.gReqs[P.id];this.renderGuild(true);}},
+  gAdopt(D){const c=this.ch,g=c.guild,me=this.pid();const v=+D.v||0,t=+D.t||0;if(!(v>(g.v|0)||(v===(g.v|0)&&t>(g.t||0)))) return;
+    const m=(Array.isArray(D.m)?D.m:[]).filter(e=>Array.isArray(e)&&typeof e[0]==='string').slice(0,GUILD_MAX).map(e=>[e[0].slice(0,40),Net.name(String(e[1]||'?')).slice(0,16),Math.max(0,Math.min(4,e[2]|0))]);
+    if(D.x||!m.some(e=>e[0]===me)){if(!D.x&&!(g.v|0)) return;      // not on the roster yet: an officer adds newcomers
+      const n=g.n;c.guild=null;this.gReqs={};if(c.pk.mode==='guild'){c.pk.mode='peace';this.pkBadge();}const msg=D.x?`‹${n}› was disbanded`:`You are no longer in ‹${n}›`;
+      toast(msg);this.log('sys',null,`Guild · ${msg}`);this.save();this.renderGuild(true);if(this.win==='pkwin') this.renderPk();return;}
+    const was=this.gMy();c.guild={i:g.i,n:Net.name(String(D.n||g.n)).slice(0,16),l:typeof D.l==='string'?D.l:null,v,t,m};const now=this.gMy();
+    if(now!==was&&(g.v|0)) {toast(`You are now ${GUILD_RANKS[now]} of ‹${c.guild.n}›`);this.log('sys',null,`Guild · you are now ${GUILD_RANKS[now]}`);}
+    this.save();this.renderGuild(true);if(this.win==='pkwin') this.renderPk();},
+  gBadge(){const b=$('#btn-guild');if(!b) return;const n=Object.keys(this.gReqs||{}).length+(this.pendingG?1:0),txt=n?`Guild · ${n}`:'Guild';if(b.textContent!==txt) b.textContent=txt;b.classList.toggle('on',!!n);},
+  /* ---------- Guild window (O) ---------- */
+  renderGuild(force){this.gBadge();if(this.win!=='guildwin') return;const c=this.ch,g=c.guild,me=this.pid(),ppl=this.people(),now=performance.now(),B=$('#gw-body');
+    const on=id=>{const x=ppl.get(id);return x&&x.P;};
+    const sig=JSON.stringify([g,Object.keys(this.gReqs||{}),this.pendingG&&this.pendingG.i,Object.keys(this.gAsked||{}),[...ppl.values()].map(x=>[x.P.id,x.P.m,x.P.lv,gdOf(x.P)])]);
+    if(!force&&sig===this.gwSig) return;if(B.contains(document.activeElement)&&document.activeElement.tagName==='INPUT'&&!force) return;this.gwSig=sig;
+    let h='';
+    if(!g){$('#gw-sub').textContent='not in a guild';
+      const gs=new Map();for(const x of ppl.values()){const d=gdOf(x.P);if(!d||x.P.id===me) continue;const e=gs.get(d[0])||{i:d[0],n:Net.name(String(d[1]||'Guild')).slice(0,16),on:0,lead:null};e.on++;if(d[2]===0) e.lead=Net.name(x.P.n);gs.set(d[0],e);}
+      if(this.pendingG) h+=`<div class="pw-sec"><h4>Invitation</h4><div class="pw-row"><div class="nm"><b>‹${esc(this.pendingG.n)}›</b><small>you are invited</small></div><button class="btn primary" id="gw-yes">Join</button><button class="btn" id="gw-no">No thanks</button></div></div>`;
+      h+=`<div class="pw-sec"><h4>Join a guild</h4>`+(gs.size?[...gs.values()].sort((a,b)=>b.on-a.on).map(e=>{const asked=now-(this.gAsked[e.i]||-1e9)<60000;
+          return `<div class="pw-row"><div class="nm"><b>‹${esc(e.n)}›</b><small>${e.on} online${e.lead?` · led by ${esc(e.lead)}`:''}</small></div><button class="btn${asked?'':' primary'}" data-greq="${esc(e.i)}" data-n="${esc(e.n)}" ${asked?'disabled':''}>${asked?'Requested':'Request to join'}</button></div>`;}).join('')
+        :`<p class="pw-note">${Net.room?'No guild members are online right now.':'Guilds need other players: play on the game\'s web link (Cloudflare or Vercel) to join one.'}</p>`)+
+        `<p class="pw-note">An officer or the leader has to accept your request. You join as ${GUILD_RANKS[4]}. You can also be invited.</p></div>`;
+      h+=`<div class="pw-sec"><h4>Found a guild</h4><div class="pk-row"><input type="text" id="gw-name" maxlength="16" placeholder="Guild name" aria-label="Guild name"><button class="btn" id="gw-new">Found (${GUILD_COST} gold)</button></div><p class="pw-note">Needs Base Level ${GUILD_MIN_LV}. You become its ${GUILD_RANKS[0]}; up to ${GUILD_MAX} members.</p></div>`;
+      B.innerHTML=h;const y=$('#gw-yes');if(y){y.onclick=()=>this.guildAnswer(true);$('#gw-no').onclick=()=>this.guildAnswer(false);}
+      B.querySelectorAll('[data-greq]').forEach(b=>b.onclick=()=>this.gRequest(b.dataset.greq,b.dataset.n));
+      $('#gw-new').onclick=()=>this.guildCreate($('#gw-name').value);$('#gw-name').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter') this.guildCreate(e.target.value);});return;}
+    const my=this.gMy(),onl=g.m.filter(x=>x[0]===me||on(x[0])).length;
+    $('#gw-sub').textContent=`‹${g.n}› · you are ${GUILD_RANKS[my]} · ${g.m.length}/${GUILD_MAX} members`;
+    const rows=[...g.m].sort((a,b)=>a[2]-b[2]||(!!on(b[0])-!!on(a[0]))||String(a[1]).localeCompare(b[1]));
+    h+=`<div class="pw-sec"><h4>Members <span>${onl} online</span></h4>`;
+    for(const [id,n,r] of rows){const mine=id===me,P=mine?null:on(id),can=!mine&&my<=2&&r>my;
+      const info=mine?`you · ${esc(MAP_NAMES[this.mapId]||'')}`:P?`Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[P.m]||'')}`:'offline';
+      h+=`<div class="pw-row gw-row"><div class="nm"><b>${r===0?'♛ ':''}${esc(n)}</b><small><span class="grank r${r}">${GUILD_RANKS[r]}</span> · ${info}</small></div>`;
+      if(can) h+=`<span class="gw-act">${r-1>my?`<button class="btn" data-gup="${esc(id)}" title="Promote to ${GUILD_RANKS[r-1]}" aria-label="Promote ${esc(n)} to ${GUILD_RANKS[r-1]}">▲</button>`:''}${r<4?`<button class="btn" data-gdn="${esc(id)}" title="Demote to ${GUILD_RANKS[r+1]}" aria-label="Demote ${esc(n)} to ${GUILD_RANKS[r+1]}">▼</button>`:''}${my===0?`<button class="btn" data-glead="${esc(id)}" title="Make ${esc(n)} ${GUILD_RANKS[0]}" aria-label="Make ${esc(n)} ${GUILD_RANKS[0]}">♛</button>`:''}<button class="btn" data-gkick="${esc(id)}" aria-label="Remove ${esc(n)} from the guild">Kick</button></span>`;
+      h+=`</div>`;}
+    h+=`</div>`;
+    if(my<=2){const rq=Object.entries(this.gReqs||{});
+      h+=`<div class="pw-sec"><h4>Join requests <span>${rq.length}</span></h4>`+(rq.length?rq.map(([id,r])=>`<div class="pw-row"><div class="nm"><b>${esc(r.n)}</b><small>Lv ${r.lv} ${esc((JOBS[r.j]||JOBS.recruit).name)}</small></div><button class="btn primary" data-gacc="${esc(id)}">Accept</button><button class="btn" data-gdec="${esc(id)}">Decline</button></div>`).join(''):'<p class="pw-note">No requests right now. Players without a guild can ask to join from their Guild window.</p>')+`</div>`;
+      const free=[...ppl.values()].filter(x=>x.P.id&&x.P.id!==me&&!gdOf(x.P));
+      h+=`<div class="pw-sec"><h4>Invite</h4>`+(free.length?free.slice(0,12).map(x=>`<div class="pw-row"><div class="nm"><b>${esc(Net.name(x.P.n))}</b><small>Lv ${x.P.lv|0} ${esc((JOBS[x.P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[x.P.m]||'')}</small></div><button class="btn" data-ginv="${esc(x.P.id)}" data-n="${esc(Net.name(x.P.n))}">Invite</button></div>`).join(''):`<p class="pw-note">${Net.room?'Nobody without a guild is online right now.':'Invites need other players online.'}</p>`)+`</div>`;}
+    h+=`<div class="pw-sec"><h4>Ranks</h4><p class="pw-note"><span class="grank r0">${GUILD_RANKS[0]}</span>: everything, passes the leadership on, disbands the guild. <span class="grank r1">${GUILD_RANKS[1]}</span> and <span class="grank r2">${GUILD_RANKS[2]}</span>: invite, accept join requests, promote, demote and kick members ranked below them. <span class="grank r3">${GUILD_RANKS[3]}</span> and <span class="grank r4">${GUILD_RANKS[4]}</span>: guild chat (/g message). Newcomers start as ${GUILD_RANKS[4]}.</p></div>`;
+    h+=`<div class="pk-row">${my===0?`<button class="btn" id="gw-disband">Disband guild</button>`:''}<button class="btn" id="gw-leave">Leave guild</button></div>`;
+    B.innerHTML=h;
+    B.querySelectorAll('[data-gup]').forEach(b=>b.onclick=()=>this.gSetRank(b.dataset.gup,this.gRank(b.dataset.gup)-1));
+    B.querySelectorAll('[data-gdn]').forEach(b=>b.onclick=()=>this.gSetRank(b.dataset.gdn,this.gRank(b.dataset.gdn)+1));
+    B.querySelectorAll('[data-glead]').forEach(b=>b.onclick=()=>this.arm(b,'Sure?',()=>this.gLead(b.dataset.glead)));
+    B.querySelectorAll('[data-gkick]').forEach(b=>b.onclick=()=>this.arm(b,'Sure?',()=>this.gKick(b.dataset.gkick)));
+    B.querySelectorAll('[data-gacc]').forEach(b=>b.onclick=()=>this.gAccept(b.dataset.gacc));B.querySelectorAll('[data-gdec]').forEach(b=>b.onclick=()=>this.gDecline(b.dataset.gdec));
+    B.querySelectorAll('[data-ginv]').forEach(b=>b.onclick=()=>this.guildInvite(b.dataset.ginv,b.dataset.n));
+    const ds=$('#gw-disband');if(ds) ds.onclick=()=>this.arm(ds,'Tap again to disband',()=>this.gQuit(true));
+    const lv=$('#gw-leave');lv.onclick=()=>{if(my===0&&g.m.length>1){toast('Make someone else Guild Leader first (♛), or disband the guild');return;}this.arm(lv,'Tap again to leave',()=>this.gQuit(false));};},
   renderPk(){if(this.win!=='pkwin') return;const c=this.ch,pk=c.pk,L=c.baseLevel||1,ppl=[...this.people().values()].filter(x=>x.P.id!==this.pid());
     $('#pk-sub').textContent=`${PK_MODES.find(x=>x[0]===pk.mode)[1]}${c.guild?` · ‹${c.guild.n}›`:''} · ${pk.kills|0} wins, ${pk.deaths|0} defeats`;
-    const mates=c.guild?ppl.filter(x=>Array.isArray(x.P.gd)&&x.P.gd[0]===c.guild.i):[],free=ppl.filter(x=>!x.P.gd);
+    
     $('#pk-body').innerHTML=`<div class="pw-sec"><h4>PK mode</h4>${PK_MODES.map(([k,n,d])=>`<label class="pk-mode"><input type="radio" name="pkm" value="${k}" ${pk.mode===k?'checked':''}><span><b>${n}${k==='target'&&pk.who?` · ${esc(pk.who)}`:''}</b><small>${d}</small></span></label>`).join('')}
         <div class="pk-row"><input type="text" id="pk-who" maxlength="16" placeholder="Character name" value="${esc(pk.who||'')}" aria-label="PK target: character name"><button class="btn" id="pk-set">Set as my target</button></div>
         ${ppl.length?`<div class="pk-row" style="margin-top:0">${ppl.slice(0,10).map(x=>`<button class="btn" data-who="${esc(Net.name(x.P.n))}">${esc(Net.name(x.P.n))}</button>`).join('')}</div>`:''}
         <p class="pw-note">${L<PK_MIN_LV?`<b style="color:#ffb0b0">PK opens at Base Level ${PK_MIN_LV} (you are ${L}).</b> `:''}Tap a player to attack when your mode allows it. Oakhaven is a safe zone, your party can never be hit, and players under Base Level ${PK_MIN_LV} are protected. Anyone you hit may hit you back for 30 seconds, whatever their mode. Players deal half damage to each other; area skills only hit monsters. Falling to a player sends you back to Oakhaven like any defeat: nothing is lost.</p></div>
-      <div class="pw-sec"><h4>Guild</h4>${c.guild?`<div class="pw-row"><div class="nm"><b>‹${esc(c.guild.n)}›</b><small>${mates.length+1} online · guild chat: /g message</small></div><button class="btn" id="g-leave">Leave</button></div>
-          ${mates.map(x=>`<div class="pw-row"><div class="nm"><b>${esc(Net.name(x.P.n))}</b><small>Lv ${x.P.lv|0} ${esc((JOBS[x.P.j]||JOBS.recruit).name)} · ${esc(MAP_NAMES[x.P.m]||'')}</small></div></div>`).join('')}
-          ${free.length?`<p class="pw-note">Invite someone who is online:</p>${free.slice(0,12).map(x=>`<div class="pw-row"><div class="nm"><b>${esc(Net.name(x.P.n))}</b><small>Lv ${x.P.lv|0}</small></div><button class="btn" data-ginv="${esc(x.P.id)}" data-n="${esc(Net.name(x.P.n))}">Invite</button></div>`).join('')}`:'<p class="pw-note">Nobody without a guild is online to invite right now.</p>'}`
-        :`<div class="pk-row"><input type="text" id="g-name" maxlength="16" placeholder="Guild name" aria-label="Guild name"><button class="btn" id="g-new">Found a guild (${GUILD_COST} gold)</button></div><p class="pw-note">Founding needs Base Level ${GUILD_MIN_LV}. To join one, ask a member to invite you (they tap you, or use this window). Guild members show ‹the guild name› over their heads.</p>`}</div>`;
+      <div class="pw-sec"><h4>Guild</h4><div class="pw-row"><div class="nm"><b>${c.guild?`‹${esc(c.guild.n)}›`:'No guild'}</b><small>${c.guild?`${GUILD_RANKS[this.gMy()]} · ${c.guild.m.length} members · guild chat: /g message`:'Found a guild, or ask one to take you in'}</small></div><button class="btn" id="g-open">Guild window (O)</button></div></div>`;
     const B=$('#pk-body');B.querySelectorAll('input[name=pkm]').forEach(r=>r.onchange=()=>{this.setPk(r.value,r.value==='target'?$('#pk-who').value:undefined);this.renderPk();});
     $('#pk-set').onclick=()=>this.setPk('target',$('#pk-who').value);B.querySelectorAll('[data-who]').forEach(b=>b.onclick=()=>{$('#pk-who').value=b.dataset.who;this.setPk('target',b.dataset.who);});
-    const gl=$('#g-leave');if(gl) gl.onclick=()=>this.arm(gl,'Tap again to leave',()=>this.guildLeave());const gn=$('#g-new');if(gn) gn.onclick=()=>this.guildCreate($('#g-name').value);
-    B.querySelectorAll('[data-ginv]').forEach(b=>b.onclick=()=>this.guildInvite(b.dataset.ginv,b.dataset.n));
+    $('#g-open').onclick=()=>this.openWin('guildwin');
     B.querySelectorAll('input[type=text]').forEach(i=>i.addEventListener('keydown',e=>e.stopPropagation()));},
   /* ---------- vault: Odo keeps gear, items and gold for this character ---------- */
   vault(){const c=this.ch;if(!c.vault||!Array.isArray(c.vault.bag)) c.vault={bag:[],items:{},gold:0};c.vault.items=c.vault.items||{};return c.vault;},
@@ -4818,10 +4936,10 @@ const TownScreen={
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
   openWin(id){if(id&&this.win===id) id=null;this.win=id;document.body.classList.toggle('skills-open',id==='skillwin');
-    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin']) $('#'+w).classList.toggle('on',w===id);
+    for(const w of ['charwin','invwin','skillwin','questwin','setwin','partywin','shopwin','autowin','vaultwin','mailwin','pkwin','locwin','guildwin']) $('#'+w).classList.toggle('on',w===id);
     $$('.shortcuts [data-win]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.win===id));
     if(id==='charwin') this.renderChar();else if(id==='invwin') this.renderInv();else if(id==='skillwin') this.renderSkills();
-    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();},
+    else if(id==='questwin') this.renderQuests();else if(id==='setwin') this.renderSettings();else if(id==='partywin') this.renderParty();else if(id==='shopwin') this.renderShop();else if(id==='autowin') this.renderAuto();else if(id==='vaultwin') this.renderVault();else if(id==='mailwin') this.renderMail();else if(id==='pkwin') this.renderPk();else if(id==='locwin') this.renderLoc();else if(id==='guildwin') this.renderGuild(true);},
   toggleChar(on){this.openWin(on===false?null:'charwin');},
   /* ---------- equipment: c.equip (worn, one per slot), c.bag (gear you carry); potions and materials stay in c.items ---------- */
   initGear(){const c=this.ch;
@@ -5116,13 +5234,13 @@ const TownScreen={
   /* ---------- chat ---------- */
   say(t){const c=this.ch,now=performance.now();
     if(t[0]==='/'){const cmd=t.slice(1).split(/\s+/)[0].toLowerCase();
-      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
+      if(cmd==='help') this.log('sys',null,'Commands: /help, /who (who is online), /p message (party chat), /g message (guild chat), /guild (guild window), /pk [peace|all|guild|name], /invite name, /party (party window), /leave (leave the party), /clear, /stuck (back to this map\'s arrival point), /played');
       else if(cmd==='p'){const msg=t.slice(2).trim().slice(0,120);if(!this.party){this.log('sys',null,'You are not in a party (P opens the Party window)');return;}if(!msg) return;
         this.log('pchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,this.party.i]);if(Net.says.length>5) Net.says.shift();}return;}
-      else if(cmd==='g'){const msg=t.slice(2).trim().slice(0,120);if(!c.guild){this.log('sys',null,'You are not in a guild (G opens PK & Guild)');return;}if(!msg) return;
+      else if(cmd==='g'){const msg=t.slice(2).trim().slice(0,120);if(!c.guild){this.log('sys',null,'You are not in a guild (O opens the Guild window)');return;}if(!msg) return;
         this.log('gchat',c.name,msg);if(Net.room){Net.says.push([++Net.sayN,msg,'g:'+c.guild.i]);if(Net.says.length>5) Net.says.shift();}return;}
       else if(cmd==='pk'){const a=t.split(/\s+/).slice(1).join(' ').trim();if(!a) this.openWin('pkwin');else if(['peace','all','guild'].includes(a.toLowerCase())) this.setPk(a.toLowerCase());else this.setPk('target',a);}
-      else if(cmd==='guild') this.openWin('pkwin');
+      else if(cmd==='guild') this.openWin('guildwin');
       else if(cmd==='party') this.openWin('partywin');
       else if(cmd==='leave') this.partyLeave();
       else if(cmd==='invite'){const q=t.split(/\s+/).slice(1).join(' ').toLowerCase();const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===q);
@@ -5502,7 +5620,7 @@ const TownScreen={
     if(this.others) for(const o of this.others.values()){if(this.hid(o.x,o.y)) continue;const [px,py]=S(o.x,o.y-60),mate=o.P&&this.inParty(o.P.id);
       if(o.speech&&now-o.speech.t<4000) this.bubble(ctx,px,py-14,o.speech.text,Math.min(1,(4000-(now-o.speech.t))/400));
       ctx.font='900 12px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=mate?'#9fd8ff':o.pkm>0&&this.mapId!=='town'?'#ff9a9a':'#b8ffc8';const t=`${mate?'◆ ':''}${o.n} · Lv ${o.lv}`;ctx.strokeText(t,px,py);ctx.fillText(t,px,py);
-      if(o.gd){ctx.font='900 10px Nunito,sans-serif';ctx.fillStyle='#f7c552';const g=`‹${o.gd[1]}›`;ctx.strokeText(g,px,py-13);ctx.fillText(g,px,py-13);}
+      if(o.gd){ctx.font='900 10px Nunito,sans-serif';ctx.fillStyle='#f7c552';const g=`${o.gd[2]===0?'♛ ':''}‹${o.gd[1]}›`;ctx.strokeText(g,px,py-13);ctx.fillText(g,px,py-13);}
       if(o.hp<100&&(this.mapId!=='town'||mate)||mate||o===this.hoverP){this.barNum(ctx,px,py+4,56,9,o.hp/100,'#e0475c',o.hm?`${fmtN(o.hp*o.hm/100)} / ${fmtN(o.hm)}`:`${o.hp}%`);
         if(o.mp&&(mate||o===this.hoverP)) this.barNum(ctx,px,py+14,56,8,o.mp[1]?o.mp[0]/o.mp[1]:0,'#3a86e0',`${fmtN(o.mp[0])} / ${fmtN(o.mp[1])}`);}}
     for(const d of this.drops||[]){if(now<d.t0+DROP_POP||!(d.kind==='gear'||d===this.hoverDrop||d===this.promptDrop)) continue;const [px,py]=S(d.x,d.y-27);
@@ -5618,6 +5736,10 @@ function heroSilhouette(comp,ci,dir,col){const C=comp._sil||(comp._sil=new Map()
 const PK_MODES=[['peace','Peace','You attack no one. If someone attacks you, you can still fight back.'],['all','Attack all','Any player outside town can be attacked: tap them.'],
   ['target','One character','Only the character you name can be attacked.'],['guild','Guild','Everyone can be attacked except members of your own guild.']];
 const PK_MIN_LV=15,PK_SCALE=.5,PK_GRACE=30000,GUILD_COST=500,GUILD_MIN_LV=10;
+/* guild ranks, highest first. Leader: everything, passes leadership, disbands. Vice Leader and Officer: invite, accept join
+   requests, promote, demote and kick members ranked below them. Member and Novice: guild chat. Newcomers start as Novice. */
+const GUILD_RANKS=['Guild Leader','Vice Leader','Officer','Member','Novice'],GUILD_MAX=30;
+const gdOf=P=>Array.isArray(P&&P.gd)&&P.gd[0]&&!(P.gd[2]<0)?P.gd:null;      // a player's published guild [id, name, rank, roster version]; rank -1 = just left
 /* ---------- vault and mail ---------- */
 const VAULT_SIZE=80;
 /* letters every character gets once. More can be sent without a new build through mail.json next to the page:
@@ -5716,7 +5838,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13e';
+const BUILD='2026-11-13f';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
