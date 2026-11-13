@@ -2119,6 +2119,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13i',date:'2026-11-13',title:'Summons feed their master',
+    balance:['Boss summons hit 50% harder again','When you kill a summon, its life flows back to the boss: +25% of the boss\'s total health. Weigh every kill']},
   {v:'2026-11-13h',date:'2026-11-13',title:'Fiercer summons',
     balance:['The Slime King and the Molten Brood (baby imps, drakes and obsidian golems) hit 50% harder']},
   {v:'2026-11-13g',date:'2026-11-13',title:'Bosses heal harder',
@@ -2840,7 +2842,7 @@ const BOSS_TUNE={
   hp:{slimequeen:10630,lavagolem:6730},     // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
   dmg:2001,                              // x the boss's damage
   vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
-  minion:{hp:2010,dmg:901.5},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  minion:{hp:2010,dmg:1352.25,deathHeal:.25},     // deathHeal: a summon killed by players gives the boss this share of its maximum health             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
   def:.5},                               // x the boss's armour and magic resistance (half)             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
   CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
@@ -4093,6 +4095,17 @@ const TownScreen={
     for(const s of E.slots){if(s.state!=='dead'){s.state='dead';s.deadT=now;if(this.target===s) this.target=null;}s.respawnAt=1e15;s.act=null;s.hostile=false;s.tgt=null;s.threat=null;if(this.mp) this.mp.dmg.delete(s);}
     this.bshots=[];this.efx=this.efx.filter(f=>f.k==='puff');E.t0=0;E.seen=0;E.nextHeal=0;E.nextSummon=0;E.majorUntil=0;E.minorNext=0;E.targets=[];if(this.mp) this.mp.dmg.delete(b);
     if(why!=='respawn'){this.efx.push({k:'puff',x:E.cx,y:E.cy,t0:now,dur:700,color:E.cfg.arena.color});if(E.inside||why==='left') this.log('sys',null,`${b.def.name} returns to the heart of the arena, restored.`);}},
+  /* a summon killed by players gives its life back to the boss: +25% of the boss's maximum health. The host changes the
+     health; everyone sees the stream of light. Summons removed by a reset or by the boss's death don't count. */
+  summonHeal(m,now){const E=this.enc;if(!E||!m.minion) return;const b=E.boss;if(b.state==='dead'||now-E.resetT<1500) return;
+    const full=Math.round(b.maxHp*BOSS_TUNE.minion.deathHeal),host=!this.mp||this.mp.amHost,amt=host?Math.max(0,Math.min(full,Math.round(b.maxHp-b.hp))):full;
+    if(host) b.hp=Math.min(b.maxHp,b.hp+amt);
+    if(this.hid(b.x,b.y)) return;const col=b.def.heal?b.def.heal.color:'#7dff9a';
+    this.efx.push({k:'link',x:m.x,y:m.y-m.def.h*.5,x2:b.x,y2:b.y-b.def.h*.5,t0:now,dur:800,color:col});
+    this.efx.push({k:'wave',x:b.x,y:b.y,t0:now+350,dur:650,r:b.def.body*2.6,color:col});
+    if(amt>0) this.fx.push({x:b.x,y:b.y-b.def.h-8,dmg:amt,sty:'heal',sign:'+',t0:now+350});
+    AudioFX.smp('holy_flourish',Math.max(0,1-Math.hypot(b.x-this.p.x,b.y-this.p.y)/520)*.7,{rate:.8});
+    if(E.inside) this.log('sys',null,`${m.def.name} falls · ${b.def.name} drinks its life (+${Math.round(BOSS_TUNE.minion.deathHeal*100)}%)`);},
   /* the boss fell (host): its casts stop, its summons and projectiles go with it */
   encCleanup(m,now){const E=this.enc;if(!E) return;
     if(m.minion){m.respawnAt=1e15;m.act=null;return;}
@@ -4248,6 +4261,8 @@ const TownScreen={
     for(const f of this.efx){const e=(now-f.t0)/f.dur;if(e<0||e>=1) continue;
       if(f.k==='flame') this.drawFlame(ctx,f.x,f.y,f.ang,f.len,f.arc,now,1-e);
       else if(f.k==='slash'){ctx.globalAlpha=1-e;ctx.strokeStyle=f.color;ctx.lineWidth=7*(1-e)+2;ctx.lineCap='round';const h=f.arc*Math.PI/360,R=f.len*(.62+.3*e);ctx.beginPath();for(let i=0;i<=12;i++){const q=f.ang-h+2*h*i/12,X=f.x+Math.cos(q)*R,Y=f.y-14+Math.sin(q)*R/1.3;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}ctx.stroke();}
+      else if(f.k==='link'){for(let i=0;i<12;i++){const u=Math.min(1,e*1.5-i*.035);if(u<=0) continue;const X=f.x+(f.x2-f.x)*u,Y=f.y+(f.y2-f.y)*u-Math.sin(u*Math.PI)*34;
+        ctx.globalAlpha=(1-e)*.95;ctx.fillStyle=i%3?f.color:'#ffffff';ctx.beginPath();ctx.arc(X,Y,Math.max(.8,3-i*.18),0,7);ctx.fill();}}
       else if(f.k==='pop'){ctx.globalAlpha=1-e;const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r*(.6+e));g.addColorStop(0,'#fff');g.addColorStop(.4,f.color);g.addColorStop(1,hexA(f.color,0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.6+e),0,7);ctx.fill();}
       else if(f.k==='text'){ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1-e*e;ctx.font='900 13px Nunito,sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.9)';ctx.fillStyle=f.color;ctx.strokeText(f.text,f.x,f.y-e*16);ctx.fillText(f.text,f.x,f.y-e*16);ctx.globalCompositeOperation='lighter';}}
     ctx.restore();},
@@ -4545,7 +4560,7 @@ const TownScreen={
       ...(m.def.acts&&!dead?[m.act?m.def.acts.indexOf(m.act.def)+1:0,m.actSeq|0,m.act?Math.round((now-m.act.t0)/100):0,m.act?Math.round(m.act.ax):0,m.act?Math.round(m.act.ay):0,m.boss&&this.enc?this.enc.resets:0,Math.round(m.maxHp)]:[])];})};},   // + the action of a boss or summon
   applySnap(mb,now){if(!mb||!Array.isArray(mb.l)||mb.s===this.mp.lastSnap) return;this.mp.lastSnap=mb.s;
     for(const e of mb.l){const m=Array.isArray(e)&&this.mobs[e[0]|0];if(!m) continue;const f=e[4]|0;
-      if(f&1){if(m.state!=='dead'){m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;if(this.target===m) this.target=null;}m.respawnAt=now+(e[3]|0)*100;continue;}
+      if(f&1){if(m.state!=='dead'){m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;if(this.target===m) this.target=null;if(m.minion) this.summonHeal(m,now);}m.respawnAt=now+(e[3]|0)*100;continue;}
       if(m.state==='dead'){m.state='idle';m.x=+e[1]||m.x;m.y=+e[2]||m.y;m.bornT=now;m.occ=null;}
       if(Number.isFinite(+e[1])&&Number.isFinite(+e[2])){m.tx=+e[1];m.ty=+e[2];}
       if(m.def.acts&&+e[12]>0) m.maxHp=Math.min(4e9,Math.round(+e[12]));      // a boss's maximum health comes from the host too, so its bar is right even if versions differ
@@ -5306,7 +5321,7 @@ const TownScreen={
     return {final:true,pages:[`Then walk as a ${JOBS[id].name}, {name}. Open the Skills window (K) to learn your new skills and put them on your bar. Amelie at the town hall will want to update her ledger.`]};},
   kill(m,now){this.mobDie(m,now);this.reward(m,now);},
   mobDie(m,now){const D=m.def;m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;m.frozen=false;m.stunUntil=0;m.tgt=null;
-    m.respawnAt=now+(D.respawn[0]+Math.random()*(D.respawn[1]-D.respawn[0]))*1000;if(this.target===m) this.target=null;if(this.mp) this.mp.dmg.delete(m);if(D.acts) this.encCleanup(m,now);},
+    m.respawnAt=now+(D.respawn[0]+Math.random()*(D.respawn[1]-D.respawn[0]))*1000;if(this.target===m) this.target=null;if(this.mp) this.mp.dmg.delete(m);if(D.acts){if(m.minion) this.summonHeal(m,now);this.encCleanup(m,now);}},
   /* the host's monster died: rewards for the host if it helped, and a kill notice naming everyone else who hit it */
   hostKill(m,now){const who=this.mp&&this.mp.dmg.get(m),others=who?[...who.keys()].filter(k=>k!=='me'):[];
     this.mobDie(m,now);if(!who||who.has('me')) this.reward(m,now);
@@ -5842,7 +5857,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13h';
+const BUILD='2026-11-13i';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

@@ -1,1 +1,1 @@
-build: 2026-11-13h (boss summons hit 50% harder)
+build: 2026-11-13i (summons hit 50% harder again; a killed summon heals its boss 25%)
