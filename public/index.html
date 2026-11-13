@@ -1246,7 +1246,7 @@ const GOD_WING=5,WING_POSE=1,GOD_WING_ICONS=['godwingsNight','godwingsDawn'];
 /* where wings attach: this far (x the 54 px figure) below the neck, at the top of the back; how much bigger than their
    art's own size they are drawn; and the lowest their tips may reach (x the figure above the feet). A kind whose art
    hangs lower (the Phoenix's flames, the Drake's tail) is drawn smaller so its tips stay above the feet. */
-const WING_DROP=.035,WING_GROW=1.15,WING_FLOOR=.13,WING_MIN=.85,WING_FADE=.14;   // fade: over this much (x figure) above the floor
+const WING_DROP=.035,WING_GROW=1.32,WING_FLOOR=.12,WING_MIN=.98,WING_FADE=.14;   // fade: over this much (x figure) above the floor
 const TRADE={near:150,far:380,slots:6,idle:9000,inv:20000,hb:900};   // trades: stand this close to start, break off when this far apart, offer slots, silence that ends it (ms)
 const WING_SC=.72,WING_NECK=6;   // painted wings: drawn at this scale; their crest sits this far (head-cell px) below the chin
 const WING_LOOK=[{kind:'feather',n:6,len:30,c1:'#f4f7ff',c2:'#c9d6ef',c3:'rgba(120,140,180,.5)'},
@@ -2197,6 +2197,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14b',date:'2026-11-14',title:'Bigger wings, GameMaster letters',
+    new:['GameMasters can send gold, items, gear, wings or max level to any character by name with /send. The character can be online or offline, on any map. The gift arrives as a letter in Mail, with an optional message'],
+    fixes:['Wings are a little bigger, still attached at the top of the back with the tips above the feet']},
   {v:'2026-11-14a',date:'2026-11-14',title:'Footwork: left, right, left, right',
     fixes:['Walking is back to each character\'s own look: the weapon stays in hand and the outfit, arms and shield move as drawn, for every class',
       'The feet copy the footwork of the drawn walk and now step strictly left, right, left, right in all 8 directions. Facing the screen or away, the free foot lifts under the body while the other stays planted. Side and diagonal views take a full stride, with the trailing foot lifting off and the boots staying flat',
@@ -3267,6 +3270,7 @@ const TownScreen={
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
     setInterval(()=>{if(activeScreen===this&&this.ch) Mail.fetch().then(()=>this.mailSync());},3*60000);
+    setInterval(()=>{if(activeScreen===this&&this.ch&&Cloud.token) this.mailPull();},60000);
     $('#btn-pk').onclick=()=>{AudioFX.sfx('ui');this.openWin('pkwin');};
     $('#btn-auto').onclick=()=>this.toggleAuto();$('#ac-more').onclick=()=>{$('#auto-cfg').classList.remove('on');$('#btn-auto-cfg').setAttribute('aria-expanded',false);AudioFX.sfx('ui');this.openWin('autowin');};
     $('#btn-auto-cfg').onclick=()=>{const o=$('#auto-cfg').classList.toggle('on');$('#btn-auto-cfg').setAttribute('aria-expanded',o);AudioFX.sfx('ui');};
@@ -3325,7 +3329,7 @@ const TownScreen={
     this.hud();$('#dlg').classList.remove('on');this.save();this.questCheck();
     c.pk={mode:'peace',who:'',kills:0,deaths:0,...(c.pk||{})};this.pkFoes={};this.pkMine={};this.pkBadge();
     this.gInit();this.gBadge();this.duel=null;this.duelUi(performance.now());
-    this.mailSync();Mail.fetch().then(()=>{if(this.ch===c&&activeScreen===this) this.mailSync();});
+    this.mailSync();Promise.all([Mail.fetch(),Mail.server(c)]).then(()=>{if(this.ch===c&&activeScreen===this) this.mailSync();});
     showScreen('screen-town');this.layoutHud();requestAnimationFrame(()=>requestAnimationFrame(()=>this.layoutHud()));setTimeout(()=>this.layoutHud(),400);
     this.newsAuto();
   },
@@ -4546,7 +4550,7 @@ const TownScreen={
     if(t==='greq'||t==='gok'||t==='gno'||t==='gq'||t==='grk'||t==='gkk'){this.guildEvent(t,from,P,e,now,nm);return;}
     if(t==='dinv'||t==='dacc'||t==='ddec'||t==='dend'){this.duelEvent(t,from,P,e,now,nm);return;}
     if(t==='tinv'||t==='tacc'||t==='tdec'||t==='tof'||t==='tst'||t==='tend'){this.tradeEvent(t,from,P,e,now,nm);return;}
-    if(t==='gm'||t==='gmok'){this.gmEvent(t,from,P,e,nm);return;}
+    if(t==='gm'||t==='gmok'||t==='gmmail'){this.gmEvent(t,from,P,e,nm);return;}
     if(t==='inv'){if(pa&&pa.m.length>1&&pa.i!==e[3]){this.partySend('dec',from,e[3]);return;}if(pa&&pa.i===e[3]) return;
       this.pendingInv={from,i:String(e[3]).slice(0,24),n:Net.name(String(e[4]||'Party').replace(/'s Party$/,''))+"'s Party",name:nm,until:now+30000};AudioFX.sfx('quest');
       const el=$('#pinvite');el.innerHTML=`<p>${esc(nm)} invites you to a party<small>${esc(this.pendingInv.n)} · Lv ${P.lv|0} ${esc((JOBS[P.j]||JOBS.recruit).name)}</small></p><div class="row"><button class="btn primary" id="pi-yes">Join</button><button class="btn" id="pi-no">No thanks</button></div>`;
@@ -5039,6 +5043,7 @@ const TownScreen={
     $$('#vw-body [data-v]').forEach(b=>b.onclick=()=>{const [dir,kind,id]=b.dataset.v.split('|');this.vaultMove(dir,kind,id);});
     $$('#vw-body [data-vg]').forEach(b=>b.onclick=()=>{const [dir,n]=b.dataset.vg.split('|');this.vaultGold(dir,+n);});},
   /* ---------- mail: letters with gold, items and gear; the icon flashes while something is unread or unclaimed ---------- */
+  mailPull(){const c=this.ch;if(!c) return;Mail.server(c).then(n=>{if(n&&this.ch===c&&activeScreen===this) this.mailSync();});},
   mailSync(){const c=this.ch;if(!c) return;const n=Mail.deliver(c);
     if(n){this.save();AudioFX.sfx('quest');toast(n>1?`${n} new letters · open Mail`:'You have mail · open Mail',4200);this.log('sys',null,`Mail · ${n} new letter${n>1?'s':''} (the envelope button, N, or Pip at the Oakhaven Post)`);}
     this.mailBadge();if(this.win==='mailwin') this.renderMail();},
@@ -5048,14 +5053,15 @@ const TownScreen={
     if(need&&this.bagUsed()+need>BAG_SIZE){if(!quiet) toast(`Your bag needs ${need} free space${need>1?'s':''} for this letter`);return false;}
     const got=[];if(m.gold){c.gold=(c.gold||0)+m.gold;got.push(`${m.gold} gold`);}
     for(const [k,n] of Object.entries(m.items||{})){c.items[k]=(c.items[k]|0)+n;got.push(`${n} ${itemDef(k).name}`);}
-    for(const g0 of m.gear||[]){const g=craftGear(g0.base==='weapon'?WEAPON_OF[this.line()]:g0.base,this.mailLvl(g0),g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];}c.bag.unshift(g);got.push(gearName(g));}
+    for(const g0 of m.gear||[]){const g=m.gm&&g0.base==='wings'?craftWings(g0.wing|0,this.mailLvl(g0),g0.rar):craftGear(g0.base==='weapon'?WEAPON_OF[this.line()]:g0.base,this.mailLvl(g0),g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];}c.bag.unshift(g);got.push(gearName(g));}
+    if(m.max){this.gmMax();got.push(`Base Level ${MAX_BASE} and Job Level ${MAX_JOB}`);}
     m.claimed=true;m.read=true;AudioFX.sfx('coin');this.log('loot',null,`Mail · ${got.join(', ')}`);this.tracker();this.save();this.mailBadge();this.renderHotbar();return true;},
   /* "char" gear is forged at claim time, at the highest item level the character can wear right now (level + 3) */
   mailLvl(g0){return g0.lvl==='char'?Math.max(1,Math.min(100,(this.ch.baseLevel||1)+3)):g0.lvl;},
   mailDelete(id){const c=this.ch;c.mail=(c.mail||[]).filter(m=>m.id!==id);if(this.mailSel===id) this.mailSel=null;this.save();this.mailBadge();this.renderMail();},
   renderMail(){if(this.win!=='mailwin') return;const c=this.ch,L=c.mail||[],line=this.line();
     const date=t=>{try{return new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(e){return '';}};
-    const att=m=>`<div class="mw-att">${m.gold?`<span class="g">${m.gold} gold</span>`:''}${Object.entries(m.items||{}).map(([k,n])=>`<span>${itemIcon(k)}${esc(itemDef(k).name)} × ${n}</span>`).join('')}${(m.gear||[]).map(g=>{const base=g.base==='weapon'?WEAPON_OF[line]:g.base,B=GEAR_BASES[base];
+    const att=m=>`<div class="mw-att">${m.max?`<span class="g">Base Level ${MAX_BASE} · Job Level ${MAX_JOB}</span>`:''}${m.gold?`<span class="g">${m.gold.toLocaleString()} gold</span>`:''}${Object.entries(m.items||{}).map(([k,n])=>`<span>${itemIcon(k)}${esc(itemDef(k).name)} × ${n}</span>`).join('')}${(m.gear||[]).map(g=>{const base=g.base==='weapon'?WEAPON_OF[line]:g.base,B=GEAR_BASES[base];
       return `<span style="color:${RARITY[g.rar].color}">${gearIcon({base,rar:g.rar,wing:g.wing})}${RARITY[g.rar].name} ${esc(base==='wings'?B.names[g.wing|0]:(RARITY_WORD[g.rar]?RARITY_WORD[g.rar]+' ':'')+B.names[Math.min(4,Math.floor((this.mailLvl(g)-1)/10))])} · ${g.lvl==='char'?`fits you (item Lv ${this.mailLvl(g)})`:`Lv ${g.lvl}`}</span>`;}).join('')}</div>`;
     const wait=L.filter(m=>Mail.has(m)&&!m.claimed).length;
     $('#mw-sub').textContent=L.length?`${L.length} letter${L.length>1?'s':''}${wait?` · ${wait} with gifts to claim`:''}`:'Oakhaven Post';
@@ -5472,29 +5478,59 @@ const TownScreen={
   gmBossKind(q){q=String(q||'').toLowerCase();if(/queen|slime/.test(q)) return 'slimequeen';if(/golem|lava|dragon/.test(q)) return 'lavagolem';return null;},
   gmMap(q){q=String(q||'').toLowerCase().replace(/[^a-z]/g,'');if(!q) return null;if(q==='oakhaven'||q==='town') return 'town';
     if(MAP_NAMES[q]) return q;const k=Object.keys(MAP_NAMES).find(k=>MAP_NAMES[k].toLowerCase().replace(/[^a-z]/g,'').includes(q));return k==='oakhaven'?'town':k||null;},
-  gmCmd(cmd,args){const cmds=['gm','give','gold','maxlevel','boss'];if(!cmds.includes(cmd)) return false;
+  gmCmd(cmd,args){const cmds=['gm','give','gold','maxlevel','boss','send'];if(!cmds.includes(cmd)) return false;
     if(!this.isGM()){this.log('sys',null,cmd==='gm'?'You are not a GameMaster':'Unknown command /'+cmd+' · try /help');return true;}
+    if(cmd==='send') return this.gmSend(args),true;
     let at=null;args=args.filter(a=>{if(a[0]==='@'&&a.length>1){at=a.slice(1).toLowerCase();return false;}return true;});
     const say=t=>this.log('sys',null,t);
-    if(cmd==='gm'){say('GameMaster: /give <item> [amount] · /give <sword|staff|bow|scepter|dagger|weapon|head|body|hands|feet|ring> [level] [rarity] · /give wings <feather|seraph|drake|phoenix|celestial|night|dawn> · /gold <amount> · /maxlevel · add @name to any of these for someone online · /boss <queen|golem> [here | map [x y]] · /boss list · /boss clear [all]');return true;}
+    if(cmd==='gm'){say('GameMaster: /send <character> <what> [| message] · what: gold <amount> · <item> [amount] · <gear> [level] [rarity] · wings <kind> · maxlevel · the character gets a letter in Mail, online or not, on any map (two-word names in quotes: /send "Sir Nyx" gold 500)');say('GameMaster: /give <item> [amount] · /give <sword|staff|bow|scepter|dagger|weapon|head|body|hands|feet|ring> [level] [rarity] · /give wings <feather|seraph|drake|phoenix|celestial|night|dawn> · /gold <amount> · /maxlevel · add @name to any of these for someone online · /boss <queen|golem> [here | map [x y]] · /boss list · /boss clear [all]');return true;}
     if(cmd==='boss') return this.gmBossCmd(args),true;
-    let pay=null;
-    if(cmd==='gold'){const n=Math.floor(+args[0]);if(!(n>0)){say('Usage: /gold <amount> [@name]');return true;}pay=['gold',Math.min(n,1e9)];}
-    else if(cmd==='maxlevel') pay=['max'];
-    else{const a0=(args[0]||'').toLowerCase();
-      if(a0==='wings'){const k=this.gmWing(args[1]);if(k<0){say('Wings: feather, seraph, drake, phoenix, celestial, night, dawn');return true;}pay=['gear','wings',102,4,k];}
-      else if(GEAR_BASES[a0]||a0==='weapon'){const lv=args[1]&&/^\d+$/.test(args[1])?Math.max(1,Math.min(102,+args[1])):0,r=this.gmRar(args[2]);pay=['gear',a0,lv,r===null?4:r,-1];}
-      else{const num=args.length>1&&/^\d+$/.test(args[args.length-1])?+args.pop():1,id=this.gmItem(args.join(' '));
-        if(!id){say(`No item called "${args.join(' ')}" · items: ${Object.keys({...MATERIALS,...REFINED,...CONSUMABLES}).join(', ')} · or gear / wings`);return true;}
-        pay=['item',id,Math.max(1,Math.min(99999,num))];}}
+    const pay=this.gmPay(cmd,args,say);if(!pay) return true;
     if(!at||at===String(this.ch.name).toLowerCase()){say('GameMaster · '+this.gmApply(pay,null));return true;}
     const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===at);
     if(!hit){say(`Nobody called ${at} is online`);return true;}
     if(!Net.gmName){say('The game server has not confirmed your GameMaster account yet · try again in a moment');Net.auth();return true;}
     this.partySend('gm',hit[0],...pay);say(`GameMaster · sent to ${Net.name(hit[1].P.n)}: ${this.gmText(pay)}`);return true;},
+  /* what a GameMaster command gives: ['gold', n] | ['max'] | ['gear', base, level (0: theirs), rarity, wing kind] | ['item', id, n];
+     null (after saying why) if it can't be read */
+  gmPay(cmd,args,say){args=args.slice();
+    if(cmd==='gold'){const n=Math.floor(+args[0]);if(!(n>0)){say('Usage: /gold <amount> [@name]');return null;}return ['gold',Math.min(n,1e9)];}
+    if(cmd==='maxlevel'||cmd==='max') return ['max'];
+    const a0=(args[0]||'').toLowerCase();
+    if(a0==='wings'){const k=this.gmWing(args[1]);if(k<0){say('Wings: feather, seraph, drake, phoenix, celestial, night, dawn');return null;}return ['gear','wings',102,4,k];}
+    if(GEAR_BASES[a0]||a0==='weapon'){const lv=args[1]&&/^\d+$/.test(args[1])?Math.max(1,Math.min(102,+args[1])):0,r=this.gmRar(args[2]);return ['gear',a0,lv,r===null?4:r,-1];}
+    const num=args.length>1&&/^\d+$/.test(args[args.length-1])?+args.pop():1,id=this.gmItem(args.join(' '));
+    if(!id){say(`No item called "${args.join(' ')}" · items: ${Object.keys({...MATERIALS,...REFINED,...CONSUMABLES}).join(', ')} · or gear / wings / gold / maxlevel`);return null;}
+    return ['item',id,Math.max(1,Math.min(99999,num))];},
+  /* /send <character> <what> [| message]: a letter through the server to any character by name, online or not.
+     "Two Words" for a two-word name (or Two_Words); Name#account when several accounts have a character of that name */
+  async gmSend(args){const say=t=>this.log('sys',null,'GameMaster · '+t);
+    let raw=args.join(' ').trim(),note='';const bar=raw.indexOf('|');if(bar>=0){note=raw.slice(bar+1).trim().slice(0,600);raw=raw.slice(0,bar).trim();}
+    let who='',rest='';const q=/^"([^"]+)"\s*(.*)$/.exec(raw);
+    if(q){who=q[1];rest=q[2];}else{const i=raw.search(/\s/);who=i<0?raw:raw.slice(0,i);rest=i<0?'':raw.slice(i+1);}
+    let acct='';const hash=who.indexOf('#');if(hash>=0){acct=who.slice(hash+1).trim();who=who.slice(0,hash);}
+    who=who.replace(/_/g,' ').trim();const what=rest.trim().split(/\s+/).filter(Boolean);
+    if(!who||!what.length){say('Usage: /send <character> <gold N | item [N] | gear [level] [rarity] | wings <kind> | maxlevel> [| message] · e.g. /send Nyx gold 5000 · /send "Sir Nyx" iron ore 50 | Sorry about the bug!');return;}
+    const w0=what[0].toLowerCase(),pay=this.gmPay(w0==='gold'?'gold':w0==='maxlevel'||w0==='max'?'maxlevel':'give',w0==='gold'?what.slice(1):what,t=>say(t));if(!pay) return;
+    if(!Cloud.on()||!Cloud.token){say('Letters to other characters need the online game, signed in to your GameMaster account');return;}
+    const letter={title:'A gift from a GameMaster',body:note};
+    if(pay[0]==='gold') letter.gold=pay[1];else if(pay[0]==='max'){letter.max=true;letter.title='A gift from a GameMaster: max level';}
+    else if(pay[0]==='item') letter.items={[pay[1]]:pay[2]};
+    else letter.gear=[{base:pay[1],lvl:pay[2]||'char',rar:pay[3],wing:pay[1]==='wings'?pay[4]:0}];
+    const r=await Cloud.api('gm/send',{to:who,acct:acct||undefined,letter});
+    if(r.ok){say(`Letter sent to ${r.name} (account ${r.acct}): ${this.gmText(pay)}${note?' · "'+note.slice(0,60)+'"':''} · it waits in their Mail`);
+      const hit=[...this.people()].find(([,x])=>Net.name(x.P.n).toLowerCase()===String(r.name).toLowerCase());if(hit) this.partySend('gmmail',hit[0]);   // online: look now
+      return;}
+    if(r.code==='several'){say(`Several characters are called ${who}, on accounts ${(r.accounts||[]).join(', ')} · pick one: /send ${who.includes(' ')?'"'+who+'"':who}#<account> ...`);return;}
+    say(r.status===0?"Can't reach the game server right now":r.status===401?'Please sign in again':r.error||'Could not send the letter');},
   gmText(p){if(p[0]==='gold') return `${p[1].toLocaleString()} gold`;if(p[0]==='max') return 'Base Level 100 and Job Level 70';
     if(p[0]==='item'){const d=itemDef(p[1]);return `${p[2]} x ${d?d.name:p[1]}`;}
     if(p[0]==='gear') return p[1]==='wings'?GEAR_BASES.wings.names[p[4]]||'wings':`${RARITY[p[3]|0].name} ${p[1]}${p[2]?' Lv '+p[2]:''}`;return '?';},
+  gmMax(){const c=this.ch,L0=c.baseLevel||1,J0=c.job.jobLevel||1;
+    if(L0<MAX_BASE){c.statPoints=(c.statPoints||0)+statTotal(MAX_BASE)-statTotal(L0);c.baseLevel=MAX_BASE;}c.baseExp=0;
+    if(J0<MAX_JOB){c.skillPoints=(c.skillPoints||0)+MAX_JOB-J0;c.job.jobLevel=MAX_JOB;}c.job.jobExp=0;
+    this.dirtyMods();if(c.autoStats) this.recStats(true);c.hp=this.maxHp();this.res=this.maxRes();AudioFX.sfx('level');
+    this.fx.push({x:this.p.x,y:this.p.y-72,text:'MAX LEVEL!',color:'#ffd76a',t0:performance.now(),big:true});this.hud();this.renderChar();this.save();},
   /* carry out a GameMaster action on this character; from: the GameMaster's name, or null for your own command */
   gmApply(p,from){const c=this.ch;let txt;
     if(p[0]==='gold'){const n=Math.max(0,Math.min(1e9,Math.floor(+p[1]||0)));c.gold=(c.gold||0)+n;txt=`+${n.toLocaleString()} gold`;AudioFX.sfx('coin');}
@@ -5503,11 +5539,7 @@ const TownScreen={
       const rar=Math.max(0,Math.min(4,p[3]|0)),lvl=Math.max(1,Math.min(102,(p[2]|0)||c.baseLevel||1));let g;
       if(base==='wings'){const k=Math.max(0,Math.min(GEAR_BASES.wings.names.length-1,p[4]|0));g=craftWings(k,102,4);}else g=craftGear(base==='weapon'?WEAPON_OF[this.line()]:base,lvl,rar);
       delete g.crafted;c.bag.unshift(g);txt=`+${g.name} (${RARITY[g.rar].name}, Lv ${g.lvl})`;AudioFX.sfx('pick');}
-    else if(p[0]==='max'){const L0=c.baseLevel||1,J0=c.job.jobLevel||1;
-      if(L0<MAX_BASE){c.statPoints=(c.statPoints||0)+statTotal(MAX_BASE)-statTotal(L0);c.baseLevel=MAX_BASE;}c.baseExp=0;
-      if(J0<MAX_JOB){c.skillPoints=(c.skillPoints||0)+MAX_JOB-J0;c.job.jobLevel=MAX_JOB;}c.job.jobExp=0;
-      this.dirtyMods();if(c.autoStats) this.recStats(true);c.hp=this.maxHp();this.res=this.maxRes();AudioFX.sfx('level');
-      this.fx.push({x:this.p.x,y:this.p.y-72,text:'MAX LEVEL!',color:'#ffd76a',t0:performance.now(),big:true});txt=`Base Level ${MAX_BASE}, Job Level ${MAX_JOB}`;}
+    else if(p[0]==='max'){this.gmMax();txt=`Base Level ${MAX_BASE}, Job Level ${MAX_JOB}`;}
     else return 'unknown';
     this.hud();this.renderChar();this.renderInv();this.renderHotbar();this.tracker();this.save();
     if(from){toast(`GameMaster ${from}: ${txt}`,3500);this.log('sys',null,`GameMaster ${from} gave you ${txt}`);}
@@ -5515,6 +5547,7 @@ const TownScreen={
   gmEvent(t,from,P,e,nm){const gm=this.gmNameOf(P);
     if(t==='gmok'){if(this.isGM()) this.log('sys',null,`GameMaster · ${nm}: ${String(e[3]||'').slice(0,80)}`);return;}
     if(!gm) return;                                       // only the room's stamp makes someone a GameMaster
+    if(t==='gmmail'){this.mailPull();return;}               // a letter is waiting on the server: fetch it now
     const txt=this.gmApply(e.slice(3),gm);this.partySend('gmok',from,txt);},
   /* ---- GameMaster bosses: [id, map, kind, x, y] in the GameMaster's presence (gs); every game on that map builds the
      same encounter there (the boss's own arena, size and summons, centred on the spot), instead of the map's own boss.
@@ -6369,24 +6402,29 @@ const MAIL_BUILTIN=[
     gear:[{base:'weapon',lvl:'char',rar:4},{base:'body',lvl:'char',rar:4},{base:'head',lvl:'char',rar:4},{base:'hands',lvl:'char',rar:4},{base:'feet',lvl:'char',rar:4},{base:'wings',lvl:'char',rar:4,wing:4}]},
   {id:'welcome-oakhaven',from:'Pip · Oakhaven Post',title:'Welcome to Oakhaven',body:'A parcel from the Post to get you started. Letters with gifts wait here until you take them: open one and press Claim.\n\nSafe roads!',items:{potion:5,tonic:3}},
   {id:'gift-2026-11-12',from:'The MMORPG ONLINE team',title:'Thank you for playing through the updates',body:'Shops, wings, new sounds, the phone layout and more all landed this week, with a few bumps along the way. Here is a little something for the road.',gold:300,items:{potion:10,tonic:5,elixir:2},until:'2027-01-31'}];
-const Mail={remote:[],
+const Mail={remote:[],inbox:{},
+  /* letters a GameMaster sent to this character through the server (/send): picked up once, then they live in its mailbox */
+  async server(c){if(!c||!Cloud.on()||!Cloud.token) return 0;const r=await Cloud.api('mail?id='+encodeURIComponent(c.id));
+    if(!r.ok||!Array.isArray(r.mail)||!r.mail.length) return 0;(this.inbox[c.id]=this.inbox[c.id]||[]).push(...r.mail.map(m=>({...m,gm:true})));return r.mail.length;},
   async fetch(){if(window.claude||!/^https?:$/.test(location.protocol)) return;
     try{const r=await fetch('mail.json?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const j=await r.json();if(j&&Array.isArray(j.mails)) this.remote=j.mails.slice(0,60);}catch(e){}},
   all(){const seen=new Set(),out=[];for(const m of [...this.remote,...MAIL_BUILTIN]){if(!m||!m.id||seen.has(String(m.id))) continue;seen.add(String(m.id));out.push(m);}return out;},
-  make(m,now){const items={};for(const [k,v] of Object.entries(m.items||{})) if(itemDef(k)&&(v|0)>0) items[k]=Math.min(999,v|0);
-    const gear=(Array.isArray(m.gear)?m.gear:[]).slice(0,6).filter(g=>g&&(g.base==='weapon'||GEAR_BASES[g.base])).map(g=>({base:String(g.base),lvl:g.lvl==='char'?'char':Math.max(1,Math.min(100,(g.lvl|0)||1)),rar:Math.max(0,Math.min(4,g.rar|0)),wing:g.base==='wings'?Math.max(0,Math.min(GEAR_BASES.wings.names.length-1,g.wing|0)):undefined}));
-    return {id:String(m.id).slice(0,40),t:now,from:String(m.from||'Oakhaven Post').slice(0,40),title:String(m.title||'A letter').slice(0,70),body:String(m.body||'').slice(0,700),gold:Math.max(0,Math.min(1e7,m.gold|0)),items,gear,read:false,claimed:false};},
+  make(m,now){const gm=!!m.gm,items={};for(const [k,v] of Object.entries(m.items||{})) if(itemDef(k)&&(v|0)>0) items[k]=Math.min(gm?99999:999,v|0);
+    const gear=(Array.isArray(m.gear)?m.gear:[]).slice(0,6).filter(g=>g&&(g.base==='weapon'||GEAR_BASES[g.base])).map(g=>({base:String(g.base),lvl:g.lvl==='char'?'char':Math.max(1,Math.min(gm?102:100,(g.lvl|0)||1)),rar:Math.max(0,Math.min(4,g.rar|0)),wing:g.base==='wings'?Math.max(0,Math.min(GEAR_BASES.wings.names.length-1,g.wing|0)):undefined}));
+    return {id:String(m.id).slice(0,40),t:now,from:String(m.from||'Oakhaven Post').slice(0,40),title:String(m.title||'A letter').slice(0,70),body:String(m.body||'').slice(0,700),gold:Math.max(0,Math.min(gm?1e9:1e7,Math.floor(+m.gold||0))),items,gear,max:gm&&!!m.max,gm,read:false,claimed:false};},
   /* put every letter this character should have and hasn't had yet into its mailbox; returns how many were new */
   deliver(c){c.mail=Array.isArray(c.mail)?c.mail:[];c.mailGot=c.mailGot||{};let n=0;const now=Date.now(),nm=String(c.name||'').toLowerCase();
     for(const m of this.all()){const id=String(m.id).slice(0,40);if(c.mailGot[id]) continue;
       if(Array.isArray(m.to)&&!m.to.some(x=>String(x).toLowerCase()===nm)) continue;
       if(m.until&&now>Date.parse(m.until+'T23:59:59Z')) continue;if(m.after&&now<Date.parse(m.after)) continue;if(m.minLevel&&(c.baseLevel||1)<m.minLevel) continue;
       c.mailGot[id]=1;c.mail.unshift(this.make(m,now));n++;}
+    for(const m of this.inbox[c.id]||[]){const id=String(m.id).slice(0,40);if(c.mailGot[id]) continue;c.mailGot[id]=1;c.mail.unshift(this.make(m,+m.t||now));n++;}
+    delete this.inbox[c.id];
     if(c.mail.length>50) c.mail=c.mail.filter((m,i)=>i<50||(this.has(m)&&!m.claimed));
     return n;},
   /* a letter from the game itself (used for things that could not go into a full bag) */
   send(c,m){c.mail=Array.isArray(c.mail)?c.mail:[];c.mail.unshift(this.make({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),...m},Date.now()));},
-  has(m){return m.gold>0||Object.keys(m.items||{}).length>0||(m.gear||[]).length>0;},
+  has(m){return m.gold>0||Object.keys(m.items||{}).length>0||(m.gear||[]).length>0||!!m.max;},
   pending(c){return (c.mail||[]).filter(m=>!m.read||(this.has(m)&&!m.claimed)).length;}};
 /* ---------- shops and crafting ----------
    Greta's equipment shop: Uncommon gear for your job at your level bracket and the next (fixed stats, 5x its resale).
@@ -6461,7 +6499,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14a';
+const BUILD='2026-11-14b';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

@@ -135,6 +135,11 @@ export class GameRoom extends DurableObject {
      POST /api/chars    {put:[{id, t, data}], del:[id]}       save changed characters, delete others
      POST /api/logout             end this sign-in
      GET  /api/me                 who this sign-in is        -> {name, gm}   (gm: a GameMaster account)
+     POST /api/gm/send  {to, acct?, letter}   GameMasters: a letter for the character called `to` (any account,
+                                  online or not; acct picks one when several characters share the name)
+                                  -> {ok, name, acct} | 404 nobody | 409 {accounts} several
+     GET  /api/mail?id=<char id>  letters waiting for one of my characters (handed over once, then removed)
+                                  -> {mail:[{id, from, title, body, gold, items, gear, max, t}]}
 
    u is the username (3-16 letters, numbers or _). v is not the password: the browser stretches the password
    (PBKDF2-SHA-256, 150,000 rounds, salted with the game name and the username) and sends only that key. The server
@@ -142,7 +147,8 @@ export class GameRoom extends DurableObject {
    tokens, kept hashed, good for 60 days (renewed while in use). 8 wrong passwords lock an account for 10 minutes;
    one network address can make 20 accounts an hour. Each character is stored on its own; the newer copy wins, and
    a deleted character can't come back from an older copy. Everything lives in one Durable Object's storage. */
-const DAY = 86400000, MAX_CHARS = 4, MAX_CHAR_SIZE = 90000;
+const DAY = 86400000, MAX_CHARS = 4, MAX_CHAR_SIZE = 90000, MAX_LETTERS = 40, MAX_LETTER = 4000;
+const lowName = n => String(n || '').trim().replace(/\s+/g, ' ').toLowerCase().slice(0, 20);
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 const sha256 = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
 const randomHex = n => hex(crypto.getRandomValues(new Uint8Array(n)));
@@ -161,6 +167,8 @@ export class AccountStore extends DurableObject {
       if (path === 'chars' && request.method === 'POST') return await this.save(me, await this.body(request));
       if (path === 'logout' && request.method === 'POST') { await this.ctx.storage.delete('s:' + me.th); return json({ ok: true }); }
       if (path === 'me' && request.method === 'GET') { const a = await this.ctx.storage.get('a:' + me.u); return json({ name: a ? a.name : me.u, gm: this.isGM(me.u) }); }
+      if (path === 'gm/send' && request.method === 'POST') return await this.gmSend(me, await this.body(request));
+      if (path === 'mail' && request.method === 'GET') return await this.mail(me, new URL(request.url).searchParams.get('id'));
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       return json({ error: e.status ? e.message : 'Server error', code: e.code }, e.status || 500);
@@ -240,6 +248,8 @@ export class AccountStore extends DurableObject {
     for (const id of Array.isArray(o.del) ? o.del.slice(0, 20) : []) {
       if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) continue;
       delete ix.ids[id]; ix.gone[id] = now; await S.delete('d:' + me.u + ':' + id);
+      await this.rename(me.u, id, (ix.names || {})[id], null); if (ix.names) delete ix.names[id];
+      await S.delete('m:' + me.u + ':' + id);
     }
     for (const it of Array.isArray(o.put) ? o.put.slice(0, 10) : []) {
       const id = it && it.data && it.data.id, t = +it.t;
@@ -250,8 +260,86 @@ export class AccountStore extends DurableObject {
       if (!(id in ix.ids) && id !== '__vault__' && Object.keys(ix.ids).filter(k => k !== '__vault__').length >= MAX_CHARS) { skipped.push(id); continue; }   // the account vault rides along as a record but is not a character slot
       await S.put('d:' + me.u + ':' + id, { t, data: it.data });
       ix.ids[id] = t;
+      if (id !== '__vault__') {                                                      // who is called what, for GameMaster letters
+        ix.names = ix.names || {}; const nm = lowName(it.data.name);
+        if (nm && ix.names[id] !== nm) { await this.rename(me.u, id, ix.names[id], nm); ix.names[id] = nm; }
+      }
     }
     await S.put('c:' + me.u, ix);
     return json({ ok: true, ids: ix.ids, skipped });
+  }
+
+  /* ---- character names -> characters ('n:' + lower-case name -> ['account|id', ...]; names aren't unique across
+     accounts). Characters saved before this index existed are added once, the first time a GameMaster looks one up. */
+  async rename(u, id, from, to) {
+    const S = this.ctx.storage, key = u + '|' + id;
+    if (from) { const L = (await S.get('n:' + from)) || []; const L2 = L.filter(k => k !== key); if (L2.length) await S.put('n:' + from, L2); else await S.delete('n:' + from); }
+    if (to) { const L = (await S.get('n:' + to)) || []; if (!L.includes(key)) { L.push(key); await S.put('n:' + to, L); } }
+  }
+
+  async buildNames() {
+    const S = this.ctx.storage;
+    if (await S.get('nix:v1')) return;
+    let start;
+    for (;;) {
+      const page = await S.list({ prefix: 'c:', start, limit: 100 });
+      if (!page.size) break;
+      for (const [k, ix] of page) {
+        start = k + '\u0000'; const u = k.slice(2), ids = Object.keys((ix && ix.ids) || {}).filter(id => id !== '__vault__');
+        if (!ids.length) continue;
+        ix.names = ix.names || {};
+        const recs = await S.get(ids.map(id => 'd:' + u + ':' + id));
+        for (const id of ids) {
+          const r = recs.get('d:' + u + ':' + id), nm = r && r.data && lowName(r.data.name);
+          if (nm && ix.names[id] !== nm) { await this.rename(u, id, ix.names[id], nm); ix.names[id] = nm; }
+        }
+        await S.put(k, ix);
+      }
+      if (page.size < 100) break;
+    }
+    await S.put('nix:v1', Date.now());
+  }
+
+  letter(o) {                                          // what a GameMaster may put in a letter (the game checks it again)
+    const L = o && typeof o === 'object' ? o : {}, out = {};
+    out.title = String(L.title || 'A gift from a GameMaster').slice(0, 70); out.body = String(L.body || '').slice(0, 700);
+    out.gold = Math.max(0, Math.min(1e9, Math.floor(+L.gold || 0)));
+    out.items = {};
+    for (const [k, v] of Object.entries(L.items && typeof L.items === 'object' ? L.items : {}).slice(0, 12))
+      if (/^[a-z0-9_]{1,30}$/i.test(k) && (v | 0) > 0) out.items[k] = Math.min(99999, v | 0);
+    out.gear = (Array.isArray(L.gear) ? L.gear : []).slice(0, 6).filter(g => g && typeof g.base === 'string' && /^[a-z]{1,12}$/.test(g.base))
+      .map(g => ({ base: g.base, lvl: g.lvl === 'char' ? 'char' : Math.max(1, Math.min(102, g.lvl | 0 || 1)), rar: Math.max(0, Math.min(4, g.rar | 0)), wing: Math.max(0, Math.min(20, g.wing | 0)) }));
+    out.max = !!L.max;
+    if (!out.gold && !Object.keys(out.items).length && !out.gear.length && !out.max) throw fail(400, 'The letter is empty.');
+    return out;
+  }
+
+  async gmSend(me, o) {
+    if (!this.isGM(me.u)) throw fail(403, 'Only GameMasters can do that.');
+    if (JSON.stringify(o).length > MAX_LETTER) throw fail(413, 'Too much in one letter.');
+    const to = lowName(o.to); if (to.length < 3) throw fail(400, 'Which character?');
+    const letter = this.letter(o.letter), S = this.ctx.storage;
+    await this.buildNames();
+    let hits = (await S.get('n:' + to)) || [];
+    const acct = typeof o.acct === 'string' ? o.acct.trim().toLowerCase() : '';
+    if (acct) hits = hits.filter(k => k.split('|')[0] === acct);
+    if (!hits.length) throw fail(404, `No character called "${String(o.to).slice(0, 20)}"${acct ? ' on account ' + acct : ''}.`, 'nobody');
+    if (hits.length > 1) return json({ error: 'Several characters have that name.', code: 'several', accounts: hits.map(k => k.split('|')[0]) }, 409);
+    const [u, id] = hits[0].split('|');
+    const rec = await S.get('d:' + u + ':' + id), a = await S.get('a:' + me.u);
+    const key = 'm:' + u + ':' + id, box = (await S.get(key)) || [];
+    if (box.length >= MAX_LETTERS) throw fail(429, 'That character already has a full stack of letters waiting.');
+    box.push({ id: 'gm-' + Date.now().toString(36) + randomHex(3), from: 'GameMaster ' + (a ? a.name : me.u), t: Date.now(), ...letter });
+    await S.put(key, box);
+    return json({ ok: true, name: rec && rec.data ? String(rec.data.name || to) : to, acct: u });
+  }
+
+  async mail(me, id) {
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) throw fail(400, 'Bad request.');
+    const ix = await this.index(me.u);
+    if (!(id in ix.ids)) return json({ mail: [] });
+    const key = 'm:' + me.u + ':' + id, box = (await this.ctx.storage.get(key)) || [];
+    if (box.length) await this.ctx.storage.delete(key);                              // handed over once
+    return json({ mail: box });
   }
 }

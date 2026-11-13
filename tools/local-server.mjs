@@ -29,6 +29,13 @@ const storage = {
     return mem.has(k) ? structuredClone(mem.get(k)) : undefined; },
   async put(k, v) { mem.set(k, structuredClone(v)); persist(); },
   async delete(k) { const r = mem.delete(k); persist(); return r; },
+  async list({ prefix = '', start, limit } = {}) {      // as Durable Object storage: sorted keys, from start on
+    const r = new Map();
+    for (const k of [...mem.keys()].filter(k => k.startsWith(prefix) && (start === undefined || k >= start)).sort()) {
+      if (limit && r.size >= limit) break; r.set(k, structuredClone(mem.get(k)));
+    }
+    return r;
+  },
 };
 // GameMasters: GM_USERS from the environment, else the "vars" in wrangler.jsonc (as on Cloudflare)
 const vars = (() => { try { return JSON.parse(fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '')).vars || {}; } catch (e) { return {}; } })();
