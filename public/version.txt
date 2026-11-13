@@ -1,1 +1,1 @@
-build: 2026-11-13f (guild ranks and join requests, boss defence halved, boss health bar fix)
+build: 2026-11-13g (bosses heal 15% every 10 s)

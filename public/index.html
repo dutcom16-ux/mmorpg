@@ -2119,6 +2119,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13g',date:'2026-11-13',title:'Bosses heal harder',
+    balance:['The Slime Queen and the Lava Dragon Golem now heal 15% of their health every 10 seconds once hurt (below 75% and 70%). Bring a big party, and stun them during the heal\'s cast bar to stop it']},
   {v:'2026-11-13f',date:'2026-11-13',title:'Guild ranks and join requests',
     new:['Guild window (O, the Guild button by the chat, or Amelie): your whole guild with ranks and who is online, join requests, invites, and the controls your rank allows','Ranks: Guild Leader, Vice Leader, Officer, Member, Novice. The leader passes the leadership on and can disband; Vice Leaders and Officers invite, accept requests, and promote, demote or kick members ranked below them','Ask to join any guild you see online: its officers and leader get your request','The guild leader wears a crown next to the guild name'],
     balance:['Boss armour and magic resistance are halved'],
@@ -2859,7 +2861,7 @@ const BOSS_LOOT={slimequeen:{gold:400,gear:2,rar:[.55,.33,.12],potions:5},lavago
 Object.assign(MOB_DEFS,{
   slimequeen:{el:'water',name:'Slime Queen',lvl:MAX_BASE-1,hp:30,atk:1.5,exp:70,speed:[45,57],sight:0,reach:30,cd:9,h:84,respawn:[300,300],barks:['Who tramples my garden?','Kneel before the crown of dew!','*regal squelch*'],
     sheet:'slimeboss',set:'queen',hop:true,body:27,keep:[52,170],
-    heal:{every:[10,15],below:.75,channel:2,amount:.01,name:'Royal Jelly',color:'#7dff9a'},
+    heal:{every:10,below:.75,channel:2,amount:.15,name:'Royal Jelly',color:'#7dff9a'},
     summon:{first:6,cd:22,name:'Summon Slime King',spots:{slimeking:'side'}},
     acts:[
       {id:'spit',kind:'proj',range:[48,330],cd:3,windup:.5,recover:.5,dmg:.9,mag:true,speed:185,pr:11,life:2.4,color:'#a8ff5a',from:[34,-27],anim:{set:'queen',row:0,flip:true,seq:[[0,0],[1,.1],[2,.3],[3,.44],[5,.62]]}},
@@ -2875,7 +2877,7 @@ Object.assign(MOB_DEFS,{
       {id:'spin',kind:'spin',range:[0,70],cd:7,windup:.45,active:1.6,tick:.4,recover:.6,dmg:.55,r:58,major:true,drift:.5,color:'#ffe27a',anim:{set:'kingAtk',row:3,loop:[2,3,.45,2.05],seq:[[0,0],[1,.15],[2,.45],[4,2.05],[5,2.4]]}}]},
   lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:MAX_BASE-1,hp:48,atk:1.5,exp:160,speed:[45,63],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
     sheet:'lavaboss',set:'lava',walkFps:6,body:40,keep:[0,74],
-    heal:{every:[10,15],below:.70,channel:2.5,amount:.01,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
+    heal:{every:10,below:.70,channel:2.5,amount:.15,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
     summon:{first:6,cd:24,name:'Call of the Molten Brood',spots:{babygolem:[-44,16],babyimp:[5,22],babydrake:[50,16]}},
     acts:[
       {id:'cleave',kind:'cone',range:[0,100],cd:3,windup:.6,recover:.6,dmg:1.3,len:122,arc:112,color:'#ff8a2a',slash:true,anim:{set:'lavaAtk',row:0,flip:true,seq:[[0,0],[1,.1],[2,.36],[3,.6],[4,.8],[5,1]]}},
@@ -5838,7 +5840,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13f';
+const BUILD='2026-11-13g';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
