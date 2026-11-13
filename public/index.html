@@ -2193,6 +2193,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13x',date:'2026-11-13',title:'Update notices are back',
+    fixes:['The "new game update is available" notice shows again when a new version comes out while you play (with a chime and a line in the chat), so you can refresh into it']},
   {v:'2026-11-13w',date:'2026-11-13',title:'Job Level 70, a brighter crown, GameMasters',
     new:['Job Level now goes up to 70 (one more skill point every level)','Reaching Base Level 100 gives a far stronger aura: a pillar of golden light, a turning rune circle with a shockwave, motes circling you, rising sparks and a ring of light over your head','GameMaster accounts: in-game commands for events (items, gold, levels and world bosses)']},
   {v:'2026-11-13v',date:'2026-11-13',title:'Wings on the character screen, axes for the Juggernaut',
@@ -6425,15 +6427,16 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13w';
+const BUILD='2026-11-13x';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
-  offer(){if(this.shown||Date.now()<(this.snooze||0)) return;this.shown=true;$('#upd').classList.add('on');
+  offer(){if(this.shown||Date.now()<(this.snooze||0)) return;this.shown=true;$('#upd').classList.add('on');AudioFX.sfx('quest');
+    if(activeScreen===TownScreen&&TownScreen.ch) TownScreen.log('sys',null,'A new game update is available · press Refresh Now (your progress is saved first)');
     $('#upd-go').onclick=async()=>{$('#upd-go').disabled=true;try{if(activeScreen===TownScreen&&TownScreen.ch){TownScreen.save();if(typeof Cloud!=='undefined'&&Cloud.push) await Promise.race([Cloud.push(),new Promise(r=>setTimeout(r,2500))]);}}catch(e){}location.reload();};
     $('#upd-x').onclick=()=>{$('#upd').classList.remove('on');this.shown=false;this.snooze=Date.now()+10*60000;};},
   async check(){if(window.claude||!/^https?:$/.test(location.protocol)) return;
-    try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const m=/build:\s*(\S+)/.exec(await r.text());if(m&&this.newer(m[1])) this.offer();}catch(e){}},
+    try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;const m=/(?:build:\s*)?(\d{4}-\d\d-\d\d[a-z]?)/.exec(await r.text());if(m&&this.newer(m[1])) this.offer();}catch(e){}},   // "build: 2026-11-13x (...)" or just the build
   init(){this.check();setInterval(()=>this.check(),2*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden) this.check();});}};
 const Net={room:null,conn:false,me:null,seq:Math.floor(Math.random()*1000),says:[],sayN:0,pe:[],peN:0,lobby:new Map(),since:0,kind:null,where:'',tries:0,
   /* the claude.ai link has its own room; the hosted links (Cloudflare, Vercel) share the game server. A failed
