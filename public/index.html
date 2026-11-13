@@ -618,6 +618,14 @@ dl dd.main{color:var(--gold)}
 .charwin .stat em{font-style:normal;font:900 15px Nunito,sans-serif;text-align:right}
 .charwin .stat .btn{min-height:30px;padding:0;width:32px;font-size:16px}
 .charwin .pts{margin-top:10px;font-weight:900;color:var(--aether);font-size:13px}
+.charwin .stat b .rw{display:block;font-style:normal;font-size:9px;letter-spacing:1px;color:#7dff9a;line-height:1;margin-top:3px}
+.charwin .stat.rec b{color:#ffe08a}
+.charwin .recbox{margin-top:10px;padding:9px 10px;border:1px solid rgba(125,255,154,.28);border-radius:10px;background:rgba(60,140,90,.12)}
+.charwin .recbox .rt b{display:block;color:#7dff9a;font-size:13px}.charwin .recbox .rt span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.35;margin-top:2px}
+.charwin .recbox .rp{font-size:12px;font-weight:900;color:var(--ink,#eef);margin-top:6px}
+.charwin .recbox .ra{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.charwin .recbox label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer}
+.charwin .recbox .btn{min-height:32px;padding:4px 12px;font-size:13px}
 .charwin dl{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font-size:13px}
 .charwin dt{color:var(--muted);font-weight:700}.charwin dd{margin:0;font-weight:900;text-align:right}
 .charwin .note{margin-top:12px;font-size:12px;color:var(--muted);font-weight:700;line-height:1.5}
@@ -2171,6 +2179,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13u',date:'2026-11-13',title:'Recommended stats',
+    new:['Every job has a recommended stat build in the Character window (C): the stats it favours are marked, and Use recommended spends your points the way that build grows (STR for a Vanguard, DEX for an Archer, INT for casters, AGI and LUK for a Trickster, and so on)','Tick Auto on level up and new stat points go the recommended way by themselves, and after a job advancement they follow the new job\'s build']},
   {v:'2026-11-13t',date:'2026-11-13',title:'Godwings',
     new:['Two god-tier wings at Dorin the Artificer\'s, from Base Level 99: Godwings of Night (black) and Godwings of Dawn (white). Item Level 102, the toughest wings in the game, +6 to every stat, with their own painted icons','Walking now has 8 frames, with longer steps and the foot lifted as it swings through, modelled on the walk drawn for the new wings'],
     fixes:['Wings no longer flap. Every kind sits on your upper back the same way in all 8 directions, stays put while you walk and attack, and scales with your character','Wings show properly on the equipment card']},
@@ -2868,6 +2878,36 @@ const iconSvg=(k,color)=>TILE_PATHS[k]?tileIcon(k,color):`<svg viewBox="0 0 24 2
 const STAT_INFO={STR:'+1 melee ATK (+0.2 ranged), bonus every 10',AGI:'+1 FLEE, faster attacks',VIT:'+1% max HP, +0.5 DEF, +0.2 MDEF, HP recovery',
   INT:'MATK, +1% max MP, shorter casts, MP recovery',DEX:'+1 HIT, ranged ATK, +0.2 melee ATK, shorter casts',LUK:'+0.3% critical, +0.2 ATK and MATK'};
 const STAT_KEYS=Object.keys(STAT_INFO);
+/* Recommended stats: a build per job. w = how many points each stat gets, relative to the others (the stat furthest
+   behind its share is raised next); cap = stop raising it there. They follow what each job's damage, speed and
+   survival come from: melee ATK from STR (+DEX/5), ranged ATK from DEX (+STR/5), MATK from INT (the Support line's
+   attacks too), attack speed from AGI (+DEX a little), cast time from DEX x2 + INT, HIT from DEX, FLEE from AGI,
+   critical and the Skywarden falcon's sweeps from LUK, max HP from VIT, max MP from INT. */
+const STAT_BUILDS={
+  recruit:     {name:'Balanced fighter',why:'Hits harder and stays standing: STR first, then VIT and AGI',w:{STR:3,AGI:2,VIT:2,DEX:1}},
+  vanguard:    {name:'Front-line blade',why:'STR for damage, VIT to hold the line, AGI for faster swings',w:{STR:4,VIT:3,AGI:2,DEX:1}},
+  juggernaut:  {name:'Heavy hitter',why:'As much STR as possible, AGI for speed, enough VIT to trade blows',w:{STR:5,AGI:2,VIT:2,DEX:1,LUK:1},cap:{LUK:40}},
+  bulwark:     {name:'Iron wall',why:'VIT for health and defence, STR so your blows still count',w:{VIT:5,STR:3,DEX:1,AGI:1,INT:1},cap:{INT:30}},
+  elementalist:{name:'Spell cannon',why:'INT for magic power and mana, DEX to cast faster, a little VIT',w:{INT:5,DEX:3,VIT:1}},
+  chronomage:  {name:'Swift caster',why:'INT for power, plenty of DEX for the quickest casts',w:{INT:5,DEX:4,VIT:1}},
+  pyromancer:  {name:'Pure fire',why:'INT above all for the biggest burns, DEX for casting speed',w:{INT:6,DEX:2,VIT:1,LUK:1},cap:{LUK:30}},
+  wayfinder:   {name:'Archer',why:'DEX for arrow damage and accuracy, AGI to shoot faster',w:{DEX:5,AGI:3,VIT:1,LUK:1}},
+  sharpshooter:{name:'Deadeye',why:'DEX for damage, LUK for critical shots, AGI for speed',w:{DEX:5,LUK:3,AGI:2,VIT:1}},
+  skywarden:   {name:'Falconer',why:'DEX for your arrows, LUK so the falcon sweeps more often',w:{DEX:4,LUK:4,AGI:2,VIT:1}},
+  channeler:   {name:'Healer',why:'INT for stronger heals and more mana, VIT and DEX to keep casting',w:{INT:5,VIT:2,DEX:2}},
+  hierophant:  {name:'High priest',why:'INT for holy power, DEX for faster casting, VIT to survive',w:{INT:5,DEX:3,VIT:2}},
+  arbiter:     {name:'Holy knight',why:'INT powers your scepter, VIT for the front line, DEX and AGI to keep up',w:{INT:4,VIT:3,DEX:2,AGI:1}},
+  specter:     {name:'Shadow',why:'AGI for speed and dodging, STR for damage, LUK for criticals',w:{AGI:5,STR:2,LUK:2,DEX:1}},
+  voidblade:   {name:'Assassin',why:'AGI and STR for fast, heavy strikes, LUK for criticals',w:{AGI:4,STR:3,LUK:2,DEX:1}},
+  trickster:   {name:'Lucky blade',why:'AGI and LUK: quick, evasive, lots of critical hits',w:{AGI:4,LUK:4,STR:1,DEX:1}}};
+const statBuild=id=>STAT_BUILDS[id]||STAT_BUILDS.recruit;
+/* spend points by a build: always raise the stat furthest behind its share; stop when that raise is too dear (the
+   points wait for the next level) -> {stats, left, added} */
+function planStats(stats,points,id){const B=statBuild(id),S={...stats},add={};let p=points|0;
+  for(let guard=0;guard<2000;guard++){let best=null,bv=Infinity;
+    for(const k of STAT_KEYS){const w=B.w[k]||0,v=S[k]||1;if(!w||v>=Math.min(STAT_MAX,(B.cap&&B.cap[k])||STAT_MAX)) continue;const r=(v-1)/w;if(r<bv-1e-9||(Math.abs(r-bv)<1e-9&&w>(B.w[best]||0))){bv=r;best=k;}}
+    if(!best) break;const cost=raiseCost(S[best]||1);if(p<cost) break;S[best]=(S[best]||1)+1;p-=cost;add[best]=(add[best]||0)+1;}
+  return {stats:S,left:p,added:add};}
 /* Monsters. A monster's numbers come from its level (set per zone on each map) times its kind's multipliers:
    hp, atk (hit), exp. speed: [wander, chase] px/s; sight: aggressive ones charge you inside it (0 = only fights back);
    reach, cd (s between hits), h (height on the map), float (hovers and bobs), barks: dark red lines when it turns on you */
@@ -3779,6 +3819,12 @@ const TownScreen={
     AudioFX.sfx('quest');toast(`Skills reset · ${n} skill points to spend`);
     this.log('sys',null,`Skills reset · ${n} skill points back${cost?` · -${cost} gold`:''}`);this.renderSkills();this.renderHotbar();this.hudBars();this.tracker();this.save();},
   /* ---------- character sheet (C): stats cost more the higher they go ---------- */
+  /* spend the stat points the recommended way for this job (quiet=true: on level up, with Auto on) */
+  recStats(quiet){const c=this.ch;if(!c) return;const P=planStats(c.stats,c.statPoints,c.job.classId),txt=STAT_KEYS.filter(k=>P.added[k]).map(k=>`+${P.added[k]} ${k}`).join(' · ');
+    if(!txt){if(!quiet) toast(c.statPoints?'Not enough points for the next recommended stat yet':'No stat points to spend');return;}
+    for(const k of STAT_KEYS) c.stats[k]=P.stats[k]||1;c.statPoints=P.left;this.dirtyMods();
+    if(!quiet){AudioFX.sfx('quest');toast(`Recommended stats · ${txt}`);}this.log('sys',null,`Recommended stats (${statBuild(c.job.classId).name}) · ${txt}`);
+    this.hudBars();this.renderChar();this.save();},
   resetStats(){const c=this.ch,S=c.stats,spent=STAT_KEYS.reduce((a,k)=>a+statSpent(S[k]||1),0),cost=this.resetCost();if(!spent) return;
     if((c.gold||0)<cost){toast(`A stat reset costs ${cost} gold`);return;}
     c.gold-=cost;for(const k of STAT_KEYS) S[k]=1;c.statPoints=(c.statPoints||0)+spent;this.dirtyMods();c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());
@@ -3786,10 +3832,16 @@ const TownScreen={
     this.hudBars();this.tracker();this.renderChar();this.save();},
   renderChar(){if(!$('#charwin').classList.contains('on')||!this.ch) return;const c=this.ch,S=c.stats,E=this.st(),J=JOBS[c.job.classId]||JOBS.recruit,ln=this.line(),L=c.baseLevel||1;
     $('#cw-title').textContent=c.name;$('#cw-sub').textContent=`Lv ${L} · ${J.name} · Job ${c.job.jobLevel||1}`;
-    const rows=STAT_KEYS.map(k=>{const v=S[k]||1,cost=raiseCost(v),b=E[k]-v;return `<div class="stat"><b>${k}</b><span>${STAT_INFO[k]}</span><em>${v}${b?`<small>${b>0?'+':''}${b}</small>`:''}</em>
+    const RB=statBuild(c.job.classId),RP=planStats(S,c.statPoints,c.job.classId),wmax=Math.max(...Object.values(RB.w));
+    const dots=k=>{const w=RB.w[k]||0;return w?`<i class="rw" title="Recommended for ${esc(J.name)}: ${w} of every ${Object.values(RB.w).reduce((a,b)=>a+b,0)} raises">${'●'.repeat(Math.max(1,Math.round(w/wmax*4)))}</i>`:'';};
+    const rows=STAT_KEYS.map(k=>{const v=S[k]||1,cost=raiseCost(v),b=E[k]-v;return `<div class="stat${RB.w[k]?' rec':''}"><b>${k}${dots(k)}</b><span>${STAT_INFO[k]}</span><em>${v}${b?`<small>${b>0?'+':''}${b}</small>`:''}</em>
       <button class="btn" data-st="${k}" aria-label="Raise ${k} (costs ${cost})" title="Costs ${cost} point${cost===1?'':'s'}" ${c.statPoints>=cost&&v<STAT_MAX?'':'disabled'}>+<small>${v<STAT_MAX?cost:''}</small></button></div>`;}).join('');
     const spent=STAT_KEYS.reduce((a,k)=>a+statSpent(S[k]||1),0),cost=this.resetCost(),[ma,mb]=this.matk(),pw=this.magicLine();
+    const plan=STAT_KEYS.filter(k=>RP.added[k]).map(k=>`+${RP.added[k]} ${k}`).join(' · ');
     $('#cw-body').innerHTML=`<div class="cols"><div>${rows}<div class="pts">${c.statPoints} stat point${c.statPoints===1?'':'s'} to spend</div>
+      <div class="recbox"><div class="rt"><b>Recommended · ${esc(RB.name)}</b><span>${esc(RB.why)}</span></div>
+        <div class="rp">${plan?`Spends ${c.statPoints-RP.left} point${c.statPoints-RP.left===1?'':'s'}: ${plan}`:c.statPoints?'Saving up for the next raise':'Level up to get stat points'}</div>
+        <div class="ra"><label><input type="checkbox" id="cw-auto" ${c.autoStats?'checked':''}> Auto on level up</label><button class="btn primary" id="cw-rec" ${plan?'':'disabled'}>Use recommended</button></div></div>
       <div class="resetbar"><span>${cost?`Costs ${cost} gold`:'Free up to Base Level 20'}</span><button class="btn warn" id="cw-reset" ${spent?'':'disabled'}>Reset stats</button></div></div>
       <div><dl><dt>ATK</dt><dd${pw?'':' class="main"'}>${this.atkPower()}</dd><dt>MATK</dt><dd${pw?' class="main"':''}>${ma} ~ ${mb}</dd><dt>DEF</dt><dd>${this.defence()}</dd><dt>MDEF</dt><dd>${this.mdef()}</dd>
       <dt>HIT</dt><dd>${this.hitRate()}</dd><dt>FLEE</dt><dd>${this.flee()}</dd><dt>CRIT</dt><dd>${this.critRate().toFixed(1)}%</dd><dt>ASPD</dt><dd>${this.aspd()} <small>(${(1/this.swingCd()).toFixed(2)}/s)</small></dd>
@@ -3799,7 +3851,9 @@ const TownScreen={
       <div class="note">Each level gives Floor((Lv-1)/5)+3 stat points (48 to start, 1,225 more by Level 99). Raising a stat costs Floor((value-1)/10)+2 points; stats go up to 99.
       Your chance to hit a monster is HIT minus its FLEE; its chance to hit you is its HIT minus your FLEE. <span class="better">Green</span> numbers come from gear and skills.</div></div></div>`;
     $$('#cw-body button[data-st]').forEach(b=>b.onclick=()=>{const k=b.dataset.st,v=S[k]||1,cost=raiseCost(v);if(c.statPoints>=cost&&v<STAT_MAX){S[k]=v+1;c.statPoints-=cost;this.dirtyMods();this.renderChar();this.hudBars();this.save();}});
-    $('#cw-reset').onclick=e=>this.arm(e.currentTarget,`Click again: ${spent} point${spent===1?'':'s'} back`,()=>this.resetStats());},
+    $('#cw-reset').onclick=e=>this.arm(e.currentTarget,`Click again: ${spent} point${spent===1?'':'s'} back`,()=>this.resetStats());
+    $('#cw-rec').onclick=()=>this.recStats(false);
+    $('#cw-auto').onchange=e=>{c.autoStats=e.target.checked;toast(c.autoStats?`Auto stats on · new points go the ${RB.name} way`:'Auto stats off');if(c.autoStats) this.recStats(true);else{this.renderChar();this.save();}};},
   /* ---------- drawing: skill effects (painted sheet), rains of arrows, casting circle ---------- */
   /* ---------- spell visuals drawn in code: magic circles, ground marks, falling bolts, particles ---------- */
   impact(m,sty,now){if(SETTINGS.lowfx&&sty!=='crit') return;this.wfx.push({k:'imp',x:m.x+(Math.random()-.5)*8,y:m.y-m.def.h*.5+(Math.random()-.5)*8,t0:now,dur:sty==='crit'?460:240,color:IMP_COL[sty]||'#ffffff',crit:sty==='crit',el:sty!=='normal'&&sty!=='crit',r:Math.max(10,Math.min(26,m.def.h*.35)),s:Math.random()*6.283});},
@@ -4017,7 +4071,7 @@ const TownScreen={
     this.bossHud(true);if(this.win==='locwin'&&$('#lw-list')) this.renderLocList();},
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
-      baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
+      baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,autoStats:!!c.autoStats,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
       hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
@@ -5625,7 +5679,7 @@ const TownScreen={
     const x=cv.getContext('2d'),[MW,MH]=this.meta.size,T=Sprites[this.mapId];x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
     x.drawImage(T.canvas,0,0,MW,MH,0,0,W,W);x.save();x.scale(dpr,dpr);this.drawMapDots(x,{x:0,y:0,w:MW,h:MH},W/dpr,W/dpr,now,true);x.restore();},
   /* ---------- Ascension: the first job ---------- */
-  ascend(id,key='ascension'){const c=this.ch,n=advanceJob(c,id);c.job=n.job;c.quests[key]='done';this._gt=null;
+  ascend(id,key='ascension'){const c=this.ch,n=advanceJob(c,id);c.job=n.job;c.quests[key]='done';this._gt=null;if(c.autoStats) setTimeout(()=>this.recStats(true),0);
     const w=c.equip&&c.equip.weapon;if(!w||!this.canUse(w,true)){if(w) c.bag.unshift(w);c.equip.weapon=makeGear(WEAPON_OF[this.line()],c.baseLevel||1,0);
       this.log('sys',null,`Ascension gift · ${c.equip.weapon.name}${w?` (your ${w.name} went to your bag)`:''}`);}
     this.comp=Sprites.compose(c.job.classId,c.appearance,'all');this.pk=54/this.figureHeight(this.comp);this.portrait();
@@ -5666,7 +5720,7 @@ const TownScreen={
     this.gainExp(m.exp);},
   gainExp(n,why){const c=this.ch;c.baseExp=(c.baseExp||0)+n;c.job.jobExp=(c.job.jobExp||0)+Math.round(n*.75);
     if(why) this.log('loot',null,`${why} · +${n} EXP`);
-    while(c.baseExp>=expNeed(c.baseLevel)&&c.baseLevel<MAX_BASE){c.baseExp-=expNeed(c.baseLevel);c.baseLevel++;c.statPoints=(c.statPoints||0)+statGain(c.baseLevel);c.hp=this.maxHp();this.res=this.maxRes();
+    while(c.baseExp>=expNeed(c.baseLevel)&&c.baseLevel<MAX_BASE){c.baseExp-=expNeed(c.baseLevel);c.baseLevel++;c.statPoints=(c.statPoints||0)+statGain(c.baseLevel);if(c.autoStats) this.recStats(true);c.hp=this.maxHp();this.res=this.maxRes();
       if(c.baseLevel===10&&c.job.classId==='recruit') setTimeout(()=>{toast('Level 10 · Elder Fin has your Ascension Trial');this.log('sys',null,'Elder Fin in Oakhaven is waiting to set your Ascension Trial.');},1400);
       this.fx.push({x:this.p.x,y:this.p.y-72,text:'LEVEL UP!',color:'#7fe3ff',t0:performance.now(),big:true});AudioFX.sfx('level');toast(`Base Level ${c.baseLevel}!`);this.log('sys',null,`Base Level ${c.baseLevel} · +${statGain(c.baseLevel)} stat points`);}
     while(c.job.jobExp>=jobNeed(c.job.jobLevel||1)&&(c.job.jobLevel||1)<50){c.job.jobExp-=jobNeed(c.job.jobLevel||1);c.job.jobLevel=(c.job.jobLevel||1)+1;c.skillPoints=(c.skillPoints||0)+1;this.log('sys',null,`Job Level ${c.job.jobLevel} · +1 skill point`);}
@@ -6216,7 +6270,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13t';
+const BUILD='2026-11-13u';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
