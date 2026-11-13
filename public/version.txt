@@ -1,1 +1,1 @@
-build: 2026-11-13d (bosses are Level 100)
+build: 2026-11-13e (party-sized bosses, +1% heals every 10-15 s, hidden boss level, stronger faster summons, Recruits restored)

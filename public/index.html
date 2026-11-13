@@ -309,7 +309,7 @@ button{font:inherit;color:inherit}
 .shortcuts .ib svg{width:21px;height:21px}
 .shortcuts .ib kbd{position:absolute;right:2px;bottom:1px;font:900 9px Nunito,sans-serif;color:var(--muted)}
 html:not(.mobile) .shortcuts .ib{flex:1 1 0;min-width:0;width:auto;max-width:36px}      /* eight menu buttons share the row */
-.hud-right{max-height:calc(100% - 28px)}.hud-right>*{flex-shrink:0}.hud-right>#hud-tracker,.hud-right>#hud-bosses{flex-shrink:1;min-height:44px;overflow:auto}   /* a long quest list scrolls; the boss panel stays on screen */
+.hud-right{max-height:calc(100% - 28px)}.hud-right>*{flex-shrink:0}.hud-right>#hud-tracker{flex-shrink:1;min-height:44px;overflow:auto}.hud-right>#hud-bosses{overflow:auto;max-height:50%}   /* a long quest list scrolls; the boss panel stays on screen */
 /* big map */
 .bigmap{display:none;position:absolute;inset:0;z-index:7;background:rgba(4,7,16,.55);place-items:center}
 .bigmap.on{display:grid}
@@ -360,6 +360,7 @@ html:not(.mobile) .shortcuts .ib{flex:1 1 0;min-width:0;width:auto;max-width:36p
 .vw-gold{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;font-weight:800;font-size:12.5px}.vw-gold b{color:var(--gold)}.vw-gold .btn{min-height:28px;padding:2px 9px;font-size:12px}
 html.phone .vw-cols{grid-template-columns:1fr;gap:10px}html.phone .vw-grid{grid-template-columns:repeat(8,1fr)}
 .mailwin{width:min(620px,96vw)}
+.hud-bosses .q{margin-top:5px;line-height:1.3}.hud-bosses .q .obj{font-size:11.5px}.hud-bosses .q .qgo{min-height:24px}
 .hud-bosses .q .obj.bst{font-weight:900}.hud-bosses .q .obj.bst[data-st="up"]{color:#8fe3a8}.hud-bosses .q .obj.bst[data-st="fight"]{color:#ffb45e}.hud-bosses .q .obj.bst[data-st="down"]{color:#ff9a9a}
 .locwin{width:min(560px,96vw)}
 .lw-top{display:flex;flex-direction:column;gap:8px;margin-top:8px}.lw-top .shtabs{margin:0}
@@ -2110,6 +2111,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13e',date:'2026-11-13',title:'Bosses built for parties',
+    balance:['The Slime Queen and the Lava Dragon Golem have far more health: one end-game character alone needs about 10 minutes, weaker characters much longer. Bring a party','Their heals are smaller but more frequent: +1% of their health every 10-15 seconds once hurt (stun them during the cast bar to stop it)','Boss and summon levels are no longer shown','Summons are much tougher and hit much harder, and every boss and summon moves 50% faster','Recruits are back to their original HP and critical chance (every other job keeps 301x HP and +25 critical chance)']},
   {v:'2026-11-13d',date:'2026-11-13',title:'Max-level bosses',
     balance:['The Slime Queen and the Lava Dragon Golem are Level 100: far more health, harder hits, thicker armour, sharper aim and evasion, much more EXP, and gear that drops at Level 102 (wearable from Base Level 99)']},
   {v:'2026-11-13c',date:'2026-11-13',title:'World Bosses panel, Item Finder, giant numbers',
@@ -2813,10 +2816,16 @@ const ENC={
   fortress:{boss:'lavagolem',at:[636,585],music:'fire',idleReset:8,maxSummons:6,summons:[['babyimp',2],['babydrake',2],['babygolem',2]],
     arena:{rx:300,ry:185,tol:14,hide:true,color:'#ffb45e'}}};
 const ACT_GAP=.35;
+const healWait=H=>(Array.isArray(H.every)?H.every[0]+Math.random()*(H.every[1]-H.every[0]):H.every)*1000;      // ms until the next heal check
 /* boss and character tuning: boss HP +20,000% (x201) and boss damage +200,000% (x2001). Player hits on a boss (and on
    the Slime King, whose health follows the Queen's) count 201x, so a fight lasts about as long as it did before. Every
    character has +30,000% HP (x301), flat heals grow with it, and critical chance is 25 points higher for everyone. */
-const BOSS_TUNE={hp:201,dmg:2001,vsBoss:201},CHAR_HP_X=301,CRIT_BONUS=25;
+const BOSS_TUNE={
+  hp:{slimequeen:10630,lavagolem:6730},     // x the boss's health at its level (set so one end-game character alone needs about 10 minutes)
+  dmg:2001,                              // x the boss's damage
+  vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
+  minion:{hp:2010,dmg:601}},             // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's) and x damage
+  CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
 /* when each boss next appears, as far as this game knows: seen on the boss's own map, or heard from another player on
    any map (presence bc). at = epoch ms of the next spawn (0 = up), seen = when that was true, f = in a fight.
@@ -2835,39 +2844,39 @@ const BossClock={d:null,
     return {t:o.f&&!o.at&&now-o.seen<60000?'fight':'up'};}};      // seconds between two actions of the same boss or summon
 const BOSS_LOOT={slimequeen:{gold:400,gear:2,rar:[.55,.33,.12],potions:5},lavagolem:{gold:1500,gear:3,rar:[.4,.4,.2],potions:8}};   // rar: chances of Rare, Epic, Legendary
 Object.assign(MOB_DEFS,{
-  slimequeen:{el:'water',name:'Slime Queen',lvl:MAX_BASE,hp:30,atk:1.5,exp:70,speed:[30,38],sight:0,reach:30,cd:9,h:84,respawn:[300,300],barks:['Who tramples my garden?','Kneel before the crown of dew!','*regal squelch*'],
+  slimequeen:{el:'water',name:'Slime Queen',lvl:MAX_BASE-1,hp:30,atk:1.5,exp:70,speed:[45,57],sight:0,reach:30,cd:9,h:84,respawn:[300,300],barks:['Who tramples my garden?','Kneel before the crown of dew!','*regal squelch*'],
     sheet:'slimeboss',set:'queen',hop:true,body:27,keep:[52,170],
-    heal:{every:18,below:.75,channel:2,amount:.10,name:'Royal Jelly',color:'#7dff9a'},
+    heal:{every:[10,15],below:.75,channel:2,amount:.01,name:'Royal Jelly',color:'#7dff9a'},
     summon:{first:6,cd:22,name:'Summon Slime King',spots:{slimeking:'side'}},
     acts:[
       {id:'spit',kind:'proj',range:[48,330],cd:3,windup:.5,recover:.5,dmg:.9,mag:true,speed:185,pr:11,life:2.4,color:'#a8ff5a',from:[34,-27],anim:{set:'queen',row:0,flip:true,seq:[[0,0],[1,.1],[2,.3],[3,.44],[5,.62]]}},
       {id:'slam',kind:'slam',range:[48,260],cd:7,windup:.8,jump:.5,height:34,recover:.7,dmg:1.6,r:64,major:true,color:'#a8ff5a',anim:{set:'queen',row:1,seq:[[0,0],[1,.3],[2,.8],[3,.95],[4,1.3],[5,1.72]]}},
       {id:'vine',kind:'cone',range:[0,80],cd:5,windup:.6,recover:.55,dmg:1.25,len:96,arc:74,color:'#7be05a',anim:{set:'queen',row:2,flip:true,seq:[[0,0],[1,.1],[2,.48],[3,.6],[4,.76],[5,.98]]}},
       {id:'summon',kind:'summon',special:true,windup:1.5,recover:.55,anim:{set:'queen',row:3,flip:true,hold:4,seq:[[0,0],[1,.22],[2,.55],[3,.9],[4,1.2],[5,1.5]]}}]},
-  slimeking:{el:'water',name:'Slime King',lvl:14,hp:1,hpOfBoss:.30,atk:1.2,exp:8,speed:[36,52],sight:0,reach:26,cd:9,h:70,respawn:[1,1],barks:['For the Queen!','*royal blorp*'],
+  slimeking:{el:'water',name:'Slime King',lvl:MAX_BASE-1,hp:1,hpOfBoss:.30,atk:1.2,exp:8,speed:[54,78],sight:0,reach:26,cd:9,h:70,respawn:[1,1],barks:['For the Queen!','*royal blorp*'],
     sheet:'slimeboss',set:'king',idleLoop:true,body:23,keep:[64,100],summonArt:[75,4],
     acts:[
       {id:'slam',kind:'slam',range:[0,210],cd:8,windup:.8,jump:.45,height:30,recover:.65,dmg:1.35,r:54,major:true,color:'#a8ff5a',anim:{set:'kingAtk',row:0,seq:[[0,0],[1,.3],[2,.8],[3,.93],[4,1.25],[5,1.6]]}},
       {id:'spit',kind:'proj',range:[60,340],cd:4.5,windup:.5,recover:.5,dmg:.85,mag:true,speed:195,pr:10,life:2.2,color:'#a8ff5a',from:[30,-24],anim:{set:'kingAtk',row:1,flip:true,seq:[[0,0],[1,.1],[2,.3],[3,.44],[5,.62]]}},
       {id:'beam',kind:'beam',range:[60,360],cd:9,windup:.9,track:.5,active:.35,recover:.6,dmg:1.5,mag:true,len:380,wd:22,major:true,color:'#7fd0ff',from:[4,-52],anim:{set:'kingAtk',row:2,flip:true,seq:[[0,0],[1,.2],[2,.5],[5,1.4]]}},
       {id:'spin',kind:'spin',range:[0,70],cd:7,windup:.45,active:1.6,tick:.4,recover:.6,dmg:.55,r:58,major:true,drift:.5,color:'#ffe27a',anim:{set:'kingAtk',row:3,loop:[2,3,.45,2.05],seq:[[0,0],[1,.15],[2,.45],[4,2.05],[5,2.4]]}}]},
-  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:MAX_BASE,hp:48,atk:1.5,exp:160,speed:[30,42],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
+  lavagolem:{el:'fire',name:'Lava Dragon Golem',lvl:MAX_BASE-1,hp:48,atk:1.5,exp:160,speed:[45,63],sight:0,reach:44,cd:9,h:122,respawn:[420,420],barks:['The mountain wakes.','Burn. All of you.','*a roar like splitting stone*'],
     sheet:'lavaboss',set:'lava',walkFps:6,body:40,keep:[0,74],
-    heal:{every:20,below:.70,channel:2.5,amount:.10,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
+    heal:{every:[10,15],below:.70,channel:2.5,amount:.01,name:'Molten Core Regeneration',color:'#ff9a3a',inward:true},
     summon:{first:6,cd:24,name:'Call of the Molten Brood',spots:{babygolem:[-44,16],babyimp:[5,22],babydrake:[50,16]}},
     acts:[
       {id:'cleave',kind:'cone',range:[0,100],cd:3,windup:.6,recover:.6,dmg:1.3,len:122,arc:112,color:'#ff8a2a',slash:true,anim:{set:'lavaAtk',row:0,flip:true,seq:[[0,0],[1,.1],[2,.36],[3,.6],[4,.8],[5,1]]}},
       {id:'slam',kind:'slam',self:true,range:[0,135],cd:8,windup:1,recover:.8,dmg:1.9,r:138,major:true,shake:true,color:'#ff6a1a',anim:{set:'lavaAtk',row:1,seq:[[0,0],[1,.3],[2,.62],[3,1],[4,1.14],[5,1.5]]}},
       {id:'breath',kind:'cone',range:[60,235],cd:10,windup:.9,active:1.5,tick:.3,recover:.7,dmg:.5,mag:true,len:240,arc:44,major:true,flame:true,color:'#ff7a1a',anim:{set:'lavaAtk',row:2,flip:true,seq:[[0,0],[1,.3],[2,.9],[5,2.45]]}},
       {id:'summon',kind:'summon',special:true,windup:1.5,recover:.6,anim:{set:'lavaAtk',row:3,hold:4,seq:[[0,0],[1,.3],[2,.62],[3,.95],[4,1.25],[0,1.5]]}}]},
-  babyimp:{el:'fire',name:'Baby Ember Imp',lvl:34,hp:.9,atk:.7,exp:.5,speed:[60,88],sight:0,reach:20,cd:9,h:40,respawn:[1,1],barks:['Hee hee! Burn!'],
+  babyimp:{el:'fire',name:'Baby Ember Imp',lvl:MAX_BASE-1,hp:.9,atk:.7,exp:.5,speed:[90,132],sight:0,reach:20,cd:9,h:40,respawn:[1,1],barks:['Hee hee! Burn!'],
     sheet:'lavaboss',set:'imp',body:11,keep:[115,195],
     acts:[{id:'fireball',kind:'proj',range:[50,270],cd:2.5,windup:.45,recover:.35,dmg:.8,mag:true,speed:205,pr:8,life:1.9,color:'#ff9a3a',from:[8,-22],lunge:-5}]},
-  babydrake:{el:'fire',name:'Baby Lava Drake',lvl:34,hp:1.8,atk:.9,exp:.7,speed:[44,68],sight:0,reach:24,cd:9,h:40,respawn:[1,1],barks:['*snap snap*'],
+  babydrake:{el:'fire',name:'Baby Lava Drake',lvl:MAX_BASE-1,hp:1.8,atk:.9,exp:.7,speed:[66,102],sight:0,reach:24,cd:9,h:40,respawn:[1,1],barks:['*snap snap*'],
     sheet:'lavaboss',set:'drake',body:15,keep:[0,26],
     acts:[{id:'bite',kind:'cone',range:[0,36],cd:1.8,windup:.35,recover:.35,dmg:.9,len:42,arc:84,lunge:10,quiet:true},
       {id:'burst',kind:'cone',range:[24,84],cd:7,windup:.6,recover:.5,dmg:1.1,mag:true,len:90,arc:52,flame:true,color:'#ff7a2a'}]},
-  babygolem:{el:'earth',name:'Baby Obsidian Golem',lvl:34,hp:3.4,atk:1.1,exp:1,speed:[24,38],sight:0,reach:26,cd:9,h:44,respawn:[1,1],barks:['*grinding stone*'],
+  babygolem:{el:'earth',name:'Baby Obsidian Golem',lvl:MAX_BASE-1,hp:3.4,atk:1.1,exp:1,speed:[36,57],sight:0,reach:26,cd:9,h:44,respawn:[1,1],barks:['*grinding stone*'],
     sheet:'lavaboss',set:'obsidian',body:17,keep:[0,28],
     acts:[{id:'punch',kind:'cone',range:[0,38],cd:2.6,windup:.7,recover:.5,dmg:1.3,len:46,arc:74,lunge:11},
       {id:'stomp',kind:'slam',self:true,range:[0,58],cd:8,windup:.9,recover:.6,dmg:1.2,r:60,color:'#ffb060'}]}});
@@ -3209,14 +3218,15 @@ const TownScreen={
   attackPower(){if(this.magicLine()){const [a,b]=this.matk();return Math.round((a+b)/2);}return this.atkPower();},
   hitRate(){const S=this.st(),L=this.ch.baseLevel||1;return 175+L+S.DEX+Math.floor(S.LUK/3)+(this.mods().hit||0);},
   flee(){const S=this.st(),L=this.ch.baseLevel||1;return 100+L+S.AGI+Math.floor(S.LUK/5)+(this.mods().flee||0);},
-  critRate(){return this.st().LUK*.3+1+CRIT_BONUS+(this.mods().crit||0);},
+  critRate(){return this.st().LUK*.3+1+(this.ch.job.classId==='recruit'?0:CRIT_BONUS)+(this.mods().crit||0);},
   critMul(){return 1.4+(this.mods().critDmg||0);},
   mobFlee(m){return 100+m.lvl+Math.floor(m.lvl*.35);},
   mobHit(m,now){return (175+m.lvl+Math.floor(m.lvl*.5))*(now<(m.blindUntil||0)?.7:1);},
   defence(){const S=this.st(),L=this.ch.baseLevel||1;return Math.max(0,Math.floor(S.VIT*.5)+this.gear().def+Math.floor(L*.3)+(this.mods().def||0));},
   mdef(){return Math.max(0,Math.floor(this.st().VIT*.2)+(this.mods().mdef||0));},
   maxHp(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
-    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*CHAR_HP_X;},
+    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX();},
+  hpX(){return this.ch&&this.ch.job.classId==='recruit'?1:CHAR_HP_X;},     // Recruits keep their original HP
   maxRes(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
     return Math.floor((40+(L-1)*3+t*20)*(SP_MOD[this.line()]||1)*(1+S.INT/100)*(1+(M.spPct||0)));},
   line(){return lineOf(this.ch.job.classId);},
@@ -3230,7 +3240,7 @@ const TownScreen={
   skillRange(s,r){if(s.dash) return s.range;if(s.range) return s.range+(this.mods().range||0)*(this.reach()>40?1:0);
     const far=s.mag||s.shot||(s.k==='aoe'||s.k==='zone')&&s.at==='target';return far?Math.max(this.reach(),140):this.reach();},
   healAmount(s,r){const H=s.heal,c=this.ch,S=this.st(),M=this.mods();
-    const n=H.pct?this.maxHp()*SV(H.pct,r):(Math.floor(((c.baseLevel||1)+S.INT)/8)+1)*(4+8*r)*(H.ro||1)*CHAR_HP_X;return Math.max(1,Math.round(n*(1+(M.healPct||0))));},
+    const n=H.pct?this.maxHp()*SV(H.pct,r):(Math.floor(((c.baseLevel||1)+S.INT)/8)+1)*(4+8*r)*(H.ro||1)*this.hpX();return Math.max(1,Math.round(n*(1+(M.healPct||0))));},
   /* ======================= skills: ranks, buffs, casting ======================= */
   rank(id){return (this.ch.skills||{})[id]|0;},
   addBuff(s,r,now){this.buffs=this.buffs||{};const B=s.buff,dur=SV(B.dur,r);this.buffs[s.id]={s,r,until:now+dur*1000};
@@ -3365,7 +3375,7 @@ const TownScreen={
     if(M.dmgPct&&!fixed) d*=1+M.dmgPct;
     if(m.lex&&!fixed){d*=2;m.lex=false;}
     if(o.veilBonus&&now<this.veilUntil) d*=1+o.veilBonus;
-    if(m.def.acts&&(m.boss||m.def.hpOfBoss)&&!o.noBoss) d*=BOSS_TUNE.vsBoss;      // boss health is 201x, and so is every hit on it
+    if(m.def.acts&&!o.noBoss) d*=BOSS_TUNE.vsBoss;      // bosses and their summons have huge health: every hit on them counts 201x
     const dmg=Math.max(1,Math.round(d));m.hp-=dmg;m.hitT=now;
     const sty=crit?'crit':o.num||(o.src==='basic'?'normal':EL_NUM[el]||'skill');
     this.numFx(m.x+(Math.random()-.5)*12,m.y-m.def.h-4,dmg,sty,now,{weak:em>1,resist:em<1});if(o.src!=='dot') this.impact(m,sty,now);
@@ -3524,7 +3534,7 @@ const TownScreen={
       <label><input type="checkbox" id="aw-defend" ${a.defend!==false?'checked':''}> Fight back first: anything already hitting me</label>
       <div class="aw-row">Skip monsters more than <select id="aw-above" aria-label="Level limit">${opt(0,'any number of',a.maxAbove)}${[3,5,10,15].map(n=>opt(n,n,a.maxAbove)).join('')}</select> levels above me (Base Lv ${L})</div>
       <div class="aw-hint" style="margin:8px 0 4px">Hunt these monsters (on this map):</div>
-      <div class="aw-grid">${kinds.length?kinds.map(k=>`<label><input type="checkbox" data-kind="${k}" ${(a.skip||[]).includes(k)?'':'checked'}> ${esc(MOB_DEFS[k].name)} <small style="color:var(--muted)">Lv ${MOB_DEFS[k].lvl}</small></label>`).join(''):'<span class="aw-hint">No monsters on this map.</span>'}</div></div>
+      <div class="aw-grid">${kinds.length?kinds.map(k=>`<label><input type="checkbox" data-kind="${k}" ${(a.skip||[]).includes(k)?'':'checked'}> ${esc(MOB_DEFS[k].name)} ${MOB_DEFS[k].acts?'':`<small style="color:var(--muted)">Lv ${MOB_DEFS[k].lvl}</small>`}</label>`).join(''):'<span class="aw-hint">No monsters on this map.</span>'}</div></div>
     <div class="aw-sec"><h4>Auto-loot</h4><div class="aw-row" style="margin-top:0"><label><input type="checkbox" id="ac-pick2" ${a.pick?'checked':''}> Pick up loot while AUTO is on</label></div>
       <div class="aw-row">Order <select id="aw-order" aria-label="Loot order">${opt('each','Attack, then loot: pick up after every kill',a.lootOrder||'each')}${opt('clear','Clear first: loot once the monsters in range are dead',a.lootOrder||'each')}</select></div>
       <div class="aw-grid"><label><input type="checkbox" data-loot="gold" ${l.gold!==false?'checked':''}> Gold</label><label><input type="checkbox" data-loot="pots" ${l.pots!==false?'checked':''}> Potions</label>
@@ -4025,9 +4035,9 @@ const TownScreen={
   spawnBoss(){const C=ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
     const mk=(kind,x,y)=>{const D=MOB_DEFS[kind],st=mobStats(kind,D.lvl),m={kind,def:D,zone:{kind,x,y,r:8,n:1},...st,maxHp:st.hp,x,y,dir:0,state:'idle',until:0,walkT:0,moving:false,hostile:false,nextHit:0,
       hitT:-1e9,deadT:-1e9,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*6,bornT:-1e9,barkAt:0,bubble:null,cds:{},act:null,actSeq:0,i:this.mobs.length};this.mobs.push(m);return m;};
-    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*BOSS_TUNE.hp);b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));const slots=[];
+    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));const slots=[];
     for(const [kind,n] of C.summons) for(let i=0;i<n;i++){const s=mk(kind,C.at[0],C.at[1]);s.minion=true;s.state='dead';s.respawnAt=1e15;
-      if(s.def.hpOfBoss) s.maxHp=s.hp=Math.round(b.maxHp*s.def.hpOfBoss);slots.push(s);}
+      s.maxHp=s.hp=s.def.hpOfBoss?Math.round(b.maxHp*s.def.hpOfBoss):Math.round(s.maxHp*BOSS_TUNE.minion.hp);s.atk=s.atk.map(v=>Math.round(v*BOSS_TUNE.minion.dmg));slots.push(s);}
     this.enc={cfg:C,boss:b,slots,cx:C.at[0],cy:C.at[1],t0:0,seen:0,nextHeal:0,nextSummon:0,majorUntil:0,minorNext:0,resets:0,resetsSeen:0,resetT:-1e9,targets:[],inside:false};
     this.enc.inside=this.arenaIn(this.p.x,this.p.y,0);
     const ck=BossClock.get(C.boss),left=ck&&ck.at?Math.min(ck.at-Date.now(),b.def.respawn[1]*1000):0;      // still down from an earlier kill
@@ -4054,7 +4064,7 @@ const TownScreen={
       if(m.tgt&&!E.targets.some(P=>P.key===m.tgt)) m.tgt=null;}
     if(b.state==='dead') return;
     if(!this.arenaIn(b.x,b.y,C.arena.tol)){this.bossReset(now,'left');return;}          // her ground point, not the sprite or the jump height
-    if(E.targets.length){E.seen=now;if(!E.t0){E.t0=now;E.nextSummon=now+(b.def.summon?b.def.summon.first:1e9)*1000;E.nextHeal=now+(b.def.heal?b.def.heal.every:1e9)*1000;b.hostile=true;
+    if(E.targets.length){E.seen=now;if(!E.t0){E.t0=now;E.nextSummon=now+(b.def.summon?b.def.summon.first:1e9)*1000;E.nextHeal=now+(b.def.heal?healWait(b.def.heal):1e12);b.hostile=true;
         const line=b.def.barks[Math.floor(Math.random()*b.def.barks.length)];b.bubble={text:line,t:now};if(E.inside) this.log('mob',b.def.name,line);}}
     else if(E.t0&&now-E.seen>C.idleReset*1000) this.bossReset(now,'idle');},
   /* back to the start: the same boss entity returns to its spawn at full health, summons and projectiles are removed,
@@ -4095,7 +4105,7 @@ const TownScreen={
   actorAI(m,dt,now){const E=this.enc,D=m.def;m.moving=false;if(!E) return;
     if(m.state==='dead'){if(m.boss&&now>=m.respawnAt) this.bossReset(now,'respawn');return;}
     if(now<(m.stunUntil||0)){m.frozen=m.frozen&&true;const A=m.act;         // a stun interrupts a channel or a wind-up; the cooldown is spent
-      if(A){const k=A.def.kind,t=(now-A.t0)/1000;if(k==='heal'){E.nextHeal=now+D.heal.every*1000;m.act=null;this.efx.push({k:'text',x:m.x,y:m.y-D.h-14,t0:now,dur:900,text:'Interrupted!',color:'#ffd27a'});}
+      if(A){const k=A.def.kind,t=(now-A.t0)/1000;if(k==='heal'){E.nextHeal=now+healWait(D.heal);m.act=null;this.efx.push({k:'text',x:m.x,y:m.y-D.h-14,t0:now,dur:900,text:'Interrupted!',color:'#ffd27a'});}
         else if(k==='summon'&&t<A.def.windup){E.nextSummon=now+D.summon.cd*1000;m.act=null;}else if(t<A.def.windup) m.act=null;}
       return;}
     m.frozen=false;const sp=D.speed[1]*dt*(now<(m.slowUntil||0)?.45:1),T=E.targets;
@@ -4111,7 +4121,7 @@ const TownScreen={
     m.hostile=true;const d=Math.hypot(P.x-m.x,(P.y-m.y)*1.3);
     if(now>=(m.nextAct||0)){
       if(m.boss&&D.heal&&now>=E.nextHeal){            // periodic check: only when it is due, and only below the threshold
-        if(m.hp<m.maxHp*D.heal.below){E.nextHeal=1e15;this.actStart(m,D.acts.find(a=>a.id==='heal'),now,m.x,m.y);return;}E.nextHeal=now+D.heal.every*1000;}
+        if(m.hp<m.maxHp*D.heal.below){E.nextHeal=1e15;this.actStart(m,D.acts.find(a=>a.id==='heal'),now,m.x,m.y);return;}E.nextHeal=now+healWait(D.heal);}
       if(m.boss&&D.summon&&now>=E.nextSummon){const kinds=this.summonable(E);
         if(kinds.length){const side=P.x>=m.x?-1:1,want=[m.x+side*60,m.y],ok=this.free(want[0],want[1])&&this.arenaIn(want[0],want[1],-14);E.nextSummon=1e15;
           this.actStart(m,D.acts.find(a=>a.id==='summon'),now,m.x+(ok?side:-side)*60,m.y,{kinds});m.dir=0;return;}
@@ -4151,7 +4161,7 @@ const TownScreen={
         E.nextSummon=now+D.summon.cd*1000;}
       for(const p of Object.values(spots)) this.efx.push({k:'wave',x:p[0],y:p[1],t0:now,dur:420,r:20,color:E.cfg.arena.color});if(vol>.05) AudioFX.smp('buff_pulse',vol*.7);});
     else if(a.kind==='heal') fire(1,a.windup,()=>{const amt=Math.max(0,Math.min(Math.round(m.maxHp*D.heal.amount),Math.round(m.maxHp-m.hp)));       // only what was really restored, never past the maximum
-      if(host){m.hp=Math.min(m.maxHp,m.hp+amt);E.nextHeal=now+D.heal.every*1000;}
+      if(host){m.hp=Math.min(m.maxHp,m.hp+amt);E.nextHeal=now+healWait(D.heal);}
       if(amt>0&&vis){this.fx.push({x:m.x,y:m.y-D.h-8,dmg:amt,sty:'heal',sign:'+',t0:now});this.efx.push({k:'wave',x:m.x,y:m.y,t0:now,dur:600,r:D.body*2.4,color:D.heal.color});if(vol>.05) AudioFX.smp('holy_flourish',vol*.8);}});
     if(!host&&t>a.total+1.2) m.act=null;},
   /* host -> others: the extra fields of a boss / summon entry in the monster snapshot */
@@ -4637,7 +4647,7 @@ const TownScreen={
     if(crit) this.nextCrit=false;
     let d;if(fixed) d=o.fixed;else if(o.mag){const [a,b]=this.matk();d=(a+Math.random()*(b-a))*(o.mult??1);}else d=this.atkPower()*(.9+Math.random()*.2)*(o.mult??1);
     if(crit) d*=this.critMul();d*=PK_SCALE;{const df=Array.isArray(O.P.df)?O.P.df:[0,0];d=o.mag?Math.max(d*.25,d-Math.max(0,+df[1]||0)*.6):Math.max(d*.25,d-Math.max(0,+df[0]||0)*.5);}
-    d*=CHAR_HP_X;      // characters have 301x HP, so hits between players count 301x: a duel lasts as long as before
+    if(O.j!=='recruit') d*=CHAR_HP_X;      // other jobs have 301x HP, so hits on them count 301x: a duel lasts as long as before (Recruits are unchanged)
     const dmg=Math.max(1,Math.round(d)),sty=crit?'crit':o.num||(o.src==='basic'?'normal':'skill');
     this.numFx(O.x+(Math.random()-.5)*12,O.y-54,dmg,sty,now);if(o.src!=='dot'){this.impact(m,sty,now);AudioFX.sfx(crit?'crit':'hit');}O.hurtT=now;
     this.pkMine[O.P.id]=now+PK_GRACE;this.partySend('pv',O.P.id,dmg,(crit?1:0)|(o.mag?2:0));return {dmg,crit};},
@@ -4965,7 +4975,7 @@ const TownScreen={
     if(full||!el.firstChild){const gk=this.destKey(this.autoGo);
       let h=`<div class="qh"><div class="t">World Bosses</div><button class="ib" id="bh-min" aria-controls="bh-body"></button></div><div class="qbody" id="bh-body">`;
       for(const [map,C] of Object.entries(ENC)){const D=MOB_DEFS[C.boss],d={map,boss:C.boss},on=gk===this.destKey(d);
-        h+=`<div class="q go${on?' on':''}" title="${esc(`${D.name} returns ${Math.round(D.respawn[0]/60)} min after it is defeated. Its arena is in the middle of ${MAP_NAMES[map]}.`)}"><button class="qgo" data-bk="${map}" aria-label="Auto-move to ${esc(D.name)}">${on?'Stop':'Go'}</button><b>${esc(D.name)} · Lv ${D.lvl}</b><span class="obj">${esc(MAP_NAMES[map])} · Map ${MAP_NUM[map]} · centre</span><span class="obj bst" data-bs="${C.boss}"></span></div>`;}
+        h+=`<div class="q go${on?' on':''}" title="${esc(`${D.name} returns ${Math.round(D.respawn[0]/60)} min after it is defeated. Its arena is in the middle of ${MAP_NAMES[map]}.`)}"><button class="qgo" data-bk="${map}" aria-label="Auto-move to ${esc(D.name)}">${on?'Stop':'Go'}</button><b>${esc(D.name)}</b><span class="obj">${esc(MAP_NAMES[map])} · Map ${MAP_NUM[map]} · centre</span><span class="obj bst" data-bs="${C.boss}"></span></div>`;}
       el.innerHTML=h+'</div>';
       $('#bh-min').onclick=e=>{e.stopPropagation();SETTINGS.bossMin=!(SETTINGS.bossMin==null?Device.type==='phone':!!SETTINGS.bossMin);saveSettings();this.bossHud(true);};
       $$('#hud-bosses .qgo').forEach(b=>b.onclick=e=>{e.stopPropagation();AudioFX.sfx('ui');this.goQuest({map:b.dataset.bk,boss:ENC[b.dataset.bk].boss});});}
@@ -4981,7 +4991,7 @@ const TownScreen={
     return L;},
   locSources(key){const rows=[],L=this.ch.baseLevel||1,own=WEAPON_OF[this.line()],town=MAP_NAMES.town;let note='';
     const npc=(id,what)=>rows.push({t:`${TOWN_NPCS[id].name} · ${TOWN_NPCS[id].shop}`,s:`${town} · ${what}`,d:{map:'town',npc:id}});
-    const boss=(k,what)=>{const map=Object.keys(ENC).find(m=>ENC[m].boss===k);rows.push({t:`${MOB_DEFS[k].name} · Lv ${MOB_DEFS[k].lvl} · boss`,s:`${MAP_NAMES[map]} · ${what}`,d:{map,boss:k}});};
+    const boss=(k,what)=>{const map=Object.keys(ENC).find(m=>ENC[m].boss===k);rows.push({t:`${MOB_DEFS[k].name} · boss`,s:`${MAP_NAMES[map]} · ${what}`,d:{map,boss:k}});};
     const hunt=(kind,what)=>{const out=[];for(const [map,a,b] of MOB_HOME[kind]||[]) out.push({t:`${MOB_DEFS[kind].name} · Lv ${a===b?a:a+'–'+b}`,s:`${MAP_NAMES[map]} · ${what}`,d:{map,kind},lv:(a+b)/2});return out;};
     if(CONSUMABLES[key]){const d=CONSUMABLES[key];note=d.desc;npc('alchemist',`${d.price} gold${d.lvl?` · Base Lv ${d.lvl}`:''}`);
       if(key==='potion'){rows.push({t:'Any monster',s:'10% chance per kill'});for(const k of BOSS_KINDS) boss(k,`${BOSS_LOOT[k].potions} per kill`);}}
@@ -5486,7 +5496,7 @@ const TownScreen={
       if(m.bubble&&now-m.bubble.t<2600){this.bubble(ctx,px,py-16,m.bubble.text,Math.min(1,(2600-(now-m.bubble.t))/400),true);}
       if(!show) continue;
       ctx.font='800 11px Nunito,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='rgba(8,12,28,.85)';ctx.fillStyle=m.hostile?'#ffb0b0':'#f2f2f2';
-      const t=`${D.name} · Lv ${m.lvl}`;ctx.strokeText(t,px,py-6);ctx.fillText(t,px,py-6);
+      const t=D.acts?D.name:`${D.name} · Lv ${m.lvl}`;ctx.strokeText(t,px,py-6);ctx.fillText(t,px,py-6);
       this.barNum(ctx,px,py-3,m.boss?120:m.minion?70:56,m.boss?11:9,Math.max(0,m.hp/m.maxHp),null,`${fmtN(Math.max(0,m.hp))} / ${fmtN(m.maxHp)}`);}
     this.drawEncBars(ctx,S);
     if(this.others) for(const o of this.others.values()){if(this.hid(o.x,o.y)) continue;const [px,py]=S(o.x,o.y-60),mate=o.P&&this.inParty(o.P.id);
@@ -5706,7 +5716,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13d';
+const BUILD='2026-11-13e';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
