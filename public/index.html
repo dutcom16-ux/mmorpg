@@ -1773,6 +1773,17 @@ class Avatar{
     else{this.frame=0;if(this.loop&&now>=this.nextAt) this.attack(now);}
   }
 }
+/* equipped wings on a menu avatar (character select): fixed to the neck of the frame shown, in the avatar's facing,
+   at the avatar's scale. front=false: the layer behind the body, true: the layer over it. */
+function drawAvatarWings(ctx,composed,av,x,y,s,now,tier,front){
+  if(tier<0||!(tier>=GOD_WING?Sprites.godwings:Sprites.wings)) return;
+  const god=tier>=GOD_WING,over=WING_FRONT_DIRS.includes(av.dir);if(!god&&front!==over) return;
+  const m=composed.meta,A=m.anim||{idle:[0]},fr=av.anim==='attack'&&A.attack?A.attack[av.frame]:(A.idle||[0])[0],g=composed.g||'m';
+  const hp=m.headPlace&&m.headPlace[g]&&m.headPlace[g][av.dir]&&m.headPlace[g][av.dir][fr];if(!hp) return;
+  const ds=m.displayScale||1,ph=REDUCED?0:Math.sin(now/560),bob=av.anim==='idle'?ph*1.1:0,br=av.anim==='idle'?1+ph*.007:1,hsc=(m.headScaleG&&m.headScaleG[g])||m.headScale||1;
+  const k=s*ds,nx=x+(hp[0]+60*hsc-m.anchor[0])*k,ny=y+(hp[1]+(HEAD_CHIN_Y+WING_NECK)*hsc-m.anchor[1]+bob)*k*br;
+  const fh=composed.fh||(composed.fh=TownScreen.figureHeight(composed));
+  TownScreen.drawWings(ctx,nx,ny,av.dir,tier,false,now,front,k*fh/54);}
 function drawAvatar(ctx,composed,av,x,y,s,now){
   const meta=composed.meta,[CW,CH]=meta.cell,[ax,ay]=meta.anchor;
   const ph=REDUCED?0:Math.sin(now/560);
@@ -2071,7 +2082,8 @@ const SelectScreen={
     const s=this.stage.scaleFor(.52),cx=w/2,cy=h*.8;
     drawPedestal(ctx,cx,cy,Math.min(w*.36,58*s),now,c?1:.55);
     if(!c) return;
-    this.avatar.update(now);drawAvatar(ctx,Sprites.compose(this.outfit(),c.appearance),this.avatar,cx,cy,s,now);
+    this.avatar.update(now);const comp=Sprites.compose(this.outfit(),c.appearance),wk=wingKindOf(c.equip&&c.equip.wings);   // equipped wings show here too
+    drawAvatarWings(ctx,comp,this.avatar,cx,cy,s,now,wk,false);drawAvatar(ctx,comp,this.avatar,cx,cy,s,now);drawAvatarWings(ctx,comp,this.avatar,cx,cy,s,now,wk,true);
     if(this.outfit()==='skywarden') this.falcon.draw(ctx,this.avatar,cx,cy,s,now);
     if(GaleCard.active) GaleCard.draw(now);
   }
@@ -2179,6 +2191,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13v',date:'2026-11-13',title:'Wings on the character screen, axes for the Juggernaut',
+    new:['Your equipped wings show on the character selection screen, in whichever way you turn your character'],
+    balance:['Juggernaut: Spiral Pierce is now Cyclone Axe (spin your great axe into the target: five rending chops) and Brandish Spear is now Great Cleave (one huge axe sweep through everything in front of you), with new axe icons. They work exactly as before, and your learned ranks and skill bar stay as they are']},
   {v:'2026-11-13u',date:'2026-11-13',title:'Recommended stats',
     new:['Every job has a recommended stat build in the Character window (C): the stats it favours are marked, and Use recommended spends your points the way that build grows (STR for a Vanguard, DEX for an Archer, INT for casters, AGI and LUK for a Trickster, and so on)','Tick Auto on level up and new stat points go the recommended way by themselves, and after a job advancement they follow the new job\'s build']},
   {v:'2026-11-13t',date:'2026-11-13',title:'Godwings',
@@ -2495,8 +2510,8 @@ const SKILLDB={
     SKP({id:'improveDodge',name:'Improve Dodge',req:5,pas:{flee:[3,3]},color:'#c7b6ff',desc:'Never where the blow lands.'})],
   juggernaut:[
     SKA({id:'bowlingBash',name:'Bowling Bash',k:'strike',start:1,hits:2,mult:[1,.15],splash:60,knock:30,cast:.6,cost:[13,1],cd:3,fx:'earth',fxs:.5,color:'#ffb35c',desc:'Two crushing blows that hit everything around the target and bowl it over.'}),
-    SKA({id:'spiralPierce',name:'Spiral Pierce',k:'strike',req:5,max:5,hits:5,mult:[.5,.08],cast:.6,cost:[18,3],cd:5,fx:'wind',fxs:.4,color:'#dfe8ff',desc:'Drive your weapon home in a spinning thrust: five hits.'}),
-    SKA({id:'brandishSpear',name:'Brandish Spear',k:'aoe',at:'front',req:10,mult:[1.2,.2],r:[60,3],knock:20,cast:.7,cost:12,cd:5,fx:'earth',color:'#ffd36b',desc:'A wide sweep that hits everything in front of you.'}),
+    SKA({id:'spiralPierce',name:'Cyclone Axe',k:'strike',req:5,max:5,hits:5,mult:[.5,.08],cast:.6,cost:[18,3],cd:5,fx:'wind',fxs:.4,color:'#dfe8ff',desc:'Spin your great axe into the target: five rending chops.'}),
+    SKA({id:'brandishSpear',name:'Great Cleave',k:'aoe',at:'front',req:10,mult:[1.2,.2],r:[60,3],knock:20,cast:.7,cost:12,cd:5,fx:'earth',color:'#ffd36b',desc:'One huge sweep of your axe through everything in front of you.'}),
     SKA({id:'twoHandQuicken',name:'Two-Hand Quicken',k:'buff',buff:{dur:[30,30],m:{aspd:[.3,0],crit:[2,1],hit:[2,2]}},cost:[14,4],cd:60,fx:'fire',fxs:.45,color:'#ff8a5a',desc:'Your weapon becomes a blur.'}),
     SKA({id:'earthbreaker',name:'Earthbreaker',k:'aoe',at:'self',req:20,el:'earth',mult:[1.5,.25],r:[80,3],st:{stun:[[25,5],2]},cast:1,cost:[30,3],cd:12,fx:'earth',fxs:1.1,color:'#ffcf6a',desc:'Split the ground open around you.'}),
     SKP({id:'twoHandMastery',name:'Two-Hand Mastery',pas:{atk:[4,4]},color:'#ffd36b',desc:'The great weapon feels light.'}),
@@ -5840,7 +5855,7 @@ const TownScreen={
     return o.n;
   },
   look(){const E=this.ch.equip||{},w=E.weapon&&this.canUse(E.weapon,true)?E.weapon:null,b=E.body,g=E.wings;
-    return [w?w.rar:-1,w?(w.enh||0):0,b?b.rar:-1,g?(g.wing??GEAR_BASES.wings.names.indexOf(g.name.replace(/^(Fine|Superior|Heroic|Mythic) /,''))):-1];},
+    return [w?w.rar:-1,w?(w.enh||0):0,b?b.rar:-1,wingKindOf(g)];},
   drawPlayer(ctx,now){this.drawHero(ctx,{comp:this.comp,pk:this.pk,x:this.p.x,y:this.p.y,dir:this.dir,moving:this.moving,walkT:this.walkT,atkT:this.atk?this.atk.t0:-1e9,atkDur:this.atk&&this.atk.dur,skill:!!(this.atk&&this.atk.skill),
       dead:!!this.dead,veil:now<this.veilUntil,hurtT:this.hurtT,j:this.ch.job.classId,falcon:this.falcon,lv:this.ch.baseLevel,eq:this.look()},this.pocc||(this.pocc={}),now);},
   drawRemote(ctx,o,now){if(!o.comp) return;if(o.j==='skywarden'&&!o.falcon) o.falcon=new Falcon();
@@ -6223,6 +6238,8 @@ const RECIPES=[
   ...['body','head','hands','feet'].map(b=>({id:'ha'+b,group:'Armour',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear(b,45,3)})),
   ...['body','head','hands','feet'].map(b=>({id:'ma'+b,group:'Armour',lvl:70,need:{dscale:12,stone:10,ingot:28,dust:20},gold:9000,make:()=>craftGear(b,75,4)}))];
 function craftGear(base,lvl,rar){const g=makeGear(base,lvl,rar);g.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);g.crafted=true;return g;}
+/* the wing kind (0-6) of a wings item: g.wing, or from its name for old saves; -1 for none */
+const wingKindOf=g=>g?(g.wing??GEAR_BASES.wings.names.indexOf(String(g.name||'').replace(/^(Fine|Superior|Heroic|Mythic) /,''))):-1;
 function craftWings(tier,lvl,rar){const g=craftGear('wings',lvl,rar);g.name=GEAR_BASES.wings.names[tier];g.wing=tier;
   if(tier>=GOD_WING){g.def=Math.round(g.def*1.6);g.hp=Math.round(g.hp*1.6);for(const k of ['STR','AGI','VIT','INT','DEX','LUK']) g.bonus[k]=(g.bonus[k]||0)+6;}   // god tier: tougher, +6 to every stat
   return g;}
@@ -6270,7 +6287,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13u';
+const BUILD='2026-11-13v';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
