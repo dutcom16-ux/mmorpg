@@ -2138,6 +2138,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-13o',date:'2026-11-13',title:'Cracks in the bosses',
+    balance:['Boss magic resistance is halved again: the Slime Queen 11.25%, the Lava Dragon Golem 5.6%','Critical hits have a 10% chance to stun a boss for 1 second (a boss shrugs off stuns for 9 seconds after one lands). A stun during its heal cancels the heal']},
   {v:'2026-11-13n',date:'2026-11-13',title:'Duels, faster blades, quicker spells',
     new:['Duels: stand next to another player, tap them and choose Duel (or /duel name). If they accept, a 5-second countdown starts, then you fight inside a ring, anywhere, even in Oakhaven. The first who would fall loses at 1 HP (nobody dies), stepping out of the ring for 3 seconds loses, and after 3 minutes it is a draw. Your duel record shows in the PK window'],
     balance:['Everyone attacks 15% faster','Magic attack skills come back 10% sooner (spell users swing slowly)','PvP: defence now takes a share off every hit (the more defence, the bigger the share, up to 60%) instead of a flat amount; no single hit takes more than 20% of someone\'s HP; Channelers, Hierophants and Arbiters deal 60% more damage to players']},
@@ -2877,7 +2879,9 @@ const BOSS_TUNE={
   vsBoss:201,                            // a player's hit on a boss or one of its summons counts this many times
   minion:{hp:2010,dmg:1352.25,deathHeal:.25},   // summons (Lv 99): x health (the Slime King instead has 30% of the Queen's), x damage;
                                          // deathHeal: a summon killed by players gives the boss this share of its maximum health
-  def:{slimequeen:.5,lavagolem:.25}},    // x the boss's armour and magic resistance
+  def:{slimequeen:.5,lavagolem:.25},     // x the boss's armour
+  mdef:{slimequeen:.25,lavagolem:.125},  // x the boss's magic resistance
+  critStun:{chance:.1,s:1}},            // a critical hit has this chance to stun a boss for s seconds (bosses then shrug off stuns for 9 s)
   CHAR_HP_X=301,CRIT_BONUS=25;           // every job except Recruit: x HP, + critical chance
 const BOSS_KINDS=Object.values(ENC).map(C=>C.boss);
 /* when each boss next appears, as far as this game knows: seen on the boss's own map, or heard from another player on
@@ -3439,6 +3443,8 @@ const TownScreen={
     for(const [k,[p,dur]] of Object.entries(stv)){if(!(Math.random()*100<p)) continue;
       if(k==='stun') st=Math.max(st,dur*10);else if(k==='freeze') fz=Math.max(fz,dur*10);else if(k==='slow') sl=Math.max(sl,dur*10);
       else if(k==='blind') bl=dur*10;else if(k==='brk') bk=dur*10;else if(k==='poison'||k==='burn'||k==='bleed') this.addDot(m,k,now,dur);}
+    if(crit&&m.boss&&!(now<(m.stunImm||0))&&!(now<(m.stunUntil||0))&&Math.random()<BOSS_TUNE.critStun.chance){st=Math.max(st,BOSS_TUNE.critStun.s*10);      // a critical hit can stun a boss
+      this.fx.push({x:m.x,y:m.y-m.def.h-24,text:'Stunned!',color:'#ffe58a',t0:now,big:true});}
     st=Math.min(60,Math.round(st));fz=Math.min(60,Math.round(fz));sl=Math.min(90,Math.round(sl));
     this.mobStatus(m,now,st,fz,sl);if(bl) m.blindUntil=now+bl*100;if(bk){m.brkUntil=now+bk*100;m.brkPct=o.brk||.15;}
     if(sty==='poison') m.poisonUntil=Math.max(m.poisonUntil||0,now+1200);else if(o.src==='dot'&&sty==='fire') m.burnUntil=Math.max(m.burnUntil||0,now+1200);
@@ -4091,7 +4097,7 @@ const TownScreen={
   spawnBoss(){const C=ENC[this.mapId];this.enc=null;this.bshots=[];this.efx=[];if(!C||!Sprites[MOB_DEFS[C.boss].sheet]) return;
     const mk=(kind,x,y)=>{const D=MOB_DEFS[kind],st=mobStats(kind,D.lvl),m={kind,def:D,zone:{kind,x,y,r:8,n:1},...st,maxHp:st.hp,x,y,dir:0,state:'idle',until:0,walkT:0,moving:false,hostile:false,nextHit:0,
       hitT:-1e9,deadT:-1e9,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*6,bornT:-1e9,barkAt:0,bubble:null,cds:{},act:null,actSeq:0,i:this.mobs.length};this.mobs.push(m);return m;};
-    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));{const df=BOSS_TUNE.def[C.boss]??1;b.dp*=df;b.mp*=df;}const slots=[];
+    const b=mk(C.boss,C.at[0],C.at[1]);b.boss=true;b.maxHp=b.hp=Math.round(b.maxHp*(BOSS_TUNE.hp[C.boss]||1));b.atk=b.atk.map(v=>Math.round(v*BOSS_TUNE.dmg));{const df=BOSS_TUNE.def[C.boss]??1,mf=BOSS_TUNE.mdef[C.boss]??df;b.dp*=df;b.mp*=mf;}const slots=[];
     for(const [kind,n] of C.summons) for(let i=0;i<n;i++){const s=mk(kind,C.at[0],C.at[1]);s.minion=true;s.state='dead';s.respawnAt=1e15;
       s.maxHp=s.hp=s.def.hpOfBoss?Math.round(b.maxHp*s.def.hpOfBoss):Math.round(s.maxHp*BOSS_TUNE.minion.hp);s.atk=s.atk.map(v=>Math.round(v*BOSS_TUNE.minion.dmg));slots.push(s);}
     this.enc={cfg:C,boss:b,slots,cx:C.at[0],cy:C.at[1],t0:0,seen:0,nextHeal:0,nextSummon:0,majorUntil:0,minorNext:0,resets:0,resetsSeen:0,resetT:-1e9,targets:[],inside:false};
@@ -5980,7 +5986,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-13n';
+const BUILD='2026-11-13o';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
