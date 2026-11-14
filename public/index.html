@@ -2255,6 +2255,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14v',date:'2026-11-14',title:'Wing attack in percent',
+    balance:['The Legendary wings\' attack is a percentage now, like their DEF, MDEF and HP: Phoenix Wings +19% melee attack, Celestial Wings +19% magic attack, Godwings of Night +19% ranged attack (Divine: +24%). Wings you already own change too']},
   {v:'2026-11-14u',date:'2026-11-14',title:'Divine tier and wing Synthesis',
     new:['A new tier above Legendary: Divine, with red names. Only Synthesis makes it: Legendary to Divine succeeds 30% of the time, and a failure destroys the piece and the materials. Divine pieces have stronger numbers and five bonus lines; Divine Legendary accessories and wings get 25% more',
       'Wings in Synthesis: Feather Wings become Seraph Wings, Seraph Wings become Drake Wings, and Drake Wings become the Legendary wings you choose (Phoenix, Celestial, Godwings of Night or Godwings of Dawn, 50%), then Divine'],
@@ -3069,18 +3071,18 @@ const LEGEND_ACC={
   mountain:{slot:'neck',name:'Heart of the Mountain',color:'#8fe08a',desc:'Max HP, defence and magic defence',make:L=>({hp:Math.round((4+L*1.5)*2.3*1.4),def:accD(L,.7),mdef:accD(L,.9),bonus:{VIT:3+Math.floor(L/12)}})},
   fortune:{slot:'neck',name:"Fortune's Charm",color:'#ffe08a',desc:'LUK, AGI and critical hits',make:L=>({crit:Math.round(6+L/15),hp:Math.round((4+L*1.5)*2.3*.6),bonus:{LUK:5+Math.floor(L/8),AGI:2+Math.floor(L/20)}})},
   seraphtear:{slot:'neck',name:"Seraph's Tear",color:'#bfe8ff',desc:'Stronger heals, magic attack and magic defence',make:L=>({heal:Math.round(10+L/6),matk:accW(L,.25),mdef:accD(L,.9),bonus:{INT:2+Math.floor(L/15)}})}};
-const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','defPct','mdefPct','hpPct','crit','heal','psn','stn'];
+const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','crit','heal','psn','stn'];
 const DIVINE_X=1.25;   // a Divine Legendary accessory or wing: its numbers x1.25
 function legendAcc(g,id){const A=LEGEND_ACC[id];if(!A||GEAR_BASES[g.base].slot!==A.slot) return g;for(const k of GEAR_STATS) delete g[k];
   const div=g.rar>=5,x=div?DIVINE_X:1,o=A.make(g.lvl);for(const k of GEAR_STATS) if(o[k]) g[k]=Math.round(o[k]*x);
   g.bonus=Object.fromEntries(Object.entries(o.bonus||{}).map(([k,v])=>[k,Math.round(v*x)]));g.uniq=id;g.name=(div?'Divine ':'')+A.name;g.rar=div?5:4;return g;}
-/* the four Legendary wings each have their own role (build 14s) and fixed numbers (build 14u): Phoenix Wings 190 melee
-   attack, Celestial Wings 190 magic attack, Godwings of Night 190 ranged attack, Godwings of Dawn +20% max HP; their
-   DEF, MDEF and HP raise yours by a percentage; the attack wings add a little LUK. Divine wings: x1.25. Worked out
-   from the kind and the rarity, so wings made before this build change too */
+/* the four Legendary wings each have their own role (build 14s) and fixed numbers, all percentages (builds 14u, 14v):
+   Phoenix Wings +19% melee attack, Celestial Wings +19% magic attack, Godwings of Night +19% ranged attack, Godwings
+   of Dawn +20% max HP; each also raises DEF and MDEF by a percentage, and the attack wings add a little LUK. Divine
+   wings: x1.25. Worked out from the kind and the rarity, so wings made before this build change too */
 const WING_ROLE={3:'patk',4:'matk',5:'ratk',6:'hp'};
-const WING_STATS={3:{patk:190,defPct:8,mdefPct:8,bonus:{LUK:5}},4:{matk:190,mdefPct:12,defPct:6},5:{ratk:190,defPct:8,mdefPct:8,bonus:{LUK:5}},6:{hpPct:20,defPct:10,mdefPct:12}};
-const WING_DESC={3:'190 melee attack, +8% DEF and MDEF, +5 LUK',4:'190 magic attack, +12% MDEF, +6% DEF',5:'190 ranged attack, +8% DEF and MDEF, +5 LUK',6:'+20% max HP, +12% MDEF, +10% DEF'};
+const WING_STATS={3:{patkPct:19,defPct:8,mdefPct:8,bonus:{LUK:5}},4:{matkPct:19,mdefPct:12,defPct:6},5:{ratkPct:19,defPct:8,mdefPct:8,bonus:{LUK:5}},6:{hpPct:20,defPct:10,mdefPct:12}};
+const WING_DESC={3:'+19% melee attack, +8% DEF and MDEF, +5 LUK',4:'+19% magic attack, +12% MDEF, +6% DEF',5:'+19% ranged attack, +8% DEF and MDEF, +5 LUK',6:'+20% max HP, +12% MDEF, +10% DEF'};
 const WING_LVL=[22,42,57,77,97,102,102,102];   // each kind's item level
 function roleWing(g){const k=wingKindOf(g),W=WING_STATS[k];if(!W) return g;const x=g.rar>=5?DIVINE_X:1;
   for(const s of GEAR_STATS) delete g[s];g.wing=k;g.bonus={};
@@ -3099,13 +3101,13 @@ const SLOT_SVG=Object.fromEntries(Object.entries({weapon:'<path d="M5 19L18 6M14
   .map(([k,p])=>[k,`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`]));
 /* a piece's number for one stat, with its enhancement (+10% per level, at least +1; chances and % bonuses +1 per 2
    levels). A two-handed weapon's Attack counts TWO_HAND times */
-const PCT_STATS=new Set(['crit','heal','psn','stn','defPct','mdefPct','hpPct']);
+const PCT_STATS=new Set(['crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct']);
 const gearVal=(g,k)=>{let x=g[k]||0;if(!x) return 0;if(k==='atk'&&isTwoHand(g)) x=Math.round(x*TWO_HAND);
   if(PCT_STATS.has(k)) return x+Math.floor((g.enh||0)/2);return x+Math.max(g.enh||0,Math.round(x*.1*(g.enh||0)));};
-const STAT_LABEL={atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',defPct:'Defence',mdefPct:'Magic defence',hpPct:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
+const STAT_LABEL={atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',patkPct:'Melee attack',ratkPct:'Ranged attack',matkPct:'Magic attack',defPct:'Defence',mdefPct:'Magic defence',hpPct:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
 const statText=(k,v)=>PCT_STATS.has(k)?`+${v}%`:k==='hp'?`+${v}`:`${v}`;
 const gearScore=g=>Math.round(gearVal(g,'atk')*2+(gearVal(g,'patk')+gearVal(g,'ratk')+gearVal(g,'matk'))*2+gearVal(g,'def')*3+gearVal(g,'mdef')*2.5+gearVal(g,'hp')*.25
-  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+gearVal(g,'defPct')*12+gearVal(g,'mdefPct')*10+gearVal(g,'hpPct')*15+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
+  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+(gearVal(g,'patkPct')+gearVal(g,'ratkPct')+gearVal(g,'matkPct'))*15+gearVal(g,'defPct')*12+gearVal(g,'mdefPct')*10+gearVal(g,'hpPct')*15+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
 const gearReq=g=>g.slot==='wings'&&g.wing===GM_WING?1:Math.max(1,g.lvl-3);   // GameMaster wings: any level
 const gearPrice=g=>Math.round((4+g.lvl*1.5)*(1+g.rar*.9)*(1+(g.enh||0)*.15));
 const gearSmelt=g=>({ingot:1+Math.floor(g.lvl/12)+g.rar+Math.floor((g.enh||0)/2),dust:g.rar});
@@ -3718,9 +3720,9 @@ const TownScreen={
   st(){const S=this.ch.stats||{},G=this.gear(),M=this.mods(),o={};for(const k of STAT_KEYS) o[k]=(S[k]||1)+(G[k]||0)+Math.floor(M[k]||0);return o;},   // with gear and skills
   lvlAtk(){const c=this.ch;return 8+Math.floor((c.baseLevel||1)*1.5)+(JOBS[c.job.classId]?.tier||0)*6;},
   statusAtk(){const S=this.st(),rg=this.line()==='Ranged',a=rg?S.DEX:S.STR,b=rg?S.STR:S.DEX;return a+Math.floor(a/10)**2+Math.floor(b/5)+Math.floor(S.LUK/5);},
-  atkPower(){const M=this.mods(),G=this.gear(),ln=this.line(),x=ln==='Ranged'?G.ratk:this.magicLine()?0:G.patk;   // wings and rings with melee or ranged attack count for those jobs only
-    return Math.max(1,Math.round((this.statusAtk()+this.lvlAtk()+G.atk+x+(M.atk||0))*(1+(M.atkPct||0))));},
-  matk(){const S=this.st(),M=this.mods(),I=S.INT,ln=this.line(),G=this.gear(),b=this.lvlAtk()+Math.floor(S.LUK/5)+(M.matk||0)+G.matk+(ln==='Magic'||ln==='Support'?G.atk:0),k=1+(M.matkPct||0);
+  atkPower(){const M=this.mods(),G=this.gear(),ln=this.line(),x=ln==='Ranged'?G.ratk:this.magicLine()?0:G.patk,xp=ln==='Ranged'?G.ratkPct:this.magicLine()?0:G.patkPct;   // melee or ranged attack on gear counts for those jobs only
+    return Math.max(1,Math.round((this.statusAtk()+this.lvlAtk()+G.atk+x+(M.atk||0))*(1+(M.atkPct||0)+xp/100)));},
+  matk(){const S=this.st(),M=this.mods(),I=S.INT,ln=this.line(),G=this.gear(),b=this.lvlAtk()+Math.floor(S.LUK/5)+(M.matk||0)+G.matk+(ln==='Magic'||ln==='Support'?G.atk:0),k=1+(M.matkPct||0)+G.matkPct/100;
     return [Math.round((I+Math.floor(I/7)**2+b)*k),Math.round((I+Math.floor(I/5)**2+b)*k)];},
   magicLine(){const ln=this.line();return ln==='Magic'||ln==='Support';},
   atkStyle(){return attackStyleOf(this.ch.job.classId);},
@@ -5954,7 +5956,7 @@ const TownScreen={
     this.log('sys',null,`Trade · trading with ${T.n}`);AudioFX.sfx('quest');this.openWin('tradewin');this.tradeSend(now);},
   /* what is on the table, as small as it can be (one presence packet is at most 6000 characters) */
   tradeGear(){const T=this.trade,c=this.ch;return T.mine.w.map(u=>c.bag.find(g=>g.uid===u)||(T.esc&&T.esc.w.find(g=>g.uid===u))).filter(Boolean);},
-  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries(['patk','ratk','matk','mdef','crit','heal','psn','stn','defPct','mdefPct','hpPct','uniq'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
+  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries(['patk','ratk','matk','mdef','crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','uniq'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
   tradeSend(now){const T=this.trade;if(!T||T.state!=='open') return;this.partySend('tof',T.id,T.tid,T.rev,this.tradePack());T.sentAt=now||performance.now();},
   /* what the other player says is on the table: only well-formed, in-range things are accepted */
   tradeParse(str){let o;try{o=JSON.parse(String(str).slice(0,4000));}catch(e){return null;}if(!o||typeof o!=='object') return null;
@@ -5965,7 +5967,7 @@ const TownScreen={
       if(B.slot==='weapon') g.atk=clamp(x[5],1,9999);else{if(x[6]) g.def=clamp(x[6],0,5000);if(x[7]) g.hp=clamp(x[7],0,50000);}
       if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);
       if(x[8]&&typeof x[8]==='object') for(const k of STAT_KEYS) if(x[8][k]) g.bonus[k]=clamp(x[8][k],0,200);
-      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of ['crit','heal','psn','stn','defPct','mdefPct','hpPct']) if(x[10][k]) g[k]=clamp(x[10][k],0,100);
+      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of ['crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct']) if(x[10][k]) g[k]=clamp(x[10][k],0,100);
         const u=String(x[10].uniq||'');if(LEGEND_ACC[u]&&LEGEND_ACC[u].slot===B.slot){g.uniq=u;g.name=(g.rar>=5?'Divine ':'')+LEGEND_ACC[u].name;}}
       if(B.slot==='wings'){g.wing=clamp(x[9],0,GEAR_BASES.wings.names.length-1);if(g.wing===GM_WING) continue;}out.w.push(normGear(g));}
     if(out.s.length+out.w.length>TRADE.slots) return null;return out;},
@@ -7152,7 +7154,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14u';
+const BUILD='2026-11-14v';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
