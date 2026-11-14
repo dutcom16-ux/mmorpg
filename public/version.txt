@@ -1,1 +1,1 @@
-build: 2026-11-14v (Wing attack in percent)
+build: 2026-11-14w (Town Scroll)
