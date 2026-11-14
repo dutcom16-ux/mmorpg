@@ -476,6 +476,7 @@ svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,
 .eslot svg{width:26px;height:26px;opacity:.45;margin-bottom:8px}
 .eslot .gi{width:50px;height:50px}
 .shnote{font-size:12.5px;color:var(--muted);margin:2px 0 8px;line-height:1.45}.synres{padding:7px 10px;border-radius:10px;font-weight:900;margin-bottom:8px}.synres.ok{background:rgba(111,220,122,.16);color:#9ff0a8}.synres.no{background:rgba(255,110,120,.16);color:#ff9aa4}
+.shrow .buy .mq{margin-top:5px;min-height:26px;padding:2px 10px;font-size:11.5px}.shrow .buy .mq.on{border-color:#8fe3a8;color:#aef0bf;background:rgba(111,220,122,.14)}.qj .st .qdrop{margin-left:6px;min-height:28px;padding:2px 10px;font-size:12px}
 .synpick{display:inline-flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}.synpick .btn{min-height:24px;padding:2px 8px;font-size:11.5px}.synpick .btn[aria-pressed=true]{border-color:#ffa63d;color:#ffd08a;background:rgba(255,166,61,.16)}
 .eslot .h2,.islot .h2{position:absolute;left:4px;top:2px;font:900 9.5px Nunito,sans-serif;color:#bfe8ff;letter-spacing:.04em;text-shadow:0 1px 2px #000,0 0 3px #000}
 .eslot.both>.gi,.eslot.both>svg{opacity:.32;filter:grayscale(.6)}.idetail .hint2{font-size:12px;color:#bfe8ff;margin-top:3px}
@@ -720,6 +721,7 @@ html:not(.mobile) .hotbar-wrap .autobox{flex-direction:column;gap:6px}
 html:not(.mobile) .autocfg{right:0;left:auto;bottom:calc(100% + 8px)}
 html:not(.mobile) .hslot .tip{left:auto;right:0;bottom:56px;top:auto;transform:none}
 html:not(.mobile) .hud-right{max-height:calc(100% - var(--hbh,130px) - 22px)}
+html:not(.mobile) .hud-right>#hud-tracker{min-height:min(160px,32%)}html:not(.mobile) .hud-right>#hud-bosses{flex-shrink:1;min-height:44px}   /* build 15a: the quest list keeps room above the world bosses */
 html:not(.mobile) .town-prompt{bottom:24px}
 html:not(.mobile) .topbar{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:4}
 html:not(.mobile) .topbar .shortcuts{gap:5px;padding:5px 6px}
@@ -2255,6 +2257,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15a',date:'2026-11-15',title:'Material quests',
+    new:['Material quests: at Dorin\'s, any recipe or synthesis you can\'t afford yet has a "Hunt · quest" button. The materials go on your quest list with your progress (what you carry against what it needs), and Go takes you to the nearest monsters of your level that drop the first missing one, or to Dorin once everything is in your bag. Craft or synthesize it to finish the quest: bonus EXP and a tenth of the gold back. Up to three at once; drop one from the quest journal (J). Ask Dorin for one too']},
   {v:'2026-11-14w',date:'2026-11-14',title:'Town Scroll',
     new:['Town Scroll: read it on any map and you are back in Oakhaven beside the Waystone at once, even in the middle of a boss fight. Granny Hessa sells them for 30 gold. Double-click it in your bag, or put it on your skill bar. It does nothing in town, during a duel or a trade, or while you are down']},
   {v:'2026-11-14v',date:'2026-11-14',title:'Wing attack in percent',
@@ -3542,7 +3546,9 @@ const TOWN_NPCS={
   artificer:{name:'Dorin',title:'Master Artificer · Crafting',shop:'Crafting',sprite:'scholar',tint:'hue-rotate(155deg) saturate(1.25) brightness(1.05)',
     barks:['Wings, blades, plate. Bring me the makings.','Feathers from the clouds, scales from the fire...','The finest work in Terago, if you have the stuff.'],
     talk(c){return {opts:[{label:'Show me what you can craft',action:t=>{t.closeDialogue();if(t.shopTab==='Synthesis') t.shopTab='Wings';t.openShop('craft');return {pages:['']};}},
-        {label:'Synthesis: forge my gear one rarity higher',action:t=>{t.closeDialogue();t.shopTab='Synthesis';t.openShop('craft');return {pages:['']};}}],
+        {label:'Synthesis: forge my gear one rarity higher',action:t=>{t.closeDialogue();t.shopTab='Synthesis';t.openShop('craft');return {pages:['']};}},
+        {label:'Give me a material quest',action:t=>({pages:['Pick anything in my workshop you can\'t make yet and press "Hunt · quest". I\'ll put the materials on your quest list, and Go will take you to the monsters that carry them.',
+          'Bring everything back and I\'ll make it for you, with a little extra for your trouble.']})}],
       pages:['Dorin, artificer. Greta hammers steel; I make things that fly.',
         (c.baseLevel||1)<20?'Wings take a seasoned traveller. Come back at Base Level 20 with Cloud Wisps and Gale Fur from Skyward Ridge.':'Wings, Heroic gear, rings and amulets. Legendary and Divine pieces I forge by Synthesis, from your Epic ones: bring me the materials and the gold, and I\'ll have it done before you blink.']};}},
   scholar:{name:'Master Orrin',title:'Scholar',barks:['Fascinating...','Where did I put my notes?','Aetherite, Aetherite...'],
@@ -4520,7 +4526,7 @@ const TownScreen={
     if(f.weak&&!f.remote&&!crit){ctx.font='900 9px Nunito,sans-serif';ctx.textAlign='left';ctx.lineWidth=2.6;ctx.strokeStyle='#1a0a04';ctx.strokeText('WEAK',px+W*k/2+2,y+6);ctx.fillStyle='#ffd36b';ctx.fillText('WEAK',px+W*k/2+2,y+6);}
     ctx.restore();},
   /* damage of one hit on m: base from level, job and the line's main stat; DEX vs level decides misses, LUK crits */
-  tracker(){const c=this.ch;
+  tracker(){const c=this.ch;this.matqCheck();
     const item=(t,o)=>`<div class="q"><b>${esc(t)}</b><span class="obj">${esc(o)}</span></div>`;
     $('#mm-name').textContent=`Map ${this.meta?this.meta.map:1} · ${this.meta?this.meta.name:'Oakhaven Sanctuary'}`;
     let h=`<div class="qh"><div class="t">Quests</div><button class="ib" id="qt-min" aria-controls="qt-body"></button></div><div class="qbody" id="qt-body">`;
@@ -4535,7 +4541,7 @@ const TownScreen={
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
       baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,autoStats:!!c.autoStats,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
-      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
+      hotbar:c.hotbar,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,matq:c.matq||[],mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
     this.tracker();this.save();this.questCheck();},
@@ -5648,12 +5654,13 @@ const TownScreen={
       const kit=kitOf(c.job.classId);if(tab==='Synthesis') h+=this.synthHtml();else for(const r of RECIPES.filter(r=>r.group===tab&&(!r.base||kit.includes(r.base)))){const g=recipePreview(r,line),why=this.craftWhy(r,g),mats=Object.entries(r.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
           return `<span class="${have>=n?'ok':'no'}">${esc(d.name)} ${Math.min(have,n)}/${n}</span>${have<n?`<button class="lw-find" data-find="${id}" title="Where to get ${esc(d.name)}" aria-label="Where to get ${esc(d.name)}">⌕</button>`:''}`;}).join(' · ');
         h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm" style="color:${RARITY[g.rar].color}">${esc(g.name)}</div><div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · ${this.gearLine(g)}<br>${this.reqLine(g,r.lvl)}<br>${mats} · <span class="${(c.gold||0)>=r.gold?'ok':'no'}">${r.gold} gold</span></div></div>`+
-          `<div class="buy"><button class="btn${why?'':' primary'}" data-craft="${r.id}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Craft'}</button></div></div>`;}
+          `<div class="buy"><button class="btn${why?'':' primary'}" data-craft="${r.id}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Craft'}</button>${this.matqBtn('r:'+r.id,r.need,r.gold,(c.baseLevel||1)>=r.lvl)}</div></div>`;}
       if(tab!=='Synthesis') h+=`<p class="shfoot">You get exactly the piece shown; the next one Dorin makes will roll its own stats. Materials drop from monsters (Cloud Wisp and Gale Fur on Skyward Ridge, Rune Stone from Gargoyles, Brook Scale in the Echoing Canopy, Coral Shell and Sand Stinger in the Desolate Crags, Ember Shard, Magma Core and Cinder Scale in the Scorched Badlands). Iron Ingots and Arcane Dust come from smelting gear.</p>`;}
     $('#sh-body').innerHTML=h;
     $$('#sh-body [data-buy]').forEach(b=>b.onclick=()=>{const [base,lvl]=b.dataset.buy.split('|');this.buyGear(base,+lvl);});
     $$('#sh-body [data-pot]').forEach(b=>b.onclick=()=>{const [id,n]=b.dataset.pot.split('|');this.buyItem(id,+n);});
     $$('#sh-body [data-craft]').forEach(b=>b.onclick=()=>this.craft(b.dataset.craft));
+    $$('#sh-body [data-mq]').forEach(b=>b.onclick=()=>{const id=b.dataset.mq;if(this.matqList().some(Q=>Q.id===id)) this.matqStop(id);else this.matqStart(id);this.renderShop();});
     $$('#sh-body [data-synth]').forEach(b=>b.onclick=()=>{const g=this.ch.bag.find(x=>x.uid===b.dataset.synth);if(!g) return;const k=synthCost(g);
       this.arm(b,`Again to forge · ${Math.round((1-k.rate)*100)}% to lose it`,()=>this.synth(b.dataset.synth));});
     $$('#sh-body [data-spick]').forEach(b=>b.onclick=()=>{const [u,id]=b.dataset.spick.split('|');this.synthPick=this.synthPick||{};this.synthPick[u]=id;AudioFX.sfx('ui');this.renderShop();});
@@ -5674,7 +5681,35 @@ const TownScreen={
   craft(id){const c=this.ch,r=RECIPES.find(r=>r.id===id);if(!r) return;const line=this.line(),g=recipePreview(r,line),why=this.craftWhy(r,g);if(why){toast(why);return;}
     delete RECIPE_PV[recipeKey(r,line)];g.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
     for(const [k,n] of Object.entries(r.need)) c.items[k]-=n;c.gold-=r.gold;c.bag.unshift(g);AudioFX.sfx('level');
-    this.log('loot',null,`Dorin crafted ${RARITY[g.rar].name} ${g.name} for you`);toast(`Crafted ${g.name} · it's in your bag (I)`);this.tracker();this.save();this.renderShop();},
+    this.log('loot',null,`Dorin crafted ${RARITY[g.rar].name} ${g.name} for you`);toast(`Crafted ${g.name} · it's in your bag (I)`);this.matqDone('r:'+id);this.tracker();this.save();this.renderShop();},
+  /* ---------- material quests (build 14x): any recipe or synthesis at Dorin's can become a quest (Hunt). It lists its
+     materials and gold against what you carry; Go takes you to the nearest monsters (by level) that drop the first
+     missing material, or to Dorin once everything is in hand; crafting or synthesizing it completes the quest: bonus
+     EXP (8% of your level) and a tenth of the gold back. Up to MATQ_MAX at once ---------- */
+  matqList(){const c=this.ch;if(!Array.isArray(c.matq)) c.matq=[];return c.matq;},
+  matSource(id){const L=this.ch.baseLevel||1;let best=null,bd=1e9;
+    for(const [k,m] of Object.entries(DROPS)){if(m!==id) continue;for(const [map,a,b] of MOB_HOME[k]||[]){const d=Math.abs((a+b)/2-L)+(MOB_DEFS[k].eliteOnly?30:0);if(d<bd){bd=d;best={map,kind:k};}}}
+    return best;},
+  matqInfo(id){const c=this.ch,line=this.line();
+    if(id.startsWith('r:')){const r=RECIPES.find(r=>r.id===id.slice(2));if(!r) return null;const g=recipePreview(r,line);return {title:`Materials: ${g.name}`,need:r.need,gold:r.gold,what:`craft ${RARITY[g.rar].name} ${g.name}`};}
+    const g=c.bag.find(x=>x.uid===id.slice(2));if(!canSynth(g)) return null;const k=synthCost(g),T=this.synthTarget(g);
+    return {title:`Synthesis: ${g.name}`,need:k.need,gold:k.gold,what:`synthesize ${gearName(g)} into ${T.name}`};},
+  matqBtn(id,need,gold,lvOk){const c=this.ch,on=this.matqList().some(Q=>Q.id===id),miss=Object.entries(need).some(([k,n])=>(c.items[k]||0)<n);
+    if(!on&&(!miss||!lvOk)) return '';
+    return `<button class="btn mq${on?' on':''}" data-mq="${id}" aria-pressed="${on}" title="${on?'Stop this material quest':'Make hunting these materials a quest: it shows in your quest list, and Go takes you to the monsters that drop them'}">${on?'✓ Quest':'Hunt · quest'}</button>`;},
+  matqStart(id){const L=this.matqList();if(L.some(Q=>Q.id===id)) return;if(L.length>=MATQ_MAX){toast(`You can follow ${MATQ_MAX} material quests at once · drop one in the quest journal (J)`);return;}
+    const I=this.matqInfo(id);if(!I) return;L.push({id,title:I.title,gold:I.gold});AudioFX.sfx('quest');this.log('sys',null,`New quest · ${I.title} (Dorin): hunt the materials to ${I.what}`);
+    toast(`New quest · ${I.title}`);this.tracker();this.save();},
+  matqStop(id){const c=this.ch;c.matq=this.matqList().filter(Q=>Q.id!==id);AudioFX.sfx('ui');this.tracker();this.save();},
+  matqDone(id){const c=this.ch,Q=this.matqList().find(Q=>Q.id===id);if(!Q) return;const I=this.matqInfo(id);c.matq=c.matq.filter(x=>x!==Q);
+    const exp=Math.max(10,Math.round(expNeed(c.baseLevel||1)*.08)),gold=Math.round(((I&&I.gold)||Q.gold||0)*.1);
+    c.gold=(c.gold||0)+gold;AudioFX.sfx('quest');toast(`Quest complete · ${Q.title}`);this.log('sys',null,`Quest complete · ${Q.title} · +${gold} gold`);this.gainExp(exp,'Material quest');this.hud();},
+  /* drop quests whose piece is gone; say once when everything for a quest is in the bag */
+  matqCheck(){const c=this.ch;if(!c||!Array.isArray(c.matq)||!c.matq.length) return;
+    c.matq=c.matq.filter(Q=>this.matqInfo(Q.id));
+    for(const Q of c.matq){const I=this.matqInfo(Q.id),ready=Object.entries(I.need).every(([k,n])=>(c.items[k]||0)>=n)&&(c.gold||0)>=I.gold;
+      if(ready&&!Q.ready){AudioFX.sfx('quest');toast(`Everything for ${Q.title.replace(/^\w+: /,'')} is in your bag · bring it to Dorin`,3500);this.log('sys',null,`${Q.title} · ready: bring it to Dorin in Oakhaven`);}
+      Q.ready=ready;}},
   /* ---------- Synthesis (Dorin, build 14s): a piece forged one rarity higher; a failure destroys it and what was spent ---------- */
   synthWhy(g,k){const c=this.ch;for(const [id,n] of Object.entries(k.need)) if((c.items[id]||0)<n) return `Needs ${n} ${itemDef(id).name}`;if((c.gold||0)<k.gold) return 'Not enough gold';return '';},
   synthItems(){return this.ch.bag.filter(canSynth).sort((a,b)=>b.rar-a.rar||b.lvl-a.lvl);},
@@ -5702,14 +5737,14 @@ const TownScreen={
       h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm"><span style="color:${RARITY[g.rar].color}">${esc(gearName(g))}</span> <span style="color:var(--muted)">→</span> <span style="color:${R2.color}">${esc(T.name)}${T.name.startsWith(R2.name)?'':` (${R2.name})`}</span></div>
         <div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · item Lv ${g.lvl}${acc?`<br><span class="synpick">${T.opts.map(([id,nm,d])=>`<button class="btn" data-spick="${g.uid}|${id}" aria-pressed="${id===T.pick}" title="${esc(d)}">${esc(nm)}</button>`).join('')}</span>`:''}${T.desc?`<br>${esc(T.desc)}`:''}
         <br>${mats} · <span class="${(c.gold||0)>=k.gold?'ok':'no'}">${k.gold.toLocaleString()} gold</span></div></div>
-        <div class="buy"><span class="price">${Math.round(k.rate*100)}% success</span><button class="btn${why?'':' primary'}" data-synth="${g.uid}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Synthesize'}</button></div></div>`;}
+        <div class="buy"><span class="price">${Math.round(k.rate*100)}% success</span><button class="btn${why?'':' primary'}" data-synth="${g.uid}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Synthesize'}</button>${this.matqBtn('s:'+g.uid,k.need,k.gold,true)}</div></div>`;}
     return h;},
   synth(uid){const c=this.ch,i=c.bag.findIndex(g=>g.uid===uid);if(i<0) return;const g=c.bag[i];if(!canSynth(g)) return;const k=synthCost(g),why=this.synthWhy(g,k);if(why){toast(why);return;}
     for(const [id,n] of Object.entries(k.need)) c.items[id]-=n;c.gold-=k.gold;
     if(Math.random()<k.rate){const n=this.synthMake(g);c.bag[i]=n;
       const nm=`${gearName(n)} (${RARITY[n.rar].name})`;AudioFX.sfx('level');this.synthLast={ok:true,name:nm};this.log('loot',null,`Synthesis succeeded · ${nm}`);toast(`Success! ${nm}`,3500);}
     else{c.bag.splice(i,1);AudioFX.sfx('miss');this.synthLast={ok:false,name:gearName(g)};this.log('loot',null,`Synthesis failed · ${gearName(g)} and the materials were destroyed`);toast(`Synthesis failed · ${gearName(g)} was destroyed`,3500);}
-    if(this.synthPick) delete this.synthPick[uid];this.tracker();this.save();this.renderShop();},
+    if(this.synthPick) delete this.synthPick[uid];this.matqDone('s:'+uid);this.tracker();this.save();this.renderShop();},
   /* any drinkable from the bar or the bag */
   /* why a Town Scroll can't be read right now ('' = it can) */
   recallWhy(){if(this.mapId==='town') return 'You are already in Oakhaven';if(this.dead) return 'Not while you are down';if(this.travelling) return 'Already on your way';
@@ -5928,10 +5963,11 @@ const TownScreen={
     const done=['firstSteps','horizon','ascension','ascension2'].filter(k=>q[k]==='done').length+(c.waystones.includes('oakhaven')?1:0)+QUEST_CHAIN.filter(Q=>q[Q.id]==='done').length;
     const N=QUEST_CHAIN.find(Q=>!q[Q.id]);
     $('#qw-sub').textContent=`${act.length} active · ${done} completed`;
-    $('#qw-body').innerHTML=act.map((a,i)=>`<div class="qj"><span class="st">${a.dest?`<button class="btn qgo2" data-qi="${i}">${this.destKey(this.autoGo)===this.destKey(a.dest)?'Stop':'Go there'}</button>`:'Active'}</span><b>${esc(a.title)}</b>
+    $('#qw-body').innerHTML=act.map((a,i)=>`<div class="qj"><span class="st">${a.dest?`<button class="btn qgo2" data-qi="${i}">${this.destKey(this.autoGo)===this.destKey(a.dest)?'Stop':'Go there'}</button>`:'Active'}${a.mat?`<button class="btn qdrop" data-qd="${esc(a.id)}">Drop</button>`:''}</span><b>${esc(a.title)}</b>
         <p>From ${esc(a.from)} · ${esc(a.desc||'')}</p><p class="obj">${esc(a.obj)}</p><p>Reward: ${esc(a.reward||'-')}</p></div>`).join('')+
       `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700">${N?`Up next: ${esc(N.title)} at Base Level ${N.lv}.`:'You have finished every quest in Terago.'} Finished quests leave the list. ${done} completed so far.</div>`;
-    $$('#qw-body .qgo2').forEach(b=>b.onclick=()=>{AudioFX.sfx('ui');const d=act[+b.dataset.qi].dest;this.openWin(null);this.goQuest(d);});},
+    $$('#qw-body .qgo2').forEach(b=>b.onclick=()=>{AudioFX.sfx('ui');const d=act[+b.dataset.qi].dest;this.openWin(null);this.goQuest(d);});
+    $$('#qw-body .qdrop').forEach(b=>b.onclick=()=>this.arm(b,'Drop it?',()=>this.matqStop(b.dataset.qd)));},
   /* everything still to do: story quests (and trials waiting to be picked up), plus the current hunt */
   activeQuests(){const c=this.ch,q=c.quests,L=c.baseLevel||1,J=JOBS[c.job.classId]||JOBS.recruit,out=[];
     const elder={map:'town',npc:'elder'},hunt=(n,need,map,kind)=>n>=need?elder:{map,kind};   // dest: where auto-move takes you
@@ -5945,6 +5981,13 @@ const TownScreen={
     else if(J.tier===1&&L>=40&&(c.job.jobLevel||1)>=40&&q.ascension2!=='done') out.push({id:'ascension2',title:QUEST_INFO.ascension2.title,from:'Elder Fin',desc:QUEST_INFO.ascension2.desc,obj:'Speak with Elder Fin in Oakhaven to begin.',reward:QUEST_INFO.ascension2.reward,dest:elder});
     const A=this.chainActive();if(A){const p=(q.prog||{})[A.id]||[],g=A.goals&&A.goals.find((g,i)=>(p[i]||0)<g[2]);
       out.push({id:A.id,title:A.title,from:TOWN_NPCS[A.from]?TOWN_NPCS[A.from].name:'the Guild',desc:A.desc,obj:this.goalText(A),reward:this.rewardText(A),dest:g?{map:g[1],kind:g[0]}:null});}
+    for(const Q of this.matqList()){const I=this.matqInfo(Q.id);if(!I) continue;const parts=[],miss=[];   // material quests (Dorin)
+      for(const [id,n] of Object.entries(I.need)){const have=Math.min(n,c.items[id]||0);parts.push(`${itemDef(id).name} ${have}/${n}`);if(have<n) miss.push(id);}
+      parts.push(`${Math.min(I.gold,c.gold||0).toLocaleString()}/${I.gold.toLocaleString()} gold`);
+      const hunt=miss.find(id=>MATERIALS[id]),src=hunt&&this.matSource(hunt),ready=!miss.length&&(c.gold||0)>=I.gold;
+      const tip=ready?'Everything is in your bag: bring it to Dorin in Oakhaven':hunt&&src?`${MATERIALS[hunt].name}: ${MOB_DEFS[src.kind].name}s, ${MAP_NAMES[src.map]} · `:miss.some(id=>REFINED[id])?'Smelt gear for Iron Ingots and Arcane Dust · ':'';
+      out.push({id:Q.id,mat:true,title:Q.title,from:'Dorin',desc:`Hunt the materials to ${I.what}.`,obj:tip+(ready?'':parts.join(' · ')),reward:'Bonus EXP and a tenth of the gold back when Dorin makes it',
+        dest:ready?{map:'town',npc:'artificer'}:src||null});}
     return out;},
   /* ---------- trading: invite (stand next to each other), both put gold, items and gear on the table, both lock, then it swaps ----------
      Everything goes through the party-event relay (Net.pe) like duels do. Locking puts my offer aside (c.escrow, saved) so it
@@ -7095,7 +7138,8 @@ const shopPrice=g=>Math.round(gearPrice(g)*5);
 /* Synthesis costs: Iron Ingots, Arcane Dust (from Rare up) and gold by the rarity you are making and the item level,
    plus monster materials for Epic, Legendary and Divine (Halo Fragments and Valkyrie Steel at the top). Wings too
    (build 14u): Feather -> Seraph -> Drake Wings, Drake -> the Legendary wings of your choice, Legendary -> Divine */
-const SYNTH_RATE=[0,.9,.75,.6,.5,.3];   // chance of success by the rarity you are making (Uncommon ... Legendary, Divine)
+const SYNTH_RATE=[0,.9,.75,.6,.5,.3];
+const MATQ_MAX=3;   // material quests at once   // chance of success by the rarity you are making (Uncommon ... Legendary, Divine)
 const SYNTH_MID={weapon:{stone:6},shield:{shell:8},armour:{shell:8},acc:{wisp:8},arrows:{stinger:6},wings:{dscale:15,core:10}};
 const SYNTH_TOP={weapon:{core:10,halo:1},shield:{dscale:10,halo:1},armour:{dscale:10,halo:1},acc:{feather:10,halo:3},arrows:{stinger:15,vsteel:5},wings:{ember:20,dscale:15,feather:10,halo:2}};
 const SYNTH_DIV={weapon:{core:20,vsteel:10,halo:4},shield:{dscale:20,vsteel:10,halo:4},armour:{dscale:20,feather:10,halo:4},acc:{feather:20,vsteel:8,halo:6},arrows:{stinger:25,vsteel:12,halo:3},wings:{feather:25,vsteel:15,halo:6}};
@@ -7165,7 +7209,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14w';
+const BUILD='2026-11-15a';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
