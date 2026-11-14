@@ -1,1 +1,1 @@
-build: 2026-11-14q (New spells for mages)
+build: 2026-11-14r (Skill bar in the corner)

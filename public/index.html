@@ -361,7 +361,10 @@ html.mobile .nw-list{max-height:none;overflow:visible}html.mobile .newswin .nw-f
 .party-frame{display:none;position:absolute;left:14px;bottom:240px;width:210px;z-index:3;padding:6px 7px;overflow-y:auto;scrollbar-width:thin}
 .party-frame.on{display:block}
 .party-frame .ph{font:900 10.5px Nunito,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--aether);padding:1px 3px 4px;display:flex;justify-content:space-between;gap:6px}
-.party-frame .ph span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.party-frame .ph span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;text-align:right}
+.party-frame .ph{align-items:center}.party-frame .ph em{font-style:normal}
+.party-frame .pmin{flex:none;min-width:22px;width:22px;height:20px;padding:0;border-radius:6px}.party-frame .pmin svg{width:13px;height:13px}
+.party-frame.min{width:auto;min-width:150px;max-width:230px}.party-frame.min .pm,.party-frame.min .pw-note{display:none}.party-frame.min .ph{padding-bottom:1px}
 .pm{display:flex;align-items:center;gap:6px;padding:4px 4px;border-radius:9px;cursor:pointer;border:1px solid transparent}
 .pm:hover{background:rgba(127,227,255,.08)}.pm.sel{border-color:rgba(125,255,154,.75);background:rgba(125,255,154,.12)}
 .pm .pn{flex:1;min-width:0}.pm .pn b{display:block;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -702,18 +705,16 @@ dl dd.main{color:var(--gold)}
   .dlg .nm{font-size:16px}.dlg p{font-size:14px;min-height:5.6em}
 }
 /* ---------- toast / modal ---------- */
-/* build 14p, computers: the skill bar is a 2 x 5 column on the left (keys 1-9, 0), under your status card, with
-   AUTO below it and your buffs beside it; chat and the party list move right of it; the menu icons sit in a bar at
-   the top centre and fold into one button */
-html:not(.mobile) .hotbar-wrap{left:14px;top:var(--stb,140px);bottom:auto;transform:none;flex-direction:column;align-items:stretch;gap:6px}
-html:not(.mobile) .hotbar{display:grid;grid-template-columns:repeat(2,auto);gap:6px}
-html:not(.mobile) .buffbar{left:100%;right:auto;top:0;bottom:auto;margin:0 0 0 8px;width:200px;flex-wrap:wrap;justify-content:flex-start}
-html:not(.mobile) .hotbar-wrap .autobox{flex-direction:row;gap:6px}
-html:not(.mobile) .hotbar-wrap .autobox .btn.auto{flex:1}
-html:not(.mobile) .autocfg{left:calc(100% + 8px);right:auto;bottom:0}
-html:not(.mobile) .hslot .tip{left:calc(100% + 10px);top:50%;bottom:auto;transform:translateY(-50%)}
-html:not(.mobile) .chatbox{left:calc(22px + var(--lcol,110px));bottom:14px}
-html:not(.mobile) .party-frame{left:calc(22px + var(--lcol,110px))}
+/* build 14r, computers: the skill bar sits in the lower right corner, 2 rows of 5 (1-5 above, 6-9 and 0 below),
+   with AUTO and its settings on its left and your buffs left of AUTO; the panels on the right stop above it. The menu
+   icons sit in a bar at the top centre and fold into one button (build 14p) */
+html:not(.mobile) .hotbar-wrap{left:auto;right:14px;top:auto;bottom:14px;transform:none;flex-direction:row-reverse;align-items:flex-end;gap:8px}
+html:not(.mobile) .hotbar{display:grid;grid-template-columns:repeat(5,auto);gap:6px}
+html:not(.mobile) .buffbar{left:auto;right:calc(100% + 8px);bottom:0;top:auto;margin:0;width:200px;flex-wrap:wrap-reverse;justify-content:flex-end}
+html:not(.mobile) .hotbar-wrap .autobox{flex-direction:column;gap:6px}
+html:not(.mobile) .autocfg{right:0;left:auto;bottom:calc(100% + 8px)}
+html:not(.mobile) .hslot .tip{left:auto;right:0;bottom:56px;top:auto;transform:none}
+html:not(.mobile) .hud-right{max-height:calc(100% - var(--hbh,130px) - 22px)}
 html:not(.mobile) .town-prompt{bottom:24px}
 html:not(.mobile) .topbar{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:4}
 html:not(.mobile) .topbar .shortcuts{gap:5px;padding:5px 6px}
@@ -2249,6 +2250,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14r',date:'2026-11-14',title:'Skill bar in the corner',
+    new:['On computers the skill bar moved to the lower right corner of the screen, in two rows: keys 1 to 5 on top, 6 to 9 and 0 below. AUTO and its settings sit on its left, with your buffs beside them, and the tips open above the bar. The quests and world-boss panels end above it, and the chat and party list are back on the left',
+      'The party list has a minimize button in its header: it folds the list to one line with the party name and the member count, and the + button opens it again. The game remembers your choice, on computers and phones']},
   {v:'2026-11-14q',date:'2026-11-14',title:'New spells for mages',
     new:['Every mage skill has a new painted icon: the Elementalist\'s, the Chrono-Mage\'s and the Pyromancer\'s, passives included',
       'Fourteen mage spells have new painted effects: Fire Bolt\'s comets fall from the sky and burst, Frost Nova grows a ring of ice crystals round you, Frost Diver flies as a lance of ice and erupts into spikes, Thunderstorm brings its own storm cloud, Soul Strike lands as spirit crescents, Storm Gust spins up tornadoes, Jupitel Thunder strikes a golden pillar, Time Lock draws a clock under its target, Chrono Collapse folds time in rings, meteors streak down and crater the ground, Fire Wall blazes, Fireball flies as a painted fireball, Inferno Aura rings you in fire (and keeps burning round your feet while it lasts) and Volcano Rift splits the ground in a ring of eruptions',
@@ -2814,7 +2818,7 @@ function numSheet(){const A=numAtlas(),keys=['0','1','2','3','4','5','6','7','8'
 const NUM_ANIM={normal:[.8,26],crit:[1,30],recv:[.85,24],heal:[1,18],miss:[.65,12]};
 /* ------------------------------ settings ------------------------------
    graphics, sound and HUD layout; saved on this device (not on the character) */
-const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,scFold:false,mmZoom:1.8,touchInit:false,bossMin:null,news:'login'};
+const SETTINGS=(()=>{const D={zoom:100,res:'sharp',numbers:true,names:true,lowfx:false,master:80,music:45,sfx:70,mute:false,trackerMin:false,mmMin:false,chatMin:false,scFold:false,partyMin:false,mmZoom:1.8,touchInit:false,bossMin:null,news:'login'};
   try{return {...D,...JSON.parse(localStorage.getItem('mmorpg-online.settings.v1')||'{}')};}catch(e){return D;}})();
 function saveSettings(){try{localStorage.setItem('mmorpg-online.settings.v1',JSON.stringify(SETTINGS));}catch(e){}}
 /* ------------------------------ sound ------------------------------
@@ -5058,14 +5062,16 @@ const TownScreen={
   partyFrame(force){const el=$('#party-frame');const pa=this.party;if(!pa||!Net.room){if(el.classList.contains('on')){el.classList.remove('on');el._k='';}return;}
     const ppl=this.people(),me=this.pid(),rows=pa.m.filter(x=>x[0]!==me).map(([id,n])=>{const x=ppl.get(id),P=x&&x.P;
       return {id,n,P,hp:P?Math.max(0,Math.min(100,P.hp|0)):0,where:!P?'offline':P.dd?'down':P.m===this.mapId?`Lv ${P.lv|0} ${(JOBS[P.j]||JOBS.recruit).name}`:(MAP_NAMES[P.m]||'choosing a character')};});
-    const key=JSON.stringify([pa.n,pa.l,this.ally,this.follow,rows.map(r=>[r.id,r.n,!!r.P])]);
+    const key=JSON.stringify([pa.n,pa.l,this.ally,this.follow,rows.map(r=>[r.id,r.n,!!r.P]),!!SETTINGS.partyMin]);
     if(force||el._k!==key){el._k=key;   // rebuilt only when who / what is selected changes; HP and places update in place so taps aren't lost
-      let h=`<div class="ph">Party<span>${esc(pa.n)}</span></div>`;
+      const min=!!SETTINGS.partyMin,bt=`<button class="ib pmin" type="button" title="${min?'Show the party':'Minimize the party'}" aria-label="${min?'Show the party':'Minimize the party'}" aria-expanded="${!min}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">${min?'<path d="M6 12h12M12 6v12"/>':'<path d="M6 12h12"/>'}</svg></button>`;
+      let h=`<div class="ph"><em>Party</em><span>${esc(pa.n)}${min?` · ${pa.m.length}/${PARTY_MAX}`:''}</span>${bt}</div>`;el.classList.toggle('min',min);
       for(const r of rows) h+=`<div class="pm${this.ally===r.id?' sel':''}${r.P?'':' off'}" data-id="${esc(r.id)}" title="Tap: heal / buff target"><div class="pn"><b>${r.id===pa.l?'<span class="ld">★</span> ':''}${esc(r.n)}</b><small></small><div class="hpb"${r.P?'':' hidden'}><i></i><b></b></div><div class="hpb mp"${r.P?'':' hidden'}><i></i><b></b></div></div>`+
         `<button class="fol${this.follow===r.id?' on':''}" data-f="${esc(r.id)}" title="Follow" aria-label="Follow ${esc(r.n)}">${this.follow===r.id?'■':'➜'}</button></div>`;
       if(!rows.length) h+=`<div class="pw-note" style="margin:2px 3px 3px;font-size:11px">Invite players from the Party window (P).</div>`;
       el.innerHTML=h;el.classList.add('on');
       el.querySelectorAll('.pm').forEach(r=>r.onclick=e=>{if(e.target.closest('.fol')) return;AudioFX.sfx('ui');this.setAlly(r.dataset.id);});
+      el.querySelector('.pmin').onclick=e=>{e.stopPropagation();SETTINGS.partyMin=!SETTINGS.partyMin;saveSettings();AudioFX.sfx('ui');this.partyFrame(true);requestAnimationFrame(()=>{const b=el.querySelector('.pmin');if(b) b.focus();});};
       el.querySelectorAll('.fol').forEach(b=>b.onclick=e=>{e.stopPropagation();AudioFX.sfx('ui');this.setFollow(b.dataset.f);});}
     this.placeParty();
     rows.forEach((r,i)=>{const row=el.querySelectorAll('.pm')[i];if(!row) return;const sm=row.querySelector('small');if(sm.textContent!==r.where) sm.textContent=r.where;
@@ -5080,11 +5086,9 @@ const TownScreen={
   /* touch devices: the menu icons live in the bottom bar (centred, above the skill bar); elsewhere under the minimap.
      --hbh = how much of the bottom the bars take, for the windows, chat and prompt that sit above them */
   layoutHud(){const sc=$('#screen-town'),sh=sc.querySelector('.shortcuts'),hw=sc.querySelector('.hotbar-wrap'),hr=sc.querySelector('.hud-right');
-    if(Device.mobile){if(sh.parentNode!==hw) hw.insertBefore(sh,hw.firstChild);}else{const tb=$('#topbar');if(sh.parentNode!==tb) tb.appendChild(sh);
-      const st=sc.querySelector('.hud-status').getBoundingClientRect(),s0=sc.getBoundingClientRect();sc.style.setProperty('--stb',Math.round(st.bottom-s0.top+10)+'px');}
+    if(Device.mobile){if(sh.parentNode!==hw) hw.insertBefore(sh,hw.firstChild);}else{const tb=$('#topbar');if(sh.parentNode!==tb) tb.appendChild(sh);}
     sh.classList.toggle('folded',!Device.mobile&&!!SETTINGS.scFold);
     const r=hw.getBoundingClientRect(),s=sc.getBoundingClientRect();if(r.height) sc.style.setProperty('--hbh',Math.round(s.bottom-r.top)+'px');
-    if(!Device.mobile&&r.width) sc.style.setProperty('--lcol',Math.round(r.right-s.left-14)+'px');
     this.placeParty();},
   chatMin(on){SETTINGS.chatMin=!!on;saveSettings();const b=$('#chat-min');$('#chatbox').classList.toggle('min',!!on);b.setAttribute('aria-pressed',!!on);b.title=on?'Show chat':'Minimize chat';b.setAttribute('aria-label',b.title);
     b.querySelector('svg').innerHTML=on?'<path d="M6 12h12M12 6v12"/>':'<path d="M6 12h12"/>';if(!on){this.unread=0;const el=$('#chatlog');el.scrollTop=el.scrollHeight;}this.unreadBadge();this.placeParty();},
@@ -6956,7 +6960,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14q';
+const BUILD='2026-11-14r';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
