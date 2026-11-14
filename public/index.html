@@ -2221,6 +2221,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14n',date:'2026-11-14',title:'Judgement Laser finds everyone',
+    new:['Judgement Laser now aims a laser at every player inside Solarius\'s arena, as well as five more spread across it. A party of four faces nine red circles: each of you has one under your feet, so everyone has to move'],
+    fixes:['Every player in the fight sees the same red circles: the host sends where each player stood when she began the cast']},
   {v:'2026-11-14m',date:'2026-11-14',title:'Heavenly Hammer and Judgement Laser',
     new:['Solarius has a new attack, Heavenly Hammer: the clouds part over where you stand and a great cross of light falls from the sky. She charges it for 2 seconds (watch the red circle and the cast bar over her head), then it lands with a burst that hits everyone inside. She can use it every 8 seconds',
       'Her ultimate, Judgement Laser: five red circles appear across the arena, one under you, and grow while she casts for 2.5 seconds. Then five lasers come down from the heavens and strike every circle at once. Step out of the red! She first uses it about 12 seconds into the fight, then every 25 seconds, and it comes before anything else she could do. A warning appears at the top of the screen when she begins'],
@@ -3171,9 +3174,10 @@ Object.assign(MOB_DEFS,{
       {id:'lance',kind:'beam',range:[100,400],cd:10,windup:.9,track:.5,active:.35,recover:.6,dmg:1.5,mag:true,len:420,wd:32,major:true,color:'#ffe9a0',from:[34,-84],anim:{set:'sunAtk',row:0,flip:true,seq:[[0,0],[3,.9]]}},
       // build 14m. Heavenly Hammer: a cross falls from the sky onto where you stood when she began (2 s to get out)
       {id:'hammer',name:'Heavenly Hammer',kind:'slam',range:[0,360],cd:8,windup:2,recover:.7,dmg:2,r:110,major:true,mag:true,shake:true,color:'#9fd0ff',fx:'hammer',anim:{set:'sunAtk',row:0,flip:true,seq:[[1,0],[3,2]]}},
-      // her ultimate, Judgement Laser: 5 lasers from the sky across the arena (one where you stand); red circles grow
-      // while she casts (2.5 s), then they strike. First 12 s into the fight, then every 25 s, before anything else
-      {id:'jlaser',name:'Judgement Laser',kind:'rain',ult:true,prio:true,first:12,range:[0,1e4],cd:25,windup:2.5,recover:1,dmg:2.2,r:85,n:5,major:true,mag:true,shake:true,color:'#ff3b3b',fx:'laser',anim:{set:'sunAtk',row:0,flip:true,seq:[[1,0],[3,2.5]]}},
+      // her ultimate, Judgement Laser: a laser from the sky onto every player in the arena (build 14n) and 5 more spread
+      // across it; red circles grow while she casts (2.5 s), then they all strike. First 12 s into the fight, then
+      // every 25 s, before anything else. v: its version, part of mobSig (older games placed the circles differently)
+      {id:'jlaser',v:2,name:'Judgement Laser',kind:'rain',ult:true,prio:true,first:12,range:[0,1e4],cd:25,windup:2.5,recover:1,dmg:2.2,r:85,n:5,maxPts:12,major:true,mag:true,shake:true,color:'#ff3b3b',fx:'laser',anim:{set:'sunAtk',row:0,flip:true,seq:[[1,0],[3,2.5]]}},
       {id:'summon',kind:'summon',special:true,windup:1.5,recover:.6,anim:{set:'sunAtk',row:0,hold:1,seq:[[1,0]]}}]},
   dawnvalk:{el:'holy',name:'Dawn Valkyrie',lvl:MAX_BASE-1,hp:2.2,atk:1,exp:1,speed:[60,96],sight:0,reach:30,cd:9,h:70,respawn:[1,1],barks:['For the Archangel!','*her spear rings*'],
     sheet:'sunboss',set:'valk',walkFps:9,size:1,body:20,keep:[0,34],summonArt:[80,6],
@@ -4549,8 +4553,9 @@ const TownScreen={
         E.nextSummon=now+2000;}                                                // every slot is taken: skip, look again shortly
       const can=D.acts.filter(a=>!a.special&&now>=(m.cds[a.id]||0)&&d>=a.range[0]&&d<=a.range[1]&&!(a.major&&now<E.majorUntil)&&!(m.minion&&!a.major&&now<E.minorNext));
       if(can.length){const fresh=can.filter(a=>a.id!==m.lastAct),prio=can.filter(a=>a.prio),pool=prio.length?prio:fresh.length?fresh:can,a=pool[Math.floor(Math.random()*pool.length)];
-        let ax=P.x,ay=P.y;if(a.kind==='slam'&&!a.self){[ax,ay]=this.validSpot(P.x,P.y,m);}else if(a.kind==='rain'){ax=Math.round(P.x);ay=Math.round(P.y);}
-        this.actStart(m,a,now,ax,ay);return;}}
+        let ax=P.x,ay=P.y,ex=null;if(a.kind==='slam'&&!a.self){[ax,ay]=this.validSpot(P.x,P.y,m);}
+        else if(a.kind==='rain'){ax=Math.round(P.x);ay=Math.round(P.y);ex={pts:this.rainPts(T,a,P)};}
+        this.actStart(m,a,now,ax,ay,ex);return;}}
     // no action yet: keep the preferred distance
     const [k0,k1]=D.keep||[0,D.reach];
     if(d>k1){if(this.actorMove(m,P.x,P.y,sp,now)) m.walkT+=dt;}
@@ -4592,14 +4597,16 @@ const TownScreen={
       else if(a.fx==='laser') for(const [x,y] of this.rainSpots(m,A)) this.efx.push({k:'spr',set:'laserFx',x,y,t0:t0+(a.windup-.3)*1000,dur:1050,keys:LASER_KEYS});
       if(a.ult&&E.inside&&t<a.windup){toast(`${D.name.split(',')[0]} casts ${a.name}! Get out of the red circles`,2400);this.log('mob',D.name,a.name+'!');}}
     if(!host&&t>a.total+1.2) m.act=null;},
-  /* where a Judgement Laser strikes: the first where its target stood, the rest spread round the arena. Worked out
-     from the cast's number and target alone (a seeded random), so every player's game puts them in the same places */
+  /* where a Judgement Laser strikes: one on every player in the arena when the cast began (the host sends these with
+     the cast: A.pts), then a.n more spread round the arena, worked out from the cast's number and target alone (a
+     seeded random), so every player's game puts them in the same places */
+  rainPts(T,a,P){const out=[[Math.round(P.x),Math.round(P.y)]];for(const Q of T){if(out.length>=(a.maxPts||12)) break;if(Q.key!==P.key) out.push([Math.round(Q.x),Math.round(Q.y)]);}return out;},
   rainSpots(m,A){if(A.spots) return A.spots;const E=this.enc,a=A.def,R=E.cfg.arena;let sd=((A.seq|0)*2654435761^Math.round(A.ax)*40503^Math.round(A.ay)*2246822519)>>>0;
     const rnd=()=>{sd=(sd+0x6D2B79F5)>>>0;let t=sd;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;};
     const ok=(x,y)=>this.free(x,y)&&((x-E.cx)/R.rx)**2+((y-E.cy)/R.ry)**2<=.92;
-    const out=[[Math.round(A.ax),Math.round(A.ay)]],base=rnd()*Math.PI*2;
+    const pts=Array.isArray(A.pts)&&A.pts.length?A.pts:[[A.ax,A.ay]],out=pts.slice(0,a.maxPts||12).map(p=>[Math.round(+p[0]||0),Math.round(+p[1]||0)]),base=rnd()*Math.PI*2,N=a.n||5;
     const apart=(x,y)=>out.every(([px,py])=>Math.hypot(x-px,(y-py)*1.3)>=a.r*1.6);      // circles barely touch at most
-    for(let k=1;k<(a.n||5);k++){const ang0=base+k*2*Math.PI/((a.n||5)-1)+(rnd()-.5)*.6,f0=.4+rnd()*.45;let best=null;
+    for(let k=0;k<N;k++){const ang0=base+k*2*Math.PI/N+(rnd()-.5)*.6,f0=.4+rnd()*.45;let best=null;
       for(let i=0;i<24&&!best;i++){const ang=ang0+(i%3-1)*.45*Math.ceil(i/3),f=Math.max(.2,f0*Math.pow(.88,Math.floor(i/3))),x=Math.round(E.cx+Math.cos(ang)*R.rx*f),y=Math.round(E.cy+Math.sin(ang)*R.ry*f);
         if(ok(x,y)&&apart(x,y)) best=[x,y];}
       out.push(best||[Math.round(E.cx+Math.cos(ang0)*R.rx*.6),Math.round(E.cy+Math.sin(ang0)*R.ry*.6)]);}
@@ -4608,7 +4615,9 @@ const TownScreen={
   actorSnap(m,e,now){const code=e[6]|0,seq=e[7]|0,E=this.enc;
     if(m.boss&&E){const r=e[11]|0;if(r!==E.resetsSeen){E.resetsSeen=r;E.resets=r;E.resetT=now;this.bshots=[];this.efx.push({k:'puff',x:E.cx,y:E.cy,t0:now,dur:700,color:E.cfg.arena.color});}}
     const def=code?m.def.acts[code-1]:null;if(!def){m.act=null;return;}
-    if(!m.act||m.act.seq!==seq) m.act={def,seq,t0:now-(e[8]|0)*100,ax:+e[9]||0,ay:+e[10]||0,done:0,sx:m.x,sy:m.y};else{m.act.ax=+e[9]||0;m.act.ay=+e[10]||0;}},
+    const pts=Array.isArray(e[13])?e[13].slice(0,48).reduce((o,v,i,arr)=>{if(i%2===0) o.push([+v||0,+arr[i+1]||0]);return o;},[]):null;
+    if(!m.act||m.act.seq!==seq) m.act={def,seq,t0:now-(e[8]|0)*100,ax:+e[9]||0,ay:+e[10]||0,done:0,sx:m.x,sy:m.y,...(pts?{pts}:{})};
+    else{m.act.ax=+e[9]||0;m.act.ay=+e[10]||0;if(pts&&!m.act.pts){m.act.pts=pts;m.act.spots=null;}}},
   /* ---------- drawing ---------- */
   drawActor(ctx,m,now){const D=m.def,S=Sprites[D.sheet];if(!S||this.hid(m.x,m.y)) return;const M=S.meta;
     let al=1,sink=0;if(m.state==='dead'){const e=(now-m.deadT)/900;if(e>=1||e<0) return;al=1-e;sink=e*8;}       // no death art: a fade and a slight sink
@@ -4704,7 +4713,7 @@ const TownScreen={
      share a map's monsters by their place in the list, so only games with the same signature share them: someone
      on an older version of the game (a different list) runs their own, instead of freezing everyone else's. */
   mobSig(){const k=this.mapId+'|'+this.mobs.length;if(this._sigK===k) return this._sig;
-    const src=JSON.stringify([this.mapId,this.meta.size,this.meta.monsters,this.mobs.filter(m=>!m.def.acts).map(m=>m.kind+(m.elite?'*':'')),ENC[this.mapId]&&ENC[this.mapId].boss,ENC[this.mapId]&&MOB_DEFS[ENC[this.mapId].boss].acts.map(a=>a.id),ELITE.per]);
+    const src=JSON.stringify([this.mapId,this.meta.size,this.meta.monsters,this.mobs.filter(m=>!m.def.acts).map(m=>m.kind+(m.elite?'*':'')),ENC[this.mapId]&&ENC[this.mapId].boss,ENC[this.mapId]&&MOB_DEFS[ENC[this.mapId].boss].acts.map(a=>a.id+(a.v?'.'+a.v:'')),ELITE.per]);
     let h=2166136261;for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619);}
     this._sigK=k;return this._sig=(h>>>0).toString(36);},
   freeSpot(z){for(let t=0;t<60;t++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*z.r,x=z.x+Math.cos(a)*r,y=z.y+Math.sin(a)*r*.8;
@@ -5045,7 +5054,7 @@ const TownScreen={
   snap(now){return {s:++Net.seq,l:this.mobs.map(m=>{const dead=m.state==='dead';
     return [m.i,Math.round(m.x),Math.round(m.y),dead?Math.max(0,Math.round((m.respawnAt-now)/100)):Math.max(0,Math.round(m.hp)),
       (dead?1:0)|(m.hostile?2:0)|(now<(m.stunUntil||0)?4:0)|(m.frozen?8:0)|(now<(m.slowUntil||0)?16:0),m.dir|0,
-      ...(m.def.acts&&!dead?[m.act?m.def.acts.indexOf(m.act.def)+1:0,m.actSeq|0,m.act?Math.round((now-m.act.t0)/100):0,m.act?Math.round(m.act.ax):0,m.act?Math.round(m.act.ay):0,m.boss&&this.enc?this.enc.resets:0,Math.round(m.maxHp)]:[])];})};},   // + the action of a boss or summon
+      ...(m.def.acts&&!dead?[m.act?m.def.acts.indexOf(m.act.def)+1:0,m.actSeq|0,m.act?Math.round((now-m.act.t0)/100):0,m.act?Math.round(m.act.ax):0,m.act?Math.round(m.act.ay):0,m.boss&&this.enc?this.enc.resets:0,Math.round(m.maxHp),...(m.act&&m.act.pts?[m.act.pts.flat()]:[])]:[])];})};},   // + the action of a boss or summon (+ a Judgement Laser's player spots)
   applySnap(mb,now){if(!mb||!Array.isArray(mb.l)||mb.s===this.mp.lastSnap) return;this.mp.lastSnap=mb.s;
     for(const e of mb.l){const m=Array.isArray(e)&&this.mobs[e[0]|0];if(!m) continue;const f=e[4]|0;
       if(f&1){if(m.state!=='dead'){m.state='dead';m.deadT=now;m.hostile=false;m.bubble=null;if(this.target===m) this.target=null;if(m.minion) this.summonHeal(m,now);}m.respawnAt=now+(e[3]|0)*100;continue;}
@@ -6835,7 +6844,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14m';
+const BUILD='2026-11-14n';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
