@@ -1,1 +1,1 @@
-build: 2026-11-15b (Safer Synthesis, every arrow)
+build: 2026-11-15c (Badlands and Ridge swap levels)
