@@ -2205,6 +2205,8 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14d',date:'2026-11-14',title:'Tougher VIT',
+    balance:['Each point of VIT now gives +0.8 DEF (was +0.5) and +0.8 MDEF (was +0.2), so VIT builds take less damage from both weapons and magic']},
   {v:'2026-11-14c',date:'2026-11-14',title:'GameMaster wings and title',
     new:['Flamebound Dragon Wings, for GameMasters only. A GameMaster gets them with /give wings flamebound. They can\'t be crafted, traded or sent, and only a GameMaster account can wear them',
       'While they are worn, an animated GAME MASTER title shows above the name, for everyone nearby and on the character selection screen']},
@@ -2923,7 +2925,7 @@ const tileIcon=(k,color)=>{const id='ti'+(++TILE_N),body=TILE_PATHS[k]?`<g fill=
   <rect x="1" y="1" width="22" height="22" rx="4.6" fill="url(#${id})" stroke="#d8b35c" stroke-width="1.3"/><rect x="2.4" y="2.4" width="19.2" height="19.2" rx="3.6" fill="none" stroke="rgba(0,0,0,.45)" stroke-width=".8"/>
   ${body}</svg>`;};
 const iconSvg=(k,color)=>TILE_PATHS[k]?tileIcon(k,color):`<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[k]||''}</svg>`;
-const STAT_INFO={STR:'+1 melee ATK (+0.2 ranged), bonus every 10',AGI:'+1 FLEE, faster attacks',VIT:'+1% max HP, +0.5 DEF, +0.2 MDEF, HP recovery',
+const STAT_INFO={STR:'+1 melee ATK (+0.2 ranged), bonus every 10',AGI:'+1 FLEE, faster attacks',VIT:'+1% max HP, +0.8 DEF, +0.8 MDEF, HP recovery',
   INT:'MATK, +1% max MP, shorter casts, MP recovery',DEX:'+1 HIT, ranged ATK, +0.2 melee ATK, shorter casts',LUK:'+0.3% critical, +0.2 ATK and MATK'};
 const STAT_KEYS=Object.keys(STAT_INFO);
 /* Recommended stats: a build per job. w = how many points each stat gets, relative to the others (the stat furthest
@@ -3391,7 +3393,7 @@ const TownScreen={
   /* ======================= stats (classic MMORPG rules) =======================
      ATK: melee STR + (STR/10)^2 + DEX/5 + LUK/5 · ranged DEX + (DEX/10)^2 + STR/5 + LUK/5, plus weapon, level and skills
      MATK: INT + (INT/7)^2 to INT + (INT/5)^2, + LUK/5 · HIT 175 + BaseLv + DEX + LUK/3 · FLEE 100 + BaseLv + AGI + LUK/5
-     CRIT LUK x 0.3 + 1 % · VIT: +1% max HP, +0.5 DEF, +0.2 MDEF · INT: +1% max SP · DEX and INT shorten casts */
+     CRIT LUK x 0.3 + 1 % · VIT: +1% max HP, +0.8 DEF, +0.8 MDEF · INT: +1% max SP · DEX and INT shorten casts */
   dirtyMods(){this._mods=null;this._gt=null;},
   mods(){if(this._mods) return this._mods;const M={},c=this.ch,add=(k,v)=>{M[k]=(M[k]||0)+v;};
     for(const s of jobSkills(c.job.classId)) if(s.t==='P'&&s.pas){const r=this.rank(s.id);if(r>0) for(const [k,v] of Object.entries(s.pas)) add(k,SV(v,r));}
@@ -3415,8 +3417,8 @@ const TownScreen={
   critMul(){return 1.4+(this.mods().critDmg||0);},
   mobFlee(m){return 100+m.lvl+Math.floor(m.lvl*.35);},
   mobHit(m,now){return (175+m.lvl+Math.floor(m.lvl*.5))*(now<(m.blindUntil||0)?.7:1);},
-  defence(){const S=this.st(),L=this.ch.baseLevel||1;return Math.max(0,Math.floor(S.VIT*.5)+this.gear().def+Math.floor(L*.3)+(this.mods().def||0));},
-  mdef(){return Math.max(0,Math.floor(this.st().VIT*.2)+(this.mods().mdef||0));},
+  defence(){const S=this.st(),L=this.ch.baseLevel||1;return Math.max(0,Math.floor(S.VIT*.8)+this.gear().def+Math.floor(L*.3)+(this.mods().def||0));},
+  mdef(){return Math.max(0,Math.floor(this.st().VIT*.8)+(this.mods().mdef||0));},
   maxHp(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
     return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX();},
   hpX(){return this.ch&&this.ch.job.classId==='recruit'?1:CHAR_HP_X;},     // Recruits keep their original HP
@@ -6521,7 +6523,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14c';
+const BUILD='2026-11-14d';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

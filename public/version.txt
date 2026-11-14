@@ -1,1 +1,1 @@
-build: 2026-11-14c (GameMaster wings and title)
+build: 2026-11-14d (Tougher VIT)
