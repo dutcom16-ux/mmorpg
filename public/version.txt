@@ -1,1 +1,1 @@
-build: 2026-11-14e (Haste Potion, AUTO skills and AUTO potions)
+build: 2026-11-14f (Elite monsters)
