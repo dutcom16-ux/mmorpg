@@ -1,1 +1,1 @@
-build: 2026-11-14b (Bigger wings, GameMaster letters)
+build: 2026-11-14c (GameMaster wings and title)
