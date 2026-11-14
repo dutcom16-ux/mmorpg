@@ -1,1 +1,1 @@
-build: 2026-11-15c (Badlands and Ridge swap levels)
+build: 2026-11-15d (New Knight skill art)
