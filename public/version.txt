@@ -1,1 +1,1 @@
-build: 2026-11-15a (Material quests)
+build: 2026-11-15b (Safer Synthesis, every arrow)
