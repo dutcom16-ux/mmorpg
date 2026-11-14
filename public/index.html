@@ -485,6 +485,7 @@ svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,
 .r2{border-color:#4d9cff;box-shadow:inset 0 0 14px rgba(77,156,255,.3)}
 .r3{border-color:#b56cff;box-shadow:inset 0 0 16px rgba(181,108,255,.34),0 0 10px rgba(181,108,255,.25)}
 .r4{border-color:#ff9b2e;box-shadow:inset 0 0 18px rgba(255,155,46,.38),0 0 12px rgba(255,155,46,.35)}
+.r5{border-color:#ff4545;box-shadow:inset 0 0 20px rgba(255,60,60,.45),0 0 14px rgba(255,60,60,.45)}
 .sel{outline:2px solid #fff;outline-offset:2px}
 .eqstats{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 10px;margin:12px 0 0;font-size:13px}
 .eqstats dt{color:var(--muted);font-weight:700}.eqstats dd{margin:0;font-weight:900}
@@ -2254,6 +2255,11 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14u',date:'2026-11-14',title:'Divine tier and wing Synthesis',
+    new:['A new tier above Legendary: Divine, with red names. Only Synthesis makes it: Legendary to Divine succeeds 30% of the time, and a failure destroys the piece and the materials. Divine pieces have stronger numbers and five bonus lines; Divine Legendary accessories and wings get 25% more',
+      'Wings in Synthesis: Feather Wings become Seraph Wings, Seraph Wings become Drake Wings, and Drake Wings become the Legendary wings you choose (Phoenix, Celestial, Godwings of Night or Godwings of Dawn, 50%), then Divine'],
+    balance:['Dorin no longer crafts Legendary pieces: no Mythic weapons, armour or accessories and no Legendary wings in his recipes. Legendary gear comes from Synthesis (and rare drops)',
+      'Legendary wings: Phoenix Wings 190 melee attack, Celestial Wings 190 magic attack, Godwings of Night 190 ranged attack, Godwings of Dawn +20% max HP. Their DEF, MDEF and HP now raise yours by a percentage (8-12%), and the attack wings add 5 LUK. Wings you already own change too']},
   {v:'2026-11-14t',date:'2026-11-14',title:'Rings and amulets from Dorin',
     new:['Dorin\'s workshop has an Accessories tab: a Heroic ring and a Heroic amulet from Base Level 40, and all six Legendary accessories from Base Level 70 (Bloodfang Ring, Hawkeye Signet, Archmage\'s Seal, Heart of the Mountain, Fortune\'s Charm and Seraph\'s Tear), each made from its own monster materials plus Iron Ingots, Arcane Dust and Halo Fragments',
       'Greta\'s Equipment Shop sells a ring and an amulet for your level and the next']},
@@ -3007,8 +3013,9 @@ function itemIcon(id){const d=itemDef(id);return gi(id)||tileIcon(d.icon,d.color
    Monsters drop gear at their own level. Rarity sets a multiplier on the base numbers and how many bonus stat
    lines it rolls. A weapon only works for the job line it was made for; armour and rings fit everyone. */
 const RARITY=[{name:'Common',color:'#d2d6df',mult:1,lines:0},{name:'Uncommon',color:'#6fdc7a',mult:1.22,lines:1},
-  {name:'Rare',color:'#5aa8ff',mult:1.5,lines:2},{name:'Epic',color:'#c07bff',mult:1.85,lines:3},{name:'Legendary',color:'#ffa63d',mult:2.3,lines:4}];
-const RARITY_ROLL=[.6,.27,.1,.026,.004],RARITY_WORD=['','Fine','Superior','Heroic','Mythic'],GEAR_DROP=.14,BAG_SIZE=40,ENH_MAX=10;
+  {name:'Rare',color:'#5aa8ff',mult:1.5,lines:2},{name:'Epic',color:'#c07bff',mult:1.85,lines:3},{name:'Legendary',color:'#ffa63d',mult:2.3,lines:4},
+  {name:'Divine',color:'#ff4545',mult:2.85,lines:5}];   // Divine (build 14u): only from Synthesis, red names
+const RARITY_ROLL=[.6,.27,.1,.026,.004],RARITY_WORD=['','Fine','Superior','Heroic','Mythic','Divine'],GEAR_DROP=.14,BAG_SIZE=40,ENH_MAX=10;
 /* ground loot: lasts a minute (blinks for the last 8 s); pick it up from PICK_R away, Z reaches for anything within PICK_FAR */
 const DROP_LIFE=60000,DROP_BLINK=8000,DROP_POP=520,DROP_MAX=60,PICK_R=30,PICK_FAR=150;
 const GEAR_SLOTS=[['weapon','Left hand'],['offhand','Right hand'],['head','Head'],['body','Body'],['hands','Gloves'],['feet','Feet'],['ring','Ring'],['neck','Amulet'],['wings','Wings']];
@@ -3062,18 +3069,22 @@ const LEGEND_ACC={
   mountain:{slot:'neck',name:'Heart of the Mountain',color:'#8fe08a',desc:'Max HP, defence and magic defence',make:L=>({hp:Math.round((4+L*1.5)*2.3*1.4),def:accD(L,.7),mdef:accD(L,.9),bonus:{VIT:3+Math.floor(L/12)}})},
   fortune:{slot:'neck',name:"Fortune's Charm",color:'#ffe08a',desc:'LUK, AGI and critical hits',make:L=>({crit:Math.round(6+L/15),hp:Math.round((4+L*1.5)*2.3*.6),bonus:{LUK:5+Math.floor(L/8),AGI:2+Math.floor(L/20)}})},
   seraphtear:{slot:'neck',name:"Seraph's Tear",color:'#bfe8ff',desc:'Stronger heals, magic attack and magic defence',make:L=>({heal:Math.round(10+L/6),matk:accW(L,.25),mdef:accD(L,.9),bonus:{INT:2+Math.floor(L/15)}})}};
-const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','crit','heal','psn','stn'];
+const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','defPct','mdefPct','hpPct','crit','heal','psn','stn'];
+const DIVINE_X=1.25;   // a Divine Legendary accessory or wing: its numbers x1.25
 function legendAcc(g,id){const A=LEGEND_ACC[id];if(!A||GEAR_BASES[g.base].slot!==A.slot) return g;for(const k of GEAR_STATS) delete g[k];
-  Object.assign(g,A.make(g.lvl));g.bonus={...(A.make(g.lvl).bonus||{})};g.uniq=id;g.name=A.name;g.rar=4;return g;}
-/* the four Legendary wings (build 14s) each have their own stats: Phoenix Wings melee attack, Celestial Wings magic
-   attack, Godwings of Night ranged attack, Godwings of Dawn max HP; all with DEF and MDEF (and a little LUK on the
-   attack wings). Worked out from the wings' kind and item level, so wings made before this build change too */
+  const div=g.rar>=5,x=div?DIVINE_X:1,o=A.make(g.lvl);for(const k of GEAR_STATS) if(o[k]) g[k]=Math.round(o[k]*x);
+  g.bonus=Object.fromEntries(Object.entries(o.bonus||{}).map(([k,v])=>[k,Math.round(v*x)]));g.uniq=id;g.name=(div?'Divine ':'')+A.name;g.rar=div?5:4;return g;}
+/* the four Legendary wings each have their own role (build 14s) and fixed numbers (build 14u): Phoenix Wings 190 melee
+   attack, Celestial Wings 190 magic attack, Godwings of Night 190 ranged attack, Godwings of Dawn +20% max HP; their
+   DEF, MDEF and HP raise yours by a percentage; the attack wings add a little LUK. Divine wings: x1.25. Worked out
+   from the kind and the rarity, so wings made before this build change too */
 const WING_ROLE={3:'patk',4:'matk',5:'ratk',6:'hp'};
-function roleWing(g){const k=wingKindOf(g),R=WING_ROLE[k];if(!R) return g;const L=g.lvl,m=k>=GOD_WING?1.6:1,d0=(2+L*.22)*2.3*m,w=(3+L*1.2)*2.3*.4*m;
-  for(const s of GEAR_STATS) delete g[s];g.wing=k;g.bonus={};g.def=Math.round(d0);g.mdef=Math.round(d0);
-  if(R==='patk'||R==='ratk'){g[R]=Math.round(w);g.bonus.LUK=Math.round(3+L/25+(m>1?2:0));}
-  else if(R==='matk'){g.matk=Math.round(w);g.mdef=Math.round(d0*1.25);}
-  else {g.hp=Math.round((10+L*2.2)*2.3*m*1.5);g.mdef=Math.round(d0*1.25);}
+const WING_STATS={3:{patk:190,defPct:8,mdefPct:8,bonus:{LUK:5}},4:{matk:190,mdefPct:12,defPct:6},5:{ratk:190,defPct:8,mdefPct:8,bonus:{LUK:5}},6:{hpPct:20,defPct:10,mdefPct:12}};
+const WING_DESC={3:'190 melee attack, +8% DEF and MDEF, +5 LUK',4:'190 magic attack, +12% MDEF, +6% DEF',5:'190 ranged attack, +8% DEF and MDEF, +5 LUK',6:'+20% max HP, +12% MDEF, +10% DEF'};
+const WING_LVL=[22,42,57,77,97,102,102,102];   // each kind's item level
+function roleWing(g){const k=wingKindOf(g),W=WING_STATS[k];if(!W) return g;const x=g.rar>=5?DIVINE_X:1;
+  for(const s of GEAR_STATS) delete g[s];g.wing=k;g.bonus={};
+  for(const s of GEAR_STATS) if(W[s]) g[s]=Math.round(W[s]*x);for(const [s,v] of Object.entries(W.bonus||{})) g.bonus[s]=Math.round(v*x);
   return g;}
 /* every piece that comes in from a save, the vault or a trade goes through here (safe to repeat) */
 function normGear(g){if(g&&g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null) roleWing(g);return g;}
@@ -3088,13 +3099,13 @@ const SLOT_SVG=Object.fromEntries(Object.entries({weapon:'<path d="M5 19L18 6M14
   .map(([k,p])=>[k,`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`]));
 /* a piece's number for one stat, with its enhancement (+10% per level, at least +1; chances and % bonuses +1 per 2
    levels). A two-handed weapon's Attack counts TWO_HAND times */
-const PCT_STATS=new Set(['crit','heal','psn','stn']);
+const PCT_STATS=new Set(['crit','heal','psn','stn','defPct','mdefPct','hpPct']);
 const gearVal=(g,k)=>{let x=g[k]||0;if(!x) return 0;if(k==='atk'&&isTwoHand(g)) x=Math.round(x*TWO_HAND);
   if(PCT_STATS.has(k)) return x+Math.floor((g.enh||0)/2);return x+Math.max(g.enh||0,Math.round(x*.1*(g.enh||0)));};
-const STAT_LABEL={atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
+const STAT_LABEL={atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',defPct:'Defence',mdefPct:'Magic defence',hpPct:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
 const statText=(k,v)=>PCT_STATS.has(k)?`+${v}%`:k==='hp'?`+${v}`:`${v}`;
 const gearScore=g=>Math.round(gearVal(g,'atk')*2+(gearVal(g,'patk')+gearVal(g,'ratk')+gearVal(g,'matk'))*2+gearVal(g,'def')*3+gearVal(g,'mdef')*2.5+gearVal(g,'hp')*.25
-  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
+  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+gearVal(g,'defPct')*12+gearVal(g,'mdefPct')*10+gearVal(g,'hpPct')*15+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
 const gearReq=g=>g.slot==='wings'&&g.wing===GM_WING?1:Math.max(1,g.lvl-3);   // GameMaster wings: any level
 const gearPrice=g=>Math.round((4+g.lvl*1.5)*(1+g.rar*.9)*(1+(g.enh||0)*.15));
 const gearSmelt=g=>({ingot:1+Math.floor(g.lvl/12)+g.rar+Math.floor((g.enh||0)/2),dust:g.rar});
@@ -3122,7 +3133,7 @@ function makeGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar],v=()=>.88
   for(let i=0;i<R.lines;i++){const k=STAT_KEYS[Math.floor(Math.random()*6)];g.bonus[k]=(g.bonus[k]||0)+1+Math.floor(lvl/10)+Math.floor(Math.random()*(rar+1));}
   if(B.slot==='ring'&&!R.lines) g.bonus.LUK=1+Math.floor(lvl/15);
   if(B.slot==='neck'&&!R.lines) g.bonus.VIT=1+Math.floor(lvl/15);
-  if((B.slot==='ring'||B.slot==='neck')&&rar===4){const ids=Object.keys(LEGEND_ACC).filter(k=>LEGEND_ACC[k].slot===B.slot);legendAcc(g,ids[Math.floor(Math.random()*ids.length)]);}
+  if((B.slot==='ring'||B.slot==='neck')&&rar>=4){const ids=Object.keys(LEGEND_ACC).filter(k=>LEGEND_ACC[k].slot===B.slot);legendAcc(g,ids[Math.floor(Math.random()*ids.length)]);}
   return g;}
 function rollRarity(){const r=Math.random();let a=0;for(let i=0;i<RARITY_ROLL.length;i++){a+=RARITY_ROLL[i];if(r<a) return i;}return 0;}
 function rollGear(lvl,job){let base;const K=kitOf(job);
@@ -3527,7 +3538,7 @@ const TOWN_NPCS={
     talk(c){return {opts:[{label:'Show me what you can craft',action:t=>{t.closeDialogue();if(t.shopTab==='Synthesis') t.shopTab='Wings';t.openShop('craft');return {pages:['']};}},
         {label:'Synthesis: forge my gear one rarity higher',action:t=>{t.closeDialogue();t.shopTab='Synthesis';t.openShop('craft');return {pages:['']};}}],
       pages:['Dorin, artificer. Greta hammers steel; I make things that fly.',
-        (c.baseLevel||1)<20?'Wings take a seasoned traveller. Come back at Base Level 20 with Cloud Wisps and Gale Fur from Skyward Ridge.':'Wings, Heroic and Mythic gear, rings and amulets, even the Legendary ones: bring me the materials and the gold, and I\'ll have it done before you blink.']};}},
+        (c.baseLevel||1)<20?'Wings take a seasoned traveller. Come back at Base Level 20 with Cloud Wisps and Gale Fur from Skyward Ridge.':'Wings, Heroic gear, rings and amulets. Legendary and Divine pieces I forge by Synthesis, from your Epic ones: bring me the materials and the gold, and I\'ll have it done before you blink.']};}},
   scholar:{name:'Master Orrin',title:'Scholar',barks:['Fascinating...','Where did I put my notes?','Aetherite, Aetherite...'],
     talk(c){return {pages:['Mm? Oh, a new face. Forgive me, I was reading about the Aetherite cores.',
       'Before the Fracture, the floating island temples kept the crystals in balance. Now the shards are scattered, and the World Bosses wake as they fall.']};}},
@@ -3723,10 +3734,10 @@ const TownScreen={
   critMul(){return 1.4+(this.mods().critDmg||0);},
   mobFlee(m){return 100+m.lvl+Math.floor(m.lvl*.35);},
   mobHit(m,now){return (175+m.lvl+Math.floor(m.lvl*.5))*(now<(m.blindUntil||0)?.7:1)*(m.elite?ELITE.hit:1);},      // elites: 60% more accurate
-  defence(){const S=this.st(),L=this.ch.baseLevel||1;return Math.max(0,Math.floor(S.VIT*.8)+this.gear().def+Math.floor(L*.3)+(this.mods().def||0));},
-  mdef(){return Math.max(0,Math.floor(this.st().VIT*.8)+this.gear().mdef+(this.mods().mdef||0));},
+  defence(){const S=this.st(),L=this.ch.baseLevel||1,G=this.gear();return Math.max(0,Math.floor((Math.floor(S.VIT*.8)+G.def+Math.floor(L*.3)+(this.mods().def||0))*(1+G.defPct/100)));},
+  mdef(){const G=this.gear();return Math.max(0,Math.floor((Math.floor(this.st().VIT*.8)+G.mdef+(this.mods().mdef||0))*(1+G.mdefPct/100)));},
   maxHp(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
-    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX();},
+    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX()*(1+this.gear().hpPct/100);},
   hpX(){return this.ch&&this.ch.job.classId==='recruit'?1:CHAR_HP_X;},     // Recruits keep their original HP
   maxRes(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
     return Math.floor((40+(L-1)*3+t*20)*(SP_MOD[this.line()]||1)*(1+S.INT/100)*(1+(M.spPct||0)));},
@@ -4072,7 +4083,7 @@ const TownScreen={
       <div class="aw-row">Order <select id="aw-order" aria-label="Loot order">${opt('each','Attack, then loot: pick up after every kill',a.lootOrder||'each')}${opt('clear','Clear first: loot once the monsters in range are dead',a.lootOrder||'each')}</select></div>
       <div class="aw-grid"><label><input type="checkbox" data-loot="gold" ${l.gold!==false?'checked':''}> Gold</label><label><input type="checkbox" data-loot="pots" ${l.pots!==false?'checked':''}> Potions</label>
         <label><input type="checkbox" data-loot="mats" ${l.mats!==false?'checked':''}> Monster materials</label><label><input type="checkbox" data-loot="gear" ${l.gear!==false?'checked':''}> Gear</label></div>
-      <div class="aw-row">Only gear that is <select id="aw-gmin" aria-label="Minimum gear rarity">${RARITY.map((r,i)=>opt(i,r.name+(i<4?' or better':''),l.gearMin||0)).join('')}</select></div>
+      <div class="aw-row">Only gear that is <select id="aw-gmin" aria-label="Minimum gear rarity">${RARITY.map((r,i)=>opt(i,r.name+(i<RARITY.length-1?' or better':''),l.gearMin||0)).join('')}</select></div>
       <div class="aw-hint">Things AUTO skips stay on the ground for you to pick up by hand (Z). Auto-sell and auto-smelt rules are in the bag (I).</div></div>
     <div class="aw-sec"><h4>Auto-potions</h4><label style="margin-bottom:6px"><input type="checkbox" id="aw-eat" ${a.eat!==false?'checked':''}> Drink the potions equipped here</label>
       ${[['hp','Health potion',`below <select id="aw-eatat" aria-label="HP threshold">${[10,15,20,25,30,35,40,45,50,55,60,65,70,75,80].map(n=>opt(n,n+'% HP',a.eatAt)).join('')}</select>`],
@@ -5282,7 +5293,7 @@ const TownScreen={
     if(key!==o.key){o.key=key;o.j=j;try{o.comp=Sprites.compose(j,APPEARANCE.normalize(P.ap||{}),'all');this.pkc=this.pkc||new Map();
       if(!this.pkc.has(key)) this.pkc.set(key,54/this.figureHeight(o.comp));o.pk=this.pkc.get(key);}catch(e){o.comp=null;}}
     const [MW,MH]=this.meta.size,x=+P.x,y=+P.y;if(Number.isFinite(x)&&Number.isFinite(y)){o.tx=Math.max(0,Math.min(MW,x));o.ty=Math.max(0,Math.min(MH,y));}
-    o.eq=Array.isArray(P.eq)?[Math.max(-1,Math.min(4,P.eq[0]|0)),Math.max(0,Math.min(ENH_MAX,P.eq[1]|0)),Math.max(-1,Math.min(4,P.eq[2]|0)),Math.max(-1,Math.min(GEAR_BASES.wings.names.length-1,P.eq[3]??-1))]:null;
+    o.eq=Array.isArray(P.eq)?[Math.max(-1,Math.min(RARITY.length-1,P.eq[0]|0)),Math.max(0,Math.min(ENH_MAX,P.eq[1]|0)),Math.max(-1,Math.min(RARITY.length-1,P.eq[2]|0)),Math.max(-1,Math.min(GEAR_BASES.wings.names.length-1,P.eq[3]??-1))]:null;
     if(o.eq&&o.eq[3]===GM_WING&&!this.gmNameOf(P)) o.eq[3]=-1;                      // only a real GameMaster shows them
     o.dir=(P.d|0)&7;o.mv=!!P.mv;const hp=Math.max(0,Math.min(100,P.hp|0));if(hp<o.hp) o.hurtT=now;o.hp=hp;o.dead=!!P.dd;o.veil=!!P.vl;
     const a=Array.isArray(P.at)?P.at[0]:0;if(o.atS===undefined) o.atS=a;else if(a!==o.atS){o.atS=a;o.atkT=now;}},
@@ -5661,22 +5672,35 @@ const TownScreen={
   /* ---------- Synthesis (Dorin, build 14s): a piece forged one rarity higher; a failure destroys it and what was spent ---------- */
   synthWhy(g,k){const c=this.ch;for(const [id,n] of Object.entries(k.need)) if((c.items[id]||0)<n) return `Needs ${n} ${itemDef(id).name}`;if((c.gold||0)<k.gold) return 'Not enough gold';return '';},
   synthItems(){return this.ch.bag.filter(canSynth).sort((a,b)=>b.rar-a.rar||b.lvl-a.lvl);},
-  synthTarget(g){const opts=Object.keys(LEGEND_ACC).filter(id=>LEGEND_ACC[id].slot===g.slot),p=(this.synthPick||{})[g.uid];return {opts,pick:opts.includes(p)?p:opts[0]};},
+  /* what a synthesis makes: the next rarity of the same piece, with a choice when an Epic accessory becomes a Legendary
+     one or Epic wings become Legendary wings. -> {name, desc, opts:[[id,name,desc]], pick} */
+  synthTarget(g){const t=g.rar+1,p=(this.synthPick||{})[g.uid],W=GEAR_BASES.wings.names;let opts=null;
+    if(t===4&&(g.slot==='ring'||g.slot==='neck')) opts=Object.keys(LEGEND_ACC).filter(id=>LEGEND_ACC[id].slot===g.slot).map(id=>[id,LEGEND_ACC[id].name,LEGEND_ACC[id].desc]);
+    if(t===4&&g.slot==='wings') opts=[3,4,5,6].map(k=>[String(k),W[k],WING_DESC[k]]);
+    if(opts){const o=opts.find(x=>x[0]===p)||opts[0];return {opts,pick:o[0],name:o[1],desc:o[2]};}
+    if(g.slot==='wings'){const k=t===5?wingKindOf(g):t-1;return {name:(t===5?'Divine ':'')+W[k],desc:WING_DESC[k]||''};}
+    if(t===5&&g.uniq) return {name:'Divine '+LEGEND_ACC[g.uniq].name,desc:LEGEND_ACC[g.uniq].desc};
+    return {name:RARITY[t].name,desc:''};},
+  /* the new piece (same kind and item level; wings take their kind's level), keeping the enhancement */
+  synthMake(g){const t=g.rar+1,T=this.synthTarget(g);let n;
+    if(g.slot==='wings'){const k=t===5?wingKindOf(g):t===4?+T.pick:t-1;n=craftWings(k,Math.max(g.lvl,WING_LVL[k]),t);}
+    else{n=makeGear(g.base,g.lvl,t);if(g.slot==='ring'||g.slot==='neck') legendAcc(n,t===4?T.pick:g.uniq||n.uniq);}
+    n.enh=g.enh||0;n.crafted=true;return n;},
   synthHtml(){const c=this.ch,L=this.synthItems(),last=this.synthLast;
-    let h=`<p class="shnote">Dorin melts a piece down with materials and forges it <b>one rarity higher</b> (Common → Uncommon → Rare → Epic → Legendary), at the same item level and keeping its enhancement. It can fail, and <b>a failed synthesis destroys the piece and everything spent on it</b>. Epic to Legendary succeeds 50% of the time; an Epic ring or amulet becomes the Legendary accessory you choose.</p>`;
+    let h=`<p class="shnote">Dorin melts a piece down with materials and forges it <b>one rarity higher</b> (Common → Uncommon → Rare → Epic → Legendary → <span style="color:${RARITY[5].color}">Divine</span>), at the same item level and keeping its enhancement. It can fail, and <b>a failed synthesis destroys the piece and everything spent on it</b>. Epic to Legendary succeeds 50% of the time, Legendary to Divine 30%. Legendary pieces only come from Synthesis (and rare drops): an Epic ring or amulet becomes the Legendary accessory you choose, and Drake Wings the Legendary wings you choose.</p>`;
     if(last) h+=`<div class="synres ${last.ok?'ok':'no'}" role="status">${last.ok?`Success! ${esc(last.name)}`:`Failed · ${esc(last.name)} and the materials are gone`}</div>`;
-    if(!L.length) h+=`<p class="shfoot">Nothing in your bag can be synthesized. Bring Common to Epic weapons, shields, arrows, armour, rings or amulets (take worn gear off first; wings are only crafted).</p>`;
-    for(const g of L){const k=synthCost(g),why=this.synthWhy(g,k),R2=RARITY[k.t],acc=k.t===4&&(g.slot==='ring'||g.slot==='neck'),T=acc?this.synthTarget(g):null;
+    if(!L.length) h+=`<p class="shfoot">Nothing in your bag can be synthesized. Bring weapons, shields, arrows, armour, rings, amulets or wings below Divine (take worn gear off first).</p>`;
+    for(const g of L){const k=synthCost(g),why=this.synthWhy(g,k),R2=RARITY[k.t],T=this.synthTarget(g),acc=!!T.opts;
       const mats=Object.entries(k.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
         return `<span class="${have>=n?'ok':'no'}">${esc(d.name)} ${Math.min(have,n)}/${n}</span>${have<n?`<button class="lw-find" data-find="${id}" title="Where to get ${esc(d.name)}" aria-label="Where to get ${esc(d.name)}">⌕</button>`:''}`;}).join(' · ');
-      h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm"><span style="color:${RARITY[g.rar].color}">${esc(gearName(g))}</span> <span style="color:var(--muted)">→</span> <span style="color:${R2.color}">${acc?esc(LEGEND_ACC[T.pick].name):R2.name}</span></div>
-        <div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · item Lv ${g.lvl}${acc?`<br><span class="synpick">${T.opts.map(id=>`<button class="btn" data-spick="${g.uid}|${id}" aria-pressed="${id===T.pick}" title="${esc(LEGEND_ACC[id].desc)}">${esc(LEGEND_ACC[id].name)}</button>`).join('')}</span><br>${esc(LEGEND_ACC[T.pick].desc)}`:''}
+      h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm"><span style="color:${RARITY[g.rar].color}">${esc(gearName(g))}</span> <span style="color:var(--muted)">→</span> <span style="color:${R2.color}">${esc(T.name)}${T.name.startsWith(R2.name)?'':` (${R2.name})`}</span></div>
+        <div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · item Lv ${g.lvl}${acc?`<br><span class="synpick">${T.opts.map(([id,nm,d])=>`<button class="btn" data-spick="${g.uid}|${id}" aria-pressed="${id===T.pick}" title="${esc(d)}">${esc(nm)}</button>`).join('')}</span>`:''}${T.desc?`<br>${esc(T.desc)}`:''}
         <br>${mats} · <span class="${(c.gold||0)>=k.gold?'ok':'no'}">${k.gold.toLocaleString()} gold</span></div></div>
         <div class="buy"><span class="price">${Math.round(k.rate*100)}% success</span><button class="btn${why?'':' primary'}" data-synth="${g.uid}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Synthesize'}</button></div></div>`;}
     return h;},
   synth(uid){const c=this.ch,i=c.bag.findIndex(g=>g.uid===uid);if(i<0) return;const g=c.bag[i];if(!canSynth(g)) return;const k=synthCost(g),why=this.synthWhy(g,k);if(why){toast(why);return;}
     for(const [id,n] of Object.entries(k.need)) c.items[id]-=n;c.gold-=k.gold;
-    if(Math.random()<k.rate){const n=makeGear(g.base,g.lvl,k.t);if(k.t===4&&(n.slot==='ring'||n.slot==='neck')) legendAcc(n,this.synthTarget(g).pick);n.enh=g.enh||0;n.crafted=true;c.bag[i]=n;
+    if(Math.random()<k.rate){const n=this.synthMake(g);c.bag[i]=n;
       const nm=`${gearName(n)} (${RARITY[n.rar].name})`;AudioFX.sfx('level');this.synthLast={ok:true,name:nm};this.log('loot',null,`Synthesis succeeded · ${nm}`);toast(`Success! ${nm}`,3500);}
     else{c.bag.splice(i,1);AudioFX.sfx('miss');this.synthLast={ok:false,name:gearName(g)};this.log('loot',null,`Synthesis failed · ${gearName(g)} and the materials were destroyed`);toast(`Synthesis failed · ${gearName(g)} was destroyed`,3500);}
     if(this.synthPick) delete this.synthPick[uid];this.tracker();this.save();this.renderShop();},
@@ -5930,19 +5954,19 @@ const TownScreen={
     this.log('sys',null,`Trade · trading with ${T.n}`);AudioFX.sfx('quest');this.openWin('tradewin');this.tradeSend(now);},
   /* what is on the table, as small as it can be (one presence packet is at most 6000 characters) */
   tradeGear(){const T=this.trade,c=this.ch;return T.mine.w.map(u=>c.bag.find(g=>g.uid===u)||(T.esc&&T.esc.w.find(g=>g.uid===u))).filter(Boolean);},
-  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries(['patk','ratk','matk','mdef','crit','heal','psn','stn','uniq'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
+  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries(['patk','ratk','matk','mdef','crit','heal','psn','stn','defPct','mdefPct','hpPct','uniq'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
   tradeSend(now){const T=this.trade;if(!T||T.state!=='open') return;this.partySend('tof',T.id,T.tid,T.rev,this.tradePack());T.sentAt=now||performance.now();},
   /* what the other player says is on the table: only well-formed, in-range things are accepted */
   tradeParse(str){let o;try{o=JSON.parse(String(str).slice(0,4000));}catch(e){return null;}if(!o||typeof o!=='object') return null;
     const clamp=(v,a,b)=>Math.max(a,Math.min(b,Math.floor(+v||0))),out={g:clamp(o.g,0,1e9),s:[],w:[]};
     for(const x of (Array.isArray(o.s)?o.s:[]).slice(0,TRADE.slots)){if(Array.isArray(x)&&itemDef(String(x[0]))&&clamp(x[1],0,99999)>0) out.s.push([String(x[0]),clamp(x[1],1,99999)]);}
     for(const x of (Array.isArray(o.w)?o.w:[]).slice(0,TRADE.slots)){if(!Array.isArray(x)) continue;const B=GEAR_BASES[x[0]];if(!B) continue;
-      const g={base:String(x[0]),slot:B.slot,lvl:clamp(x[1],1,MAX_BASE),rar:clamp(x[2],0,4),enh:clamp(x[3],0,ENH_MAX),name:String(x[4]||B.names[0]).replace(/[<>&"']/g,'').slice(0,40),bonus:{}};
+      const g={base:String(x[0]),slot:B.slot,lvl:clamp(x[1],1,MAX_BASE),rar:clamp(x[2],0,RARITY.length-1),enh:clamp(x[3],0,ENH_MAX),name:String(x[4]||B.names[0]).replace(/[<>&"']/g,'').slice(0,40),bonus:{}};
       if(B.slot==='weapon') g.atk=clamp(x[5],1,9999);else{if(x[6]) g.def=clamp(x[6],0,5000);if(x[7]) g.hp=clamp(x[7],0,50000);}
       if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);
       if(x[8]&&typeof x[8]==='object') for(const k of STAT_KEYS) if(x[8][k]) g.bonus[k]=clamp(x[8][k],0,200);
-      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of ['crit','heal','psn','stn']) if(x[10][k]) g[k]=clamp(x[10][k],0,100);
-        const u=String(x[10].uniq||'');if(LEGEND_ACC[u]&&LEGEND_ACC[u].slot===B.slot){g.uniq=u;g.name=LEGEND_ACC[u].name;}}
+      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of ['crit','heal','psn','stn','defPct','mdefPct','hpPct']) if(x[10][k]) g[k]=clamp(x[10][k],0,100);
+        const u=String(x[10].uniq||'');if(LEGEND_ACC[u]&&LEGEND_ACC[u].slot===B.slot){g.uniq=u;g.name=(g.rar>=5?'Divine ':'')+LEGEND_ACC[u].name;}}
       if(B.slot==='wings'){g.wing=clamp(x[9],0,GEAR_BASES.wings.names.length-1);if(g.wing===GM_WING) continue;}out.w.push(normGear(g));}
     if(out.s.length+out.w.length>TRADE.slots) return null;return out;},
   tradeEvent(t,from,P,e,now,nm){const T=this.trade;
@@ -6067,7 +6091,7 @@ const TownScreen={
     return Object.keys(all).find(k=>flat(all[k].name)===f)||Object.keys(all).find(k=>flat(all[k].name).includes(f))||null;},
   gmWing(q){q=String(q||'').toLowerCase();const N=GEAR_BASES.wings.names;if(/^\d+$/.test(q)) return +q<N.length?+q:-1;if(q==='gm'||q==='flame'||q==='dragon') return GM_WING;
     return N.findIndex(n=>n.toLowerCase().split(/\s+/).some(w=>w===q||w.startsWith(q)&&q.length>=3));},
-  gmRar(q){if(q===undefined) return null;q=String(q).toLowerCase();if(/^\d$/.test(q)) return Math.min(4,+q);
+  gmRar(q){if(q===undefined) return null;q=String(q).toLowerCase();if(/^\d$/.test(q)) return Math.min(RARITY.length-1,+q);
     const i=RARITY.findIndex(r=>r.name.toLowerCase()===q);if(i>=0) return i;const j=RARITY_WORD.findIndex(w=>w&&w.toLowerCase()===q);return j>0?j:null;},
   gmBossKind(q){q=String(q||'').toLowerCase();if(/queen|slime/.test(q)) return 'slimequeen';if(/golem|lava|dragon/.test(q)) return 'lavagolem';return null;},
   gmMap(q){q=String(q||'').toLowerCase().replace(/[^a-z]/g,'');if(!q) return null;if(q==='oakhaven'||q==='town') return 'town';
@@ -6284,12 +6308,12 @@ const TownScreen={
     else if(REFINED[key]) note=key==='ingot'?'Not dropped or sold: smelt gear you don\'t need (select it in your inventory and Smelt, or turn on auto-smelt). Every piece gives Iron Ingots. Greta spends them on enhancing.'
       :'Not dropped or sold: smelt Uncommon or better gear (inventory, Smelt, or auto-smelt). Enhancing past +4 and the best crafting recipes need it.';
     else if(key.startsWith('g:')){const b=key.slice(2),B=GEAR_BASES[b];
-      if(b==='wings'){const rs=RECIPES.filter(r=>r.group==='Wings');npc('artificer',`${rs.length} kinds, from Base Lv ${rs[0].lvl}`);note='Wings are only crafted. Dorin needs Cloud Wisps, Gale Fur, Rune Stones, Cinder Scales, Magma Cores or Ember Shards, plus Iron Ingots and Arcane Dust.';}
+      if(b==='wings'){const rs=RECIPES.filter(r=>r.group==='Wings');npc('artificer',`${rs.length} kinds, from Base Lv ${rs[0].lvl}`);npc('artificer','Synthesis: Drake Wings become the Legendary wings you choose (50%), then Divine (30%)');
+        note='Dorin crafts Feather, Seraph and Drake Wings. The Legendary wings (Phoenix, Celestial, Godwings of Night and of Dawn) only come from Synthesis of Drake Wings.';}
       else if((B.slot==='weapon'||B.slot==='offhand')&&!kit.includes(b)){rows.push({t:'Any monster',s:`${Math.round(GEAR_DROP*100)}% chance of gear per kill, now and then another job's weapon`});note=`${gearFor(b)} use ${LOC_GEAR[b].toLowerCase()}. Greta, Dorin and the bosses make weapons for your own job only.`;}
       else{npc('blacksmith',b==='ring'||b==='amulet'?`${LOC_GEAR[b].toLowerCase()} for your level`:'pieces for your level, Common to Superior');
-        if(b!=='ring'&&b!=='amulet') npc('artificer',`Heroic (Base Lv 40) and Mythic (Base Lv 70) ${B.slot==='weapon'?'weapons':B.slot==='offhand'?LOC_GEAR[b].toLowerCase():'armour'}`);
-        else npc('artificer',`a Heroic ${b} (Base Lv 40) and the Legendary ${b==='ring'?'Bloodfang Ring, Hawkeye Signet and Archmage\'s Seal':'Heart of the Mountain, Fortune\'s Charm and Seraph\'s Tear'} (Base Lv 70)`);
-        npc('artificer',b==='ring'||b==='amulet'?'Synthesis: an Epic one becomes a Legendary of your choice (50%)':'Synthesis: one rarity higher');
+        npc('artificer',b==='ring'||b==='amulet'?`a Heroic ${b} (Base Lv 40)`:`Heroic (Base Lv 40) ${B.slot==='weapon'?'weapons':B.slot==='offhand'?LOC_GEAR[b].toLowerCase():'armour'}`);
+        npc('artificer',b==='ring'||b==='amulet'?'Synthesis: an Epic one becomes the Legendary of your choice (50%), then Divine (30%)':'Synthesis: one rarity higher, up to Legendary (50%) and Divine (30%)');
         for(const k of BOSS_KINDS) boss(k,'Rare to Legendary gear');
         rows.push({t:'Any monster',s:`${Math.round(GEAR_DROP*100)}% chance of gear per kill, around the monster's level`});}}
     return {rows,note};},
@@ -7056,40 +7080,32 @@ function shopGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar];
   return g;}
 const shopPrice=g=>Math.round(gearPrice(g)*5);
 /* Synthesis costs: Iron Ingots, Arcane Dust (from Rare up) and gold by the rarity you are making and the item level,
-   plus monster materials for Epic and Legendary (Legendary: a Halo Fragment or Valkyrie Steel too) */
-const SYNTH_RATE=[0,.9,.75,.6,.5];   // chance of success by the rarity you are making (Uncommon ... Legendary)
-const SYNTH_MID={weapon:{stone:6},shield:{shell:8},armour:{shell:8},acc:{wisp:8},arrows:{stinger:6}};
-const SYNTH_TOP={weapon:{core:10,halo:1},shield:{dscale:10,halo:1},armour:{dscale:10,halo:1},acc:{feather:10,halo:3},arrows:{stinger:15,vsteel:5}};
-const synthCat=g=>g.slot==='ring'||g.slot==='neck'?'acc':g.slot==='weapon'?'weapon':(GEAR_BASES[g.base]||{}).kind==='arrows'?'arrows':g.slot==='offhand'?'shield':'armour';
+   plus monster materials for Epic, Legendary and Divine (Halo Fragments and Valkyrie Steel at the top). Wings too
+   (build 14u): Feather -> Seraph -> Drake Wings, Drake -> the Legendary wings of your choice, Legendary -> Divine */
+const SYNTH_RATE=[0,.9,.75,.6,.5,.3];   // chance of success by the rarity you are making (Uncommon ... Legendary, Divine)
+const SYNTH_MID={weapon:{stone:6},shield:{shell:8},armour:{shell:8},acc:{wisp:8},arrows:{stinger:6},wings:{dscale:15,core:10}};
+const SYNTH_TOP={weapon:{core:10,halo:1},shield:{dscale:10,halo:1},armour:{dscale:10,halo:1},acc:{feather:10,halo:3},arrows:{stinger:15,vsteel:5},wings:{ember:20,dscale:15,feather:10,halo:2}};
+const SYNTH_DIV={weapon:{core:20,vsteel:10,halo:4},shield:{dscale:20,vsteel:10,halo:4},armour:{dscale:20,feather:10,halo:4},acc:{feather:20,vsteel:8,halo:6},arrows:{stinger:25,vsteel:12,halo:3},wings:{feather:25,vsteel:15,halo:6}};
+const synthCat=g=>g.slot==='wings'?'wings':g.slot==='ring'||g.slot==='neck'?'acc':g.slot==='weapon'?'weapon':(GEAR_BASES[g.base]||{}).kind==='arrows'?'arrows':g.slot==='offhand'?'shield':'armour';
 function synthCost(g){const t=g.rar+1,L=g.lvl,need={ingot:2*t+Math.floor(L/10)};if(t>=2) need.dust=2*t+Math.floor(L/20);
-  if(t===3) Object.assign(need,SYNTH_MID[synthCat(g)]);if(t===4) Object.assign(need,SYNTH_TOP[synthCat(g)]);
-  return {t,need,gold:Math.round(100*t*t*(1+L/10)),rate:SYNTH_RATE[t]};}
-const canSynth=g=>!!g&&g.rar<4&&g.slot!=='wings'&&!!GEAR_BASES[g.base];
+  const C=synthCat(g);if(t===3) Object.assign(need,SYNTH_MID[C]);if(t===4) Object.assign(need,SYNTH_TOP[C]);if(t===5) Object.assign(need,SYNTH_DIV[C]);
+  return {t,need,gold:Math.round(100*t*t*(1+L/10)*(t===5?2:1)),rate:SYNTH_RATE[t]};}
+const canSynth=g=>!!g&&g.rar<RARITY.length-1&&!!GEAR_BASES[g.base]&&!(g.slot==='wings'&&wingKindOf(g)===GM_WING);
 /* recipes: need = materials by id (MATERIALS / REFINED), plus gold; make(line) returns the new item */
 const RECIPES=[
   {id:'w0',group:'Wings',lvl:20,need:{wisp:10,fur:6,ingot:6},gold:300,make:()=>craftWings(0,22,1)},
   {id:'w1',group:'Wings',lvl:40,need:{wisp:15,stone:10,ingot:12,dust:6},gold:1500,make:()=>craftWings(1,42,2)},
   {id:'w2',group:'Wings',lvl:55,need:{dscale:15,core:10,ingot:20,dust:12},gold:4000,make:()=>craftWings(2,57,3)},
-  {id:'w3',group:'Wings',lvl:75,need:{ember:25,dscale:20,core:15,ingot:35,dust:25},gold:12000,make:()=>craftWings(3,77,4)},
-  {id:'w4',group:'Wings',lvl:95,need:{wisp:30,stone:30,core:30,ingot:60,dust:50},gold:40000,make:()=>craftWings(4,97,4)},
-  {id:'w5',group:'Wings',lvl:99,need:{wisp:40,stone:40,core:40,dscale:40,ember:40,ingot:120,dust:100},gold:150000,make:()=>craftWings(5,102,4)},
-  {id:'w6',group:'Wings',lvl:99,need:{wisp:40,fur:40,stone:40,core:40,dscale:40,ingot:120,dust:100},gold:150000,make:()=>craftWings(6,102,4)},
-  ...KIT_BASES.flatMap(b=>[{id:'hw'+b,group:'Weapons',base:b,lvl:40,weapon:true,need:{stinger:12,shell:10,ingot:18,dust:8},gold:3000,make:()=>craftGear(b,45,3)},   // a Heroic and a Mythic piece
-    {id:'mw'+b,group:'Weapons',base:b,lvl:70,weapon:true,need:{dscale:20,core:15,ingot:40,dust:30},gold:15000,make:()=>craftGear(b,75,4)}]),                     // for each of your job's hands
+  ...KIT_BASES.map(b=>({id:'hw'+b,group:'Weapons',base:b,lvl:40,weapon:true,need:{stinger:12,shell:10,ingot:18,dust:8},gold:3000,make:()=>craftGear(b,45,3)})),   // a Heroic piece for each of your job's hands
   ...['body','head','hands','feet'].map(b=>({id:'ha'+b,group:'Armour',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear(b,45,3)})),
-  ...['body','head','hands','feet'].map(b=>({id:'ma'+b,group:'Armour',lvl:70,need:{dscale:12,stone:10,ingot:28,dust:20},gold:9000,make:()=>craftGear(b,75,4)})),
-  /* build 14t: rings and amulets. A Heroic (Epic) ring and amulet from Base Lv 40, and each of the six Legendary
-     accessories from Base Lv 70, every one with its own materials */
+  /* build 14t: rings and amulets, a Heroic (Epic) ring and amulet from Base Lv 40. Crafting stops at Epic (build 14u):
+     Legendary and Divine pieces, wings and accessories come from Synthesis */
   {id:'hring',group:'Accessories',lvl:40,need:{stone:8,wisp:8,ingot:12,dust:5},gold:2000,make:()=>craftGear('ring',45,3)},
-  {id:'hamulet',group:'Accessories',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear('amulet',45,3)},
-  ...Object.entries({bloodfang:{core:12,dscale:10,ember:15},hawkeye:{feather:12,fur:15,stinger:12},archmage:{stone:15,wisp:15,ember:10},
-      mountain:{shell:15,scale:15,core:10},fortune:{wisp:12,fur:12,vsteel:6},seraphtear:{feather:15,vsteel:8,wisp:10}})
-    .map(([id,m])=>({id:'la'+id,group:'Accessories',lvl:70,need:{...m,ingot:30,dust:25,halo:id==='seraphtear'?3:2},gold:20000,
-      make:()=>legendAcc(craftGear(LEGEND_ACC[id].slot==='ring'?'ring':'amulet',75,4),id)}))];
+  {id:'hamulet',group:'Accessories',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear('amulet',45,3)}];
 function craftGear(base,lvl,rar){const g=makeGear(base,lvl,rar);g.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);g.crafted=true;return g;}
 /* the wing kind (0-6) of a wings item: g.wing, or from its name for old saves; -1 for none */
-const wingKindOf=g=>g?(g.wing??GEAR_BASES.wings.names.indexOf(String(g.name||'').replace(/^(Fine|Superior|Heroic|Mythic) /,''))):-1;
-function craftWings(tier,lvl,rar){const g=craftGear('wings',lvl,rar);g.name=GEAR_BASES.wings.names[tier];g.wing=tier;
+const wingKindOf=g=>g?(g.wing??GEAR_BASES.wings.names.indexOf(String(g.name||'').replace(/^(Fine|Superior|Heroic|Mythic|Divine) /,''))):-1;
+function craftWings(tier,lvl,rar){const g=craftGear('wings',lvl,rar);g.name=(rar>=5?'Divine ':'')+GEAR_BASES.wings.names[tier];g.wing=tier;
   if(tier>=GOD_WING){const m=tier===GM_WING?2:1.6,b=tier===GM_WING?10:6;g.def=Math.round(g.def*m);g.hp=Math.round(g.hp*m);for(const k of ['STR','AGI','VIT','INT','DEX','LUK']) g.bonus[k]=(g.bonus[k]||0)+b;}   // god tier: tougher, +6 to every stat (GameMaster wings: x2, +10)
   return normGear(g);}   // the four Legendary wings: their own stats (roleWing)
 const recipeKey=(r,line)=>'pv'+r.id+(r.weapon?line:'');
@@ -7136,7 +7152,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14t';
+const BUILD='2026-11-14u';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

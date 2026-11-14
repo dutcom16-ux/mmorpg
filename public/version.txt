@@ -1,1 +1,1 @@
-build: 2026-11-14t (Rings and amulets from Dorin)
+build: 2026-11-14u (Divine tier and wing Synthesis)
