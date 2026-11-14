@@ -419,7 +419,7 @@ html.mobile .locwin{width:min(430px,94vw)}html.phone .lw-src{padding-left:8px}
 .aw-sec h4{margin:0 0 8px;font:900 13px Nunito,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--aether)}
 .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 14px}.aw-grid label,.aw-sec>label{display:flex;gap:8px;align-items:center;font-weight:800;font-size:13px}
 .aw-sec select{min-height:32px}.aw-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0;font-weight:800;font-size:13px}
-.aw-sk{display:grid;grid-template-columns:24px 34px 1fr auto;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px solid rgba(160,220,255,.08)}
+.aw-sk{display:grid;grid-template-columns:28px 34px 1fr auto;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px solid rgba(160,220,255,.08)}
 .aw-sk .gi,.aw-sk svg{width:32px;height:32px;border-radius:8px}.aw-sk .nm{font-weight:800;font-size:13px}.aw-sk .nm small{color:var(--muted);font-weight:700}
 .aw-sk .mv{display:flex;gap:4px}.aw-sk .mv .btn{min-height:28px;min-width:30px;padding:0 6px}.aw-sk.off .nm,.aw-sk.off .gi{opacity:.4}
 .aw-hint{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:6px}
@@ -565,6 +565,22 @@ svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,
 .sg .rk{position:absolute;right:-3px;bottom:-4px;padding:0 4px;border-radius:7px;background:rgba(8,12,28,.9);font:900 10px Nunito,sans-serif;color:#fff;box-shadow:0 0 0 1px rgba(247,213,142,.55)}
 .sg.on .rk{color:#ffe08a}.sg .pv{position:absolute;left:-3px;top:-4px;padding:0 4px;border-radius:7px;background:#3a2a6a;font:900 9px Nunito,sans-serif;color:#e0d4ff}
 .sg .lk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px;font:900 11px Nunito,sans-serif;color:#fff;text-shadow:0 1px 3px #000}
+.sg .oa{position:absolute;left:3px;top:2px;font:900 9px Nunito,sans-serif;color:#0b1230;background:#ffd76a;border-radius:4px;padding:0 3px;line-height:12px;box-shadow:0 0 0 2px rgba(8,12,28,.9)}
+.autorow{border:1px solid rgba(255,215,106,.35);background:rgba(255,215,106,.06);border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.autorow .ar-h{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.autorow .ar-h b{font-family:'Cinzel',serif;color:#ffd76a;letter-spacing:.06em;font-size:14px}
+.autorow .ar-h small{color:var(--muted);font-weight:700;font-size:11.5px;line-height:1.4}
+.autorow .ar-slots{display:flex;gap:6px;flex-wrap:wrap}
+.aslot{position:relative;width:46px;height:46px;border-radius:11px;border:1px solid rgba(255,215,106,.45);background:rgba(10,16,38,.55);display:grid;place-items:center;cursor:grab;padding:0;color:var(--text);touch-action:none}
+.aslot .gi,.aslot svg{width:36px;height:36px;border-radius:8px}.aslot .k{position:absolute;left:3px;top:1px;font:900 9px Nunito,sans-serif;color:#ffd76a}
+.aslot.empty{border-style:dashed;cursor:default;opacity:.7}.aslot.over,.aw-pot .ps.over{outline:2px solid #ffd76a;outline-offset:1px;background:rgba(255,215,106,.18)}
+.aw-pot{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start;padding:7px 0;border-bottom:1px solid rgba(160,220,255,.08)}
+.aw-pot .ps{position:relative;width:48px;height:48px;border-radius:12px;border:1px solid rgba(255,215,106,.45);background:rgba(10,16,38,.55);display:grid;place-items:center;touch-action:none}
+.aw-pot .ps.empty{border-style:dashed}.aw-pot .ps .plus{color:var(--muted);font:900 20px Nunito,sans-serif}.aw-pot .ps .gi,.aw-pot .ps svg{width:38px;height:38px}
+.aw-pot .ps .n{position:absolute;right:3px;bottom:1px;font:900 10.5px Nunito,sans-serif;color:#fff;text-shadow:0 1px 2px #000}
+.aw-pot .pi b{font-size:13px}.aw-pot .pi small{color:var(--muted);font-weight:700}.aw-pot .pi select{margin-left:2px}
+.aw-pot .pb{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.aw-pot .pb .btn{min-height:30px;padding:0 8px;font-size:12px;gap:4px}.aw-pot .pb .btn .gi,.aw-pot .pb .btn svg{width:20px;height:20px}
+.aw-pot .pb .btn[aria-pressed="true"]{border-color:#ffd76a;background:rgba(255,215,106,.16)}
+.aw-sk .x2{min-height:26px;min-width:26px;padding:0;font-size:12px}
 .sg .ob{position:absolute;right:3px;top:3px;width:9px;height:9px;border-radius:50%;background:#7fe3ff;box-shadow:0 0 0 2px rgba(8,12,28,.9)}
 .sghint{font-size:11.5px;color:var(--muted);font-weight:700}
 .skrow.pick{animation:skpick 1.2s ease-out}@keyframes skpick{0%{background:rgba(127,227,255,.22)}100%{background:transparent}}
@@ -1087,12 +1103,12 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
           <label><input type="checkbox" id="ac-target"> Auto-target monsters</label>
           <label><input type="checkbox" id="ac-eat"> Auto-drink potions at <span id="ac-eat-v">35</span>% HP</label>
           <input type="range" id="ac-eat-at" min="10" max="80" step="5" aria-label="Potion threshold">
-          <label><input type="checkbox" id="ac-cast"> Auto-cast skills</label>
+          <label><input type="checkbox" id="ac-cast"> Auto-cast the AUTO skills (K)</label>
           <label><input type="checkbox" id="ac-pick"> Pick up loot while AUTO is on</label>
           <label style="margin-top:10px">Attack range <output id="ac-range-v" style="margin-left:auto;color:var(--aether);font-weight:900">320</output></label>
           <input type="range" id="ac-range" min="120" max="700" step="20" aria-label="Auto-attack range">
           <div style="font-size:11.5px;color:var(--muted);font-weight:700;margin-top:4px">How far AUTO looks for monsters (shown as a ring around you while this panel is open).</div>
-          <button class="btn" id="ac-more" style="margin-top:10px;min-height:32px">Targets, loot &amp; skill order…</button>
+          <button class="btn" id="ac-more" style="margin-top:10px;min-height:32px">Targets, loot, potions &amp; skills…</button>
         </div>
       </div>
     </div>
@@ -2205,6 +2221,11 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14e',date:'2026-11-14',title:'Haste Potion, AUTO skills and AUTO potions',
+    new:['Haste Potion at Granny Hessa’s Potion Shop: 20% faster attacks for 5 minutes (80 gold)',
+      'AUTO skills: a row of 8 slots at the top of the Skills window (K). Drag skills in, drag them between slots, drag one out (or right-click it) to take it off. AUTO casts only these. The skill bar (1-9, 0) is now only for the skills and potions you use yourself',
+      'AUTO potions: in the AUTO settings, equip a health potion, a mana potion and a Haste Potion. Pick one, drag one from the skill bar onto its slot, or unequip it. AUTO drinks the equipped ones (Haste whenever it runs out during a fight). When one runs out, AUTO uses another of the same kind'],
+    fixes:['Your old AUTO setup carries over: the skills AUTO used from your bar become your AUTO skills, in the same order, and your potion choices stay as they were']},
   {v:'2026-11-14d',date:'2026-11-14',title:'Tougher VIT',
     balance:['Each point of VIT now gives +0.8 DEF (was +0.5) and +0.8 MDEF (was +0.2), so VIT builds take less damage from both weapons and magic']},
   {v:'2026-11-14c',date:'2026-11-14',title:'GameMaster wings and title',
@@ -2805,6 +2826,7 @@ const AudioFX={ctx:null,want:null,mood:null,timer:null,buf:{},loading:false,
     sched();this.timer=setInterval(sched,250);}
 };
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>AudioFX.unlock(),{capture:true}));
+const HASTE_POT={aspd:.2,dur:300};   // Haste Potion: +20% attack speed for 5 minutes (Granny Hessa sells it)
 const POTION={id:'potion',name:'Healing Draught',price:12,cd:1.5,color:'#ff6b7d',icon:'potion',desc:'Restores 30% of your max HP + 40. Granny Hessa sells them in Oakhaven.'};
 const ICON_PATHS={
   slash:'<path d="M5 19L19 5"/><path d="M14 5h5v5"/><path d="M4 14l6 6"/>',
@@ -2853,7 +2875,10 @@ const REFINED={ingot:{name:'Iron Ingot',icon:'gem',color:'#cfd8e6',desc:'Smelted
 const CONSUMABLES={potion:POTION,
   tonic:{id:'tonic',name:'Mana Potion',price:18,cd:1.5,color:'#6fb8ff',icon:'flask',mana:[.35,20],desc:'Restores 35% of your max MP + 20.'},
   ether:{id:'ether',name:'Greater Mana Potion',price:55,cd:2,color:'#8f8bff',icon:'flask',lvl:30,mana:[.7,60],desc:'Restores 70% of your max MP + 60. Base Level 30.'},
-  elixir:{id:'elixir',name:'Greater Healing Draught',price:45,cd:2,color:'#ffb347',icon:'flask',lvl:30,desc:'Restores 60% of your max HP + 120. Base Level 30.'}};
+  elixir:{id:'elixir',name:'Greater Healing Draught',price:45,cd:2,color:'#ffb347',icon:'flask',lvl:30,desc:'Restores 60% of your max HP + 120. Base Level 30.'},
+  hastepot:{id:'hastepot',name:'Haste Potion',price:80,cd:2,color:'#7dffb8',icon:'flask',buff:{dur:HASTE_POT.dur,m:{aspd:HASTE_POT.aspd}},desc:`Attacks ${Math.round(HASTE_POT.aspd*100)}% faster for ${HASTE_POT.dur/60} minutes. Another one starts the time again.`}};
+const AUTO_SLOTS=8;   // skills AUTO casts (Skills window, K); the skill bar is for you
+const POT_KIND={potion:'hp',elixir:'hp',tonic:'mp',ether:'mp',hastepot:'buff'};   // which AUTO potion slot each one fits
 for(const d of Object.values(CONSUMABLES)) d.consumable=true;
 function itemDef(id){return CONSUMABLES[id]||MATERIALS[id]||REFINED[id];}
 /* icons from the generated atlas (tools/icon_pipeline): gi(id) is '' when the atlas has no icon of that name */
@@ -3148,7 +3173,7 @@ function touchDrag(el,getData,onDrop){el.addEventListener('pointerdown',e=>{if(e
     if(!ghost){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<10) return;ghost=document.createElement('div');ghost.className='dragghost';
       const ic=el.querySelector('.gi,svg');ghost.innerHTML=ic?ic.outerHTML:'';document.body.appendChild(ghost);document.body.classList.add('dragging-skill');}
     ev.preventDefault();ghost.style.transform=`translate(${ev.clientX-24}px,${ev.clientY-24}px)`;
-    const t=document.elementFromPoint(ev.clientX,ev.clientY),sl=t&&t.closest('#hotbar .hslot');if(over!==sl){if(over) over.classList.remove('over');over=sl;if(sl) sl.classList.add('over');}};
+    const t=document.elementFromPoint(ev.clientX,ev.clientY),sl=t&&t.closest('#hotbar .hslot,#kw-auto .aslot,[data-psl]');if(over!==sl){if(over) over.classList.remove('over');over=sl;if(sl) sl.classList.add('over');}};
   const up=ev=>{if(ev.pointerId!==id) return;const dragged=!!ghost;end();if(!dragged) return;TownScreen._dragT=performance.now();
     if(ev.type==='pointercancel') return;onDrop(document.elementFromPoint(ev.clientX,ev.clientY),getData());};
   addEventListener('pointermove',move,{passive:false});addEventListener('pointerup',up);addEventListener('pointercancel',up);});}
@@ -3220,7 +3245,7 @@ const TOWN_NPCS={
   baker:{name:'Mila',title:'Baker',barks:['Warm bread here!','Smell that? Honey loaf!','Fresh from the oven!'],
     talk(c){return {pages:['Fresh from the oven! Honey loaves, seed buns, and Granny Hessa\'s favourite rye.',
       'Bread is the best potion there is. Eat before a hunt and you\'ll last twice as long. Well, almost.']};}},
-  alchemist:{name:'Granny Hessa',title:'Alchemist · Potion Shop',shop:'Potion Shop',barks:['Potions, dear? Fresh brewed.','Mind the fumes!','Red heals, blue thinks.'],
+  alchemist:{name:'Granny Hessa',title:'Alchemist · Potion Shop',shop:'Potion Shop',barks:['Potions, dear? Fresh brewed.','Mind the fumes!','Red heals, blue thinks.','Green makes you quick, dear!'],
     talk(c){return {opts:[{label:'Browse potions',action:t=>{t.closeDialogue();t.openShop('potion');return {pages:['']};}},{label:`Buy 5 Healing Draughts (${POTION.price*5} gold)`,action:t=>t.buy(5)},{label:'Sell my monster materials',action:t=>t.sellMats()}],pages:['Careful, dear, the red one bites. Healing draughts on the left, mana tonics on the right.',
       c.quests.horizon==='active'?'Off to the fields? Save me some of that slime gel. It makes a lovely tonic, if you don\'t mind the wobble.':'Bring me slime gel one day and I\'ll brew you something stronger. Those little blobs are good for something after all.']};}},
   courier:{name:'Pip',title:'Courier · Oakhaven Post',shop:'Mail',barks:['Special delivery!','Letters, parcels, rumours!','Got a letter for... no, wrong Recruit.'],
@@ -3279,7 +3304,7 @@ const TownScreen={
     mapClick($('#mm-canvas'),false);mapClick($('#bm-canvas'),true);
     $('#chat-form').onsubmit=e=>{e.preventDefault();const i=$('#chat-input'),t=i.value.trim();i.value='';i.blur();if(t) this.say(t);};
     $('#net-pill').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-party').onclick=()=>{AudioFX.sfx('ui');this.openWin('partywin');};$('#btn-guild').onclick=()=>{AudioFX.sfx('ui');this.openWin('guildwin');};$('#chat-min').onclick=()=>{AudioFX.sfx('ui');this.chatMin(!SETTINGS.chatMin);};window.addEventListener('resize',()=>this.layoutHud());
-    {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')){e.preventDefault();this.barDrop(w,d);}});}
+    {const w=$('#skillwin');w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{const d=e.dataTransfer.getData('text/plain');if(d.startsWith('slot:')||d.startsWith('auto:')){e.preventDefault();this.barDrop(e.target,d);}});}
     $('#chat-input').addEventListener('keydown',e=>{if(e.key==='Escape'){e.target.value='';e.target.blur();}e.stopPropagation();});
     $('#ac-range').oninput=e=>{this.ch.auto.range=+e.target.value;$('#ac-range-v').textContent=e.target.value;this.save();};
     setInterval(()=>{if(activeScreen===this&&this.ch) Mail.fetch().then(()=>this.mailSync());},3*60000);
@@ -3324,6 +3349,15 @@ const TownScreen={
     this.res=this.maxRes();this.cds={};this.shots=[];this.wfx=[];this.drops=[];this.decals=[];this.queued=null;this.veilUntil=0;this.nextCrit=false;
     c.auto.range=c.auto.range||320;c.auto={prio:'near',defend:true,skip:[],maxAbove:0,lootOrder:'each',loot:{gold:true,pots:true,mats:true,gear:true,gearMin:0},order:[],off:[],tonic:false,tonicAt:30,elixir:true,...c.auto};c.auto.loot={gold:true,pots:true,mats:true,gear:true,gearMin:0,...c.auto.loot};if(!c.auto.lootV){c.auto.lootV=1;c.auto.pick=true;}   // AUTO picks loot up unless you turn it offc.skills=c.skills||{};
     if(!Array.isArray(c.hotbar)||c.hotbar.length!==10) c.hotbar=this.defaultBar();
+    {const a=c.auto;
+      if(!Array.isArray(c.autoSkills)){   // AUTO used to cast the bar's skills (in its order, minus the unticked ones): those become the AUTO skills
+        const ok=new Set(jobSkills(c.job.classId).filter(s=>s.t==='A').map(s=>s.id)),o=a.order||[],bar=c.hotbar.filter(e=>e&&e.t==='skill'&&ok.has(e.id)&&!(a.off||[]).includes(e.id)).map(e=>e.id);
+        bar.sort((x,y)=>{const i=o.indexOf(x),j=o.indexOf(y);return (i<0?99+bar.indexOf(x):i)-(j<0?99+bar.indexOf(y):j);});
+        c.autoSkills=[...bar.slice(0,AUTO_SLOTS),...Array(AUTO_SLOTS).fill(null)].slice(0,AUTO_SLOTS);}
+      if(c.autoSkills.length!==AUTO_SLOTS) c.autoSkills=[...c.autoSkills,...Array(AUTO_SLOTS).fill(null)].slice(0,AUTO_SLOTS);
+      if(!a.potV){a.potV=1;   // one potion slot each for health and mana (and one to keep a Haste Potion going)
+        a.hpPot=a.eat===false&&!a.tonic?null:(a.elixir&&(c.baseLevel||1)>=CONSUMABLES.elixir.lvl&&(c.items.elixir|0)>0?'elixir':'potion');
+        a.mpPot=a.tonic||a.tonic===undefined?'tonic':null;a.buffPot=null;if(a.eat===false&&a.tonic) a.eat=true;}}
     Store.mergeVaults();this.initGear();this.tradeRestore();this.dirtyMods();
     if(c.hp==null||c.hp<=0) c.hp=this.maxHp();c.hp=Math.min(c.hp,this.maxHp());this.res=this.maxRes();
     this.syncAuto();this.renderHotbar();this.openWin(null);this.bigMap(false);this.syncMinimap();this.trackerMin(SETTINGS.trackerMin);
@@ -3446,7 +3480,7 @@ const TownScreen={
     if(ch){this.dirtyMods();const c=this.ch;c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());this.hudBars();this.renderChar();}
     if(now>=(this.buffT||0)){this.buffT=now+250;this.renderBuffs(now);}},
   renderBuffs(now){const el=$('#buffbar');if(!el) return;const L=Object.values(this.buffs||{});
-    const h=L.map(b=>{const left=Math.max(0,(b.until-now)/1000);return `<span class="bf" title="${esc(b.s.name)} · Rank ${b.r}">${skillIcon(b.s)}<i>${left>=60?Math.ceil(left/60)+'m':Math.ceil(left)}</i></span>`;}).join('')+
+    const h=L.map(b=>{const left=Math.max(0,(b.until-now)/1000);return `<span class="bf" title="${esc(b.s.name)}${b.s.consumable?'':` · Rank ${b.r}`}">${b.s.consumable?itemIcon(b.s.id):skillIcon(b.s)}<i>${left>=60?Math.ceil(left/60)+'m':Math.ceil(left)}</i></span>`;}).join('')+
       (this.barrier?`<span class="bf shield" title="Shield: ${this.barrier.hp} damage left"><b>${this.barrier.hp}</b></span>`:'');
     if(el._h!==h){el._h=h;el.innerHTML=h;}},
   /* use a skill: cast time first (moving cancels it), then it goes off */
@@ -3648,9 +3682,12 @@ const TownScreen={
       b.querySelector('.cd').style.setProperty('--cd',left>0?Math.min(1,left/full):0);b.querySelector('.cdt').textContent=left>0.05?(left>=1?Math.ceil(left):left.toFixed(1)):'';
       if(s.consumable){const n=this.ch.items[s.id]||0;b.querySelector('.n').textContent=n;b.classList.toggle('low',n===0);}
       else b.classList.toggle('low',(this.res||0)<this.costOf(s,Math.max(1,this.rank(s.id))));});},
-  useSlot(i,auto){if(this.dlg||this.dead||this.travelling) return;const s=this.slots()[i];if(!s) return;const now=performance.now();
-    if(!auto&&this.aim&&this.aim.s===s){this.setAim(null);return;}             // the same key again cancels aiming
+  useSlot(i,auto){if(this.dlg||this.dead||this.travelling) return;const s=this.slots()[i];if(!s) return;
     const b=$(`#hotbar .hslot[data-i="${i}"]`);if(b){b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),160);}
+    this.useSkill(s,auto,i);},
+  /* use a skill or a draught: from the bar (i: its slot) or by AUTO (auto, no slot) */
+  useSkill(s,auto,i){if(this.dlg||this.dead||this.travelling||!s) return;const now=performance.now();
+    if(!auto&&this.aim&&this.aim.s===s){this.setAim(null);return;}             // the same key again cancels aiming
     if(now<(this.cds[s.id]||0)) return;
     if(s.consumable) return this.useItem(s.id,now);
     if(this.casting) return;
@@ -3676,18 +3713,19 @@ const TownScreen={
     this.walkTo(x,y,null);if(this.path) this.qAt={s,at:[x,y],R:A.range};},
   /* ---------- AUTO: drinks, buffs, heals and attack skills from the bar ---------- */
   autoTick(now){const a=this.ch.auto,c=this.ch;if(!a.on||this.dead||this.dlg||this.travelling) return;
-    if(a.eat&&c.hp<this.maxHp()*a.eatAt/100){const L=c.baseLevel||1;
-      if(a.elixir&&c.items.elixir>0&&L>=CONSUMABLES.elixir.lvl&&now>=(this.cds.elixir||0)) this.useItem('elixir',now);
-      else if(now>=(this.cds.potion||0)&&c.items.potion>0) this.drink(now);}
-    if(a.tonic&&(this.res||0)<this.maxRes()*a.tonicAt/100&&c.items.tonic>0&&now>=(this.cds.tonic||0)) this.useItem('tonic',now);
-    if(a.cast&&!this.casting&&!this.atk&&now>=(this.autoCastT||0)&&!this.autoSupport(now,this.slots())){const S=this.slots(),T=this.target&&this.target.state!=='dead'?this.target:null;
-      for(const i of this.autoOrder(S)){const s=S[i];if(!s||s.consumable||now<(this.cds[s.id]||0)||(a.off||[]).includes(s.id)) continue;const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)) continue;
-        if(s.k==='heal'){if(c.hp<this.maxHp()*.5){this.autoCastT=now+300;this.useSlot(i,true);break;}continue;}
+    if(a.eat!==false){const T0=this.target&&this.target.state!=='dead';
+      if(c.hp<this.maxHp()*a.eatAt/100){const id=this.autoPot('hp',now);if(id){if(id==='potion') this.drink(now);else this.useItem(id,now);}}
+      if((this.res||0)<this.maxRes()*a.tonicAt/100){const id=this.autoPot('mp',now);if(id) this.useItem(id,now);}
+      if(T0&&a.buffPot&&!(this.buffs||{})[a.buffPot]){const id=this.autoPot('buff',now);if(id) this.useItem(id,now);}}
+    const S=this.autoList();
+    if(a.cast&&!this.casting&&!this.atk&&now>=(this.autoCastT||0)&&!this.autoSupport(now,S)){const T=this.target&&this.target.state!=='dead'?this.target:null,go=s=>{this.autoCastT=now+300;this.useSkill(s,true);};
+      for(const s of S){if(now<(this.cds[s.id]||0)) continue;const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)) continue;
+        if(s.k==='heal'){if(c.hp<this.maxHp()*.5){go(s);break;}continue;}
         if(s.k==='veil') continue;
-        if(s.k==='buff'){if(T&&!(this.buffs||{})[s.id]){this.autoCastT=now+300;this.useSlot(i,true);break;}continue;}
-        if(s.k==='zone'&&s.heal){if(T&&c.hp<this.maxHp()*.6){this.autoCastT=now+300;this.useSlot(i,true);break;}continue;}
-        if((s.k==='aoe'||s.k==='zone')&&s.at!=='target'){const R=SV(s.r,r);if(T&&this.mobs.some(o=>o.state!=='dead'&&Math.hypot(o.x-this.p.x,(o.y-this.p.y)*1.3)<R*.9)){this.autoCastT=now+300;this.useSlot(i,true);break;}continue;}
-        if(T&&!(s.lex&&T.lex)&&!(s.steal&&T.stolen)){this.autoCastT=now+300;this.useSlot(i,true);break;}}}
+        if(s.k==='buff'){if(T&&!(this.buffs||{})[s.id]){go(s);break;}continue;}
+        if(s.k==='zone'&&s.heal){if(T&&c.hp<this.maxHp()*.6){go(s);break;}continue;}
+        if((s.k==='aoe'||s.k==='zone')&&s.at!=='target'){const R=SV(s.r,r);if(T&&this.mobs.some(o=>o.state!=='dead'&&Math.hypot(o.x-this.p.x,(o.y-this.p.y)*1.3)<R*.9)){go(s);break;}continue;}
+        if(T&&!(s.lex&&T.lex)&&!(s.steal&&T.stolen)){go(s);break;}}}
     /* loot between fights: after each kill the wanted loot nearby is picked up before the next monster is chosen, even
        with other monsters on you (only skipped when HP is under 25% and something is still attacking) */
     if(a.pick&&!this.autoGo&&!this.target&&!(this.path&&this.path.length)&&!this.keys.size&&!this.casting&&!this.atk&&now>=(this.autoNext||0)
@@ -3719,11 +3757,33 @@ const TownScreen={
   wantLoot(d){const l=this.ch.auto.loot||{};if(d.kind==='gold') return l.gold!==false;if(d.kind==='potion') return l.pots!==false;if(d.kind==='mat') return l.mats!==false;
     if(d.kind==='gear') return l.gear!==false&&d.g.rar>=(l.gearMin||0);return true;},
   /* hotbar slot indexes in the player's chosen order (skills not yet ordered keep their bar order, after the ordered ones) */
-  autoOrder(S){const o=this.ch.auto.order||[],idx=[...Array(10).keys()];
-    return idx.sort((i,j)=>{const a=S[i]?o.indexOf(S[i].id):-1,b=S[j]?o.indexOf(S[j].id):-1;return (a<0?99+i:a)-(b<0?99+j:b);});},
+  /* AUTO potion slots ('hp', 'mp', 'buff'): equip a potion of that kind, or empty the slot (null) */
+  potEquip(k,id){const a=this.ch.auto;if(id&&POT_KIND[id]!==k) return;a[k+'Pot']=id;AudioFX.sfx('ui');this.save();this.syncAuto();this.renderAuto();
+    toast(id?`AUTO ${k==='hp'?'health':k==='mp'?'mana':'haste'} potion: ${CONSUMABLES[id].name}`:`AUTO ${k==='hp'?'health':k==='mp'?'mana':'haste'} potion slot emptied`);},
+  potDrop(k,data){if(!data) return;const [t,id]=data.split(':');
+    if(t==='item'){if(POT_KIND[id]===k) this.potEquip(k,id);else if(POT_KIND[id]) toast(`${CONSUMABLES[id].name} goes in the ${POT_KIND[id]==='hp'?'health':POT_KIND[id]==='mp'?'mana':'haste'} potion slot`);}
+    else if(t==='slot'){const e=this.ch.hotbar[+id];if(e&&e.t==='item') this.potDrop(k,'item:'+e.id);}},
+  /* the AUTO skills (Skills window, K): learned active skills in slot order; AUTO casts only these, the bar is yours */
+  autoList(){const ok=new Set(jobSkills(this.ch.job.classId).filter(s=>s.t==='A'&&this.rank(s.id)>0).map(s=>s.id));
+    return (this.ch.autoSkills||[]).filter(id=>id&&ok.has(id)).map(skillById).filter(Boolean);},
+  /* which potion AUTO drinks for a slot ('hp', 'mp', 'buff'): the one equipped there, or when you have none of it left, another
+     of the same kind you can use; null when the slot is empty or none is ready */
+  autoPot(kind,now){const a=this.ch.auto,c=this.ch,pref=a[kind+'Pot'];if(!pref) return null;const L=c.baseLevel||1;
+    const ids=[pref,...Object.keys(POT_KIND).filter(k=>POT_KIND[k]===kind&&k!==pref)];
+    for(const id of ids){const d=CONSUMABLES[id];if(!d||!(c.items[id]>0)||(d.lvl&&L<d.lvl)) continue;return now>=(this.cds[id]||0)?id:null;}
+    if(now>(this['potWarn'+kind]||0)){this['potWarn'+kind]=now+60000;this.log('sys',null,`AUTO · out of ${kind==='hp'?'healing':kind==='mp'?'mana':'Haste'} potions`);}
+    return null;},
+  /* AUTO skills: put a skill in slot i (from the skill list or another AUTO slot), or take one out */
+  autoSet(i,id){const A=this.ch.autoSkills;if(id&&this.rank(id)<1){toast('Learn it first');return;}const s=id&&skillById(id);if(s&&s.t!=='A') return;
+    if(id) for(let k=0;k<A.length;k++) if(A[k]===id) A[k]=null;A[i]=id||null;AudioFX.sfx('ui');this.renderSkills();this.renderAuto();this.save();},
+  autoDrop(i,data){if(!data) return;const [t,id]=data.split(':'),A=this.ch.autoSkills;
+    if(t==='auto'){const j=+id;if(j===i) return;[A[i],A[j]]=[A[j],A[i]];AudioFX.sfx('ui');this.renderSkills();this.renderAuto();this.save();}
+    else if(t==='skill'||t==='slot'){const sid=t==='slot'?(this.ch.hotbar[+id]||{}).id:id;const s=sid&&skillById(sid);if(!s||s.t!=='A') return;this.autoSet(i,sid);}},
+  toAuto(id){const A=this.ch.autoSkills;if(A.includes(id)) return;const i=A.indexOf(null);if(i<0){toast('The AUTO skills are full: drag onto a slot to replace one');return;}this.autoSet(i,id);},
+  offAuto(id){const A=this.ch.autoSkills,i=A.indexOf(id);if(i>=0){A[i]=null;AudioFX.sfx('ui');this.renderSkills();this.renderAuto();this.save();}},
   renderAuto(){if(this.win!=='autowin') return;const a=this.ch.auto,l=a.loot,S=this.slots(),L=this.ch.baseLevel||1;
     const kinds=[...new Set([...(this.mobs||[]).map(m=>m.kind),...(a.skip||[])])].filter(k=>MOB_DEFS[k]).sort((x,y)=>MOB_DEFS[x].lvl-MOB_DEFS[y].lvl);
-    const sk=this.autoOrder(S).map(i=>S[i]).filter(s=>s&&!s.consumable);
+    const sk=this.autoList();
     const opt=(v,t,cur)=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${t}</option>`;
     $('#aw-body').innerHTML=`
     <div class="aw-sec"><h4>Targets</h4>
@@ -3738,14 +3798,19 @@ const TownScreen={
         <label><input type="checkbox" data-loot="mats" ${l.mats!==false?'checked':''}> Monster materials</label><label><input type="checkbox" data-loot="gear" ${l.gear!==false?'checked':''}> Gear</label></div>
       <div class="aw-row">Only gear that is <select id="aw-gmin" aria-label="Minimum gear rarity">${RARITY.map((r,i)=>opt(i,r.name+(i<4?' or better':''),l.gearMin||0)).join('')}</select></div>
       <div class="aw-hint">Things AUTO skips stay on the ground for you to pick up by hand (Z). Auto-sell and auto-smelt rules are in the bag (I).</div></div>
-    <div class="aw-sec"><h4>Potions</h4>
-      <div class="aw-row"><label><input type="checkbox" id="aw-eat" ${a.eat?'checked':''}> Drink a healing potion below</label><select id="aw-eatat" aria-label="HP threshold">${[10,15,20,25,30,35,40,45,50,55,60,65,70,75,80].map(n=>opt(n,n+'% HP',a.eatAt)).join('')}</select></div>
-      <label><input type="checkbox" id="aw-elixir" ${a.elixir?'checked':''}> Use Greater Healing Draughts first (Base Lv 30)</label>
-      <div class="aw-row"><label><input type="checkbox" id="aw-tonic" ${a.tonic?'checked':''}> Drink a Mana Potion below</label><select id="aw-tonicat" aria-label="SP threshold">${[15,20,30,40,50].map(n=>opt(n,n+'% '+esc(this.resName()),a.tonicAt)).join('')}</select></div></div>
-    <div class="aw-sec"><h4>Skill order</h4><label style="margin-bottom:6px"><input type="checkbox" id="aw-cast" ${a.cast?'checked':''}> Auto-cast skills from the skill bar</label>
-      ${sk.length?sk.map((s,i)=>{const off=(a.off||[]).includes(s.id);return `<div class="aw-sk ${off?'off':''}"><input type="checkbox" data-on="${s.id}" ${off?'':'checked'} aria-label="Use ${esc(s.name)}">${skillIcon(s)}<div class="nm">${i+1}. ${esc(s.name)} <small>· ${s.k==='heal'?'when HP is under 50%':s.k==='buff'?'when it runs out':s.k==='aoe'||s.k==='zone'?'when monsters are close':'on the target'}</small></div>
-        <div class="mv"><button class="btn" data-up="${s.id}" ${i?'':'disabled'} aria-label="Move ${esc(s.name)} up">▲</button><button class="btn" data-dn="${s.id}" ${i<sk.length-1?'':'disabled'} aria-label="Move ${esc(s.name)} down">▼</button></div></div>`;}).join(''):'<div class="aw-hint">Put skills on the skill bar (K) and they show up here.</div>'}
-      <div class="aw-hint">AUTO tries skills top to bottom and casts the first one that is ready and has a reason to go off. Unticked skills are left for you.</div></div>`;
+    <div class="aw-sec"><h4>Auto-potions</h4><label style="margin-bottom:6px"><input type="checkbox" id="aw-eat" ${a.eat!==false?'checked':''}> Drink the potions equipped here</label>
+      ${[['hp','Health potion',`below <select id="aw-eatat" aria-label="HP threshold">${[10,15,20,25,30,35,40,45,50,55,60,65,70,75,80].map(n=>opt(n,n+'% HP',a.eatAt)).join('')}</select>`],
+         ['mp','Mana potion',`below <select id="aw-tonicat" aria-label="${esc(this.resName())} threshold">${[10,15,20,30,40,50,60].map(n=>opt(n,n+'% '+esc(this.resName()),a.tonicAt)).join('')}</select>`],
+         ['buff','Haste potion','kept up while fighting']].map(([k,label,when])=>{const id=a[k+'Pot'],d=id&&CONSUMABLES[id],choices=Object.keys(POT_KIND).filter(x=>POT_KIND[x]===k);
+        return `<div class="aw-pot" data-potslot="${k}"><div class="ps ${d?'':'empty'}" data-psl="${k}" title="${d?'Drag out or press Unequip to empty it':'Pick a potion below, or drag one here from the skill bar'}">${d?itemIcon(id)+`<span class="n">${L>=(d.lvl||1)?(this.ch.items[id]||0):'Lv '+d.lvl}</span>`:'<span class="plus">+</span>'}</div>
+          <div class="pi"><b>${label}</b> <small>${d?esc(d.name):'empty: AUTO drinks none'} · ${when}</small>
+          <div class="pb">${choices.map(x=>{const dx=CONSUMABLES[x],n=this.ch.items[x]||0;return `<button class="btn" data-peq="${k}|${x}" aria-pressed="${id===x}" ${dx.lvl&&L<dx.lvl?`disabled title="Base Lv ${dx.lvl}"`:''}>${itemIcon(x)}${esc(dx.name)} <small>×${n}</small></button>`;}).join('')}${d?`<button class="btn" data-peq="${k}|">Unequip</button>`:''}</div></div></div>`;}).join('')}
+      <div class="aw-hint">When the equipped potion runs out, AUTO drinks another of the same kind you carry. Granny Hessa in Oakhaven sells all of them.</div></div>
+    <div class="aw-sec"><h4>AUTO skills</h4><label style="margin-bottom:6px"><input type="checkbox" id="aw-cast" ${a.cast?'checked':''}> Auto-cast the AUTO skills</label>
+      ${sk.length?sk.map((s,i)=>{return `<div class="aw-sk"><button class="btn x2" data-aoff="${s.id}" aria-label="Take ${esc(s.name)} out of the AUTO skills" title="Take it out">✕</button>${skillIcon(s)}<div class="nm">${i+1}. ${esc(s.name)} <small>· ${s.k==='heal'?'when HP is under 50%':s.k==='buff'?'when it runs out':s.k==='aoe'||s.k==='zone'?'when monsters are close':'on the target'}</small></div>
+        <div class="mv"><button class="btn" data-up="${s.id}" ${i?'':'disabled'} aria-label="Move ${esc(s.name)} up">▲</button><button class="btn" data-dn="${s.id}" ${i<sk.length-1?'':'disabled'} aria-label="Move ${esc(s.name)} down">▼</button></div></div>`;}).join(''):'<div class="aw-hint">No AUTO skills yet: open Skills (K) and drag skills into the AUTO skills row.</div>'}
+      <button class="btn" id="aw-editsk" style="margin-top:8px;min-height:32px">Edit the AUTO skills (K)…</button>
+      <div class="aw-hint">AUTO tries them top to bottom and casts the first one that is ready and has a reason to go off. The skill bar (1-9, 0) is only for you: AUTO never uses it.</div></div>`;
     const B=$('#aw-body'),save=()=>{this.save();this.syncAuto();},re=()=>{save();this.renderAuto();};
     B.querySelector('#aw-prio').onchange=e=>{a.prio=e.target.value;save();};B.querySelector('#aw-defend').onchange=e=>{a.defend=e.target.checked;save();};
     B.querySelector('#aw-above').onchange=e=>{a.maxAbove=+e.target.value;save();};
@@ -3753,11 +3818,17 @@ const TownScreen={
     B.querySelector('#ac-pick2').onchange=e=>{a.pick=e.target.checked;save();};
     B.querySelector('#aw-order').onchange=e=>{a.lootOrder=e.target.value;this.lootHold=0;save();};
     B.querySelectorAll('[data-loot]').forEach(x=>x.onchange=()=>{l[x.dataset.loot]=x.checked;save();});B.querySelector('#aw-gmin').onchange=e=>{l.gearMin=+e.target.value;save();};
-    B.querySelector('#aw-eat').onchange=e=>{a.eat=e.target.checked;save();};B.querySelector('#aw-eatat').onchange=e=>{a.eatAt=+e.target.value;save();};
-    B.querySelector('#aw-elixir').onchange=e=>{a.elixir=e.target.checked;save();};B.querySelector('#aw-tonic').onchange=e=>{a.tonic=e.target.checked;save();};B.querySelector('#aw-tonicat').onchange=e=>{a.tonicAt=+e.target.value;save();};
+    B.querySelector('#aw-eat').onchange=e=>{a.eat=e.target.checked;save();};B.querySelector('#aw-eatat').onchange=e=>{a.eatAt=+e.target.value;save();};B.querySelector('#aw-tonicat').onchange=e=>{a.tonicAt=+e.target.value;save();};
+    B.querySelectorAll('[data-peq]').forEach(x=>x.onclick=()=>{const [k,id]=x.dataset.peq.split('|');this.potEquip(k,id||null);});
+    B.querySelectorAll('[data-psl]').forEach(x=>{const k=x.dataset.psl;
+      x.addEventListener('dragover',e=>{e.preventDefault();x.classList.add('over');});x.addEventListener('dragleave',()=>x.classList.remove('over'));
+      x.addEventListener('drop',e=>{e.preventDefault();x.classList.remove('over');this.potDrop(k,e.dataTransfer.getData('text/plain'));});
+      if(a[k+'Pot']){x.draggable=true;x.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','pot:'+k));x.addEventListener('dragend',e=>{if(e.dataTransfer.dropEffect==='none') this.potEquip(k,null);});
+        touchDrag(x,()=>'pot:'+k,(t,d)=>{if(!(t&&t.closest&&t.closest('[data-psl="'+k+'"]'))) this.potEquip(k,null);});}});
+    B.querySelector('#aw-editsk').onclick=()=>{AudioFX.sfx('ui');this.openWin('skillwin');};
+    B.querySelectorAll('[data-aoff]').forEach(x=>x.onclick=()=>this.offAuto(x.dataset.aoff));
     B.querySelector('#aw-cast').onchange=e=>{a.cast=e.target.checked;save();};
-    B.querySelectorAll('[data-on]').forEach(x=>x.onchange=()=>{const k=x.dataset.on;a.off=(a.off||[]).filter(y=>y!==k);if(!x.checked) a.off.push(k);re();});
-    const mv=(id,d)=>{const ids=sk.map(s=>s.id),i=ids.indexOf(id),j=i+d;if(j<0||j>=ids.length) return;[ids[i],ids[j]]=[ids[j],ids[i]];a.order=ids;AudioFX.sfx('ui');re();};
+    const mv=(id,d)=>{const A=this.ch.autoSkills,ids=sk.map(s=>s.id),i=ids.indexOf(id),j=i+d;if(j<0||j>=ids.length) return;const p=A.indexOf(ids[i]),q=A.indexOf(ids[j]);[A[p],A[q]]=[A[q],A[p]];AudioFX.sfx('ui');this.renderSkills();re();};
     B.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>mv(x.dataset.up,-1));B.querySelectorAll('[data-dn]').forEach(x=>x.onclick=()=>mv(x.dataset.dn,1));},
   /* ---------- a monster hits you: HIT vs FLEE, block, DEF or MDEF, shields ---------- */
   hurtPlayer(m,now,o){o=o||{};const c=this.ch,M=this.mods(),D=o.mag!=null?{...m.def,mag:o.mag}:m.def;      // o (boss attacks): mult x damage, mag, sure = can't be dodged
@@ -3828,14 +3899,17 @@ const TownScreen={
   renderSkills(){if(this.win!=='skillwin') return;const c=this.ch,J=JOBS[c.job.classId]||JOBS.recruit,L=jobSkills(c.job.classId),pts=c.skillPoints||0;
     const learned=L.filter(s=>this.rank(s.id)>0).length;
     $('#kw-sub').textContent=`${J.name} · Job ${c.job.jobLevel||1} · ${pts} skill point${pts===1?'':'s'} · ${learned}/${L.length} learned`;
-    const groups=[...new Set(L.map(s=>s.job))],onBar=id=>c.hotbar.some(e=>e&&e.t==='skill'&&e.id===id);
+    const groups=[...new Set(L.map(s=>s.job))],onBar=id=>c.hotbar.some(e=>e&&e.t==='skill'&&e.id===id),inAuto=id=>(c.autoSkills||[]).includes(id);
     const LOCK='<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z"/></svg>';
     // every skill at a glance: learned ones bright with their rank, unlearned dim, locked ones show the job level they need
     const grid=groups.map(g=>`<div class="sgrow"><div class="sgl">${esc((JOBS[g]||JOBS.recruit).name)}</div><div class="sgi">${L.filter(s=>s.job===g).map(s=>{
         const r=this.rank(s.id),open=this.skillUnlocked(s),st=r?'on':open?'off':'lock';
         return `<button class="sg ${st}" data-go="${s.id}" ${s.t==='A'&&r?`data-sk="${s.id}" draggable="true"`:''} title="${esc(s.name)}${open?'':` · unlocks at Job Lv ${s.req}`}" aria-label="${esc(s.name)}, ${s.t==='A'?'active':'passive'}, rank ${r} of ${s.max}${open?'':', locked'}">
-          ${skillIcon(s)}<span class="rk">${r}/${s.max}</span>${s.t==='P'?'<span class="pv">P</span>':''}${open?'':`<span class="lk">${LOCK}${s.req}</span>`}${onBar(s.id)?'<span class="ob"></span>':''}</button>`;}).join('')}</div></div>`).join('');
-    $('#kw-body').innerHTML=`<div class="skgrid">${grid}<div class="sghint">Tap a skill for details. Drag a learned skill onto the bar, or drag one off the bar to remove it.</div></div>`+
+          ${skillIcon(s)}<span class="rk">${r}/${s.max}</span>${s.t==='P'?'<span class="pv">P</span>':''}${open?'':`<span class="lk">${LOCK}${s.req}</span>`}${onBar(s.id)?'<span class="ob"></span>':''}${inAuto(s.id)?'<span class="oa">A</span>':''}</button>`;}).join('')}</div></div>`).join('');
+    const A=c.autoSkills||[],autoRow=`<div class="autorow" id="kw-auto"><div class="ar-h"><b>AUTO skills</b><small>AUTO casts these, left to right. Drag skills in, drag one out to take it off. The skill bar (1-9, 0) is only for you.</small></div>
+      <div class="ar-slots">${A.map((id,i)=>{const s=id&&skillById(id);return s?`<button class="aslot" data-ai="${i}" draggable="true" title="${esc(s.name)}: drag to move, drag out or right-click to take it off" aria-label="AUTO skill ${i+1}: ${esc(s.name)}">${skillIcon(s)}<span class="k">${i+1}</span></button>`
+        :`<button class="aslot empty" data-ai="${i}" aria-label="AUTO skill ${i+1}: empty"><span class="k">${i+1}</span></button>`;}).join('')}</div></div>`;
+    $('#kw-body').innerHTML=autoRow+`<div class="skgrid">${grid}<div class="sghint">Tap a skill for details. Drag a learned skill onto the skill bar to use it yourself, or into the AUTO skills for AUTO. Drag one off to remove it.</div></div>`+
       groups.map(g=>`<div class="skgrp">${esc((JOBS[g]||JOBS.recruit).name)} skills</div>`+L.filter(s=>s.job===g).map(s=>{
         const r=this.rank(s.id),open=this.skillUnlocked(s),on=onBar(s.id),act=s.t==='A';
         const now=r>0?this.describe(s,r):'',next=r<s.max?this.describe(s,r+1):'';
@@ -3843,7 +3917,8 @@ const TownScreen={
         <div><b>${esc(s.name)}</b> <span class="meta">${act?'ACTIVE':'PASSIVE'} · RANK ${r}/${s.max}${open?'':` · UNLOCKS AT JOB LV ${s.req}`}</span><p>${esc(s.desc)}</p>
         ${r?`<p class="now">${esc(now)}</p>`:''}${r<s.max?`<p class="next">${r?'Next rank':'Rank 1'}: ${esc(next)}</p>`:''}</div>
         <div class="act"><button class="btn" data-up="${s.id}" ${pts>0&&open&&r<s.max?'':'disabled'} aria-label="${r?'Rank up':'Learn'} ${esc(s.name)}">${r?'Rank up':'Learn'}</button>
-        ${act?(on?`<button class="btn" data-off="${s.id}">Remove from bar</button>`:`<button class="btn" data-bar="${s.id}" ${r?'':'disabled'} title="${r?'':'Learn it first'}">Add to bar</button>`):''}</div></div>`;}).join('')).join('')+
+        ${act?(on?`<button class="btn" data-off="${s.id}">Remove from bar</button>`:`<button class="btn" data-bar="${s.id}" ${r?'':'disabled'} title="${r?'':'Learn it first'}">Add to bar</button>`):''}
+        ${act?(inAuto(s.id)?`<button class="btn" data-aout="${s.id}">Remove from AUTO</button>`:`<button class="btn" data-ain="${s.id}" ${r?'':'disabled'} title="${r?'AUTO will cast it':'Learn it first'}">Add to AUTO</button>`):''}</div></div>`;}).join('')).join('')+
       `<div class="note" style="margin-top:12px;font-size:12px;color:var(--muted);font-weight:700;line-height:1.5">Each job level gives a skill point: learn a skill, then raise its rank. Passive skills work on their own. A second job keeps the first job's skills. Put active skills on the bar yourself: Add to bar, or drag them onto a slot 1-9 or 0.</div>
       <div class="resetbar"><span>${this.resetCost()?`Costs ${this.resetCost()} gold`:'Free up to Base Level 20'}</span><button class="btn warn" id="kw-reset" ${this.skillSpent()?'':'disabled'}>Reset skills</button></div>`;
     $('#kw-reset').onclick=e=>{const n=this.skillSpent();this.arm(e.currentTarget,`Click again: ${n} point${n===1?'':'s'} back`,()=>this.resetSkills());};
@@ -3852,6 +3927,15 @@ const TownScreen={
         this.renderSkills();this.renderHotbar();this.hudBars();this.renderChar();this.save();}});
     $$('#kw-body [data-bar]').forEach(b=>b.onclick=()=>this.toBar('skill',b.dataset.bar));
     $$('#kw-body [data-off]').forEach(b=>b.onclick=()=>this.offBar(b.dataset.off));
+    $$('#kw-body [data-ain]').forEach(b=>b.onclick=()=>this.toAuto(b.dataset.ain));$$('#kw-body [data-aout]').forEach(b=>b.onclick=()=>this.offAuto(b.dataset.aout));
+    $$('#kw-auto .aslot').forEach(b=>{const i=+b.dataset.ai;
+      b.addEventListener('dragover',e=>{e.preventDefault();b.classList.add('over');});b.addEventListener('dragleave',()=>b.classList.remove('over'));
+      b.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();b.classList.remove('over');this.autoDrop(i,e.dataTransfer.getData('text/plain'));});
+      if(b.classList.contains('empty')) return;
+      b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','auto:'+i));
+      b.addEventListener('dragend',e=>{if(e.dataTransfer.dropEffect==='none'&&c.autoSkills[i]) this.autoSet(i,null);});   // let go off the row: out
+      b.addEventListener('contextmenu',e=>{e.preventDefault();this.autoSet(i,null);});
+      touchDrag(b,()=>'auto:'+i,(t,d)=>this.barDrop(t,d));});
     $$('#kw-body [data-go]').forEach(b=>b.onclick=()=>{if(performance.now()-(this._dragT||0)<350) return;const row=$('#sk-'+b.dataset.go);if(!row) return;
       row.scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});row.classList.remove('pick');void row.offsetWidth;row.classList.add('pick');});
     $$('#kw-body [data-sk]').forEach(b=>{b.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','skill:'+b.dataset.sk));
@@ -3859,7 +3943,11 @@ const TownScreen={
   /* take a skill (or the draught) off the bar */
   offBar(id){const H=this.ch.hotbar;let n=0;for(let k=0;k<10;k++) if(H[k]&&H[k].id===id){H[k]=null;n++;}if(!n) return;AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();},
   /* where something dragged was let go: on a slot it goes there; a bar slot let go anywhere off the bar comes off */
-  barDrop(t,data){if(!data) return;const slot=t&&t.closest&&t.closest('#hotbar .hslot');
+  barDrop(t,data){if(!data) return;const psl=t&&t.closest&&t.closest('[data-psl]');if(psl){this.potDrop(psl.dataset.psl,data);return;}   // a potion onto an AUTO potion slot
+    const aslot=t&&t.closest&&t.closest('#kw-auto .aslot');
+    if(aslot){this.autoDrop(+aslot.dataset.ai,data);return;}
+    if(data.startsWith('auto:')){if(!(t&&t.closest&&t.closest('#kw-auto'))) this.autoSet(+data.slice(5),null);return;}
+    const slot=t&&t.closest&&t.closest('#hotbar .hslot');
     if(slot){this.dropOnBar(+slot.dataset.i,data);return;}
     const [k,id]=data.split(':');if(k==='slot'&&!(t&&t.closest&&t.closest('#hotbar'))){const H=this.ch.hotbar,i=+id;if(H[i]){H[i]=null;AudioFX.sfx('ui');this.renderHotbar();this.renderSkills();this.save();}}},
   /* skill points spent beyond the free starter ranks */
@@ -4642,7 +4730,7 @@ const TownScreen={
       if(Math.hypot(M.o.x-z.x,(M.o.y-z.y)*1.3)<=z.R) this.partySend('h',id,h,z.s.id);}},
   /* AUTO with auto-cast: heal members under half HP, keep your support buffs up on members near you */
   autoSupport(now,S){if(!this.party||this.party.m.length<2) return false;
-    for(let i=0;i<10;i++){const s=S[i];if(!s||s.consumable||!ALLY_SKILLS.has(s.id)||now<(this.cds[s.id]||0)||(this.res||0)<this.costOf(s,this.rank(s.id))) continue;
+    for(const s of S){if(!s||s.consumable||!ALLY_SKILLS.has(s.id)||now<(this.cds[s.id]||0)||(this.res||0)<this.costOf(s,this.rank(s.id))) continue;
       for(const [id] of this.party.m){if(id===this.pid()) continue;const M=this.allyOk(id);if(!M||Math.hypot(M.o.x-this.p.x,M.o.y-this.p.y)>SUPPORT_RANGE) continue;
         const need=s.k==='heal'?(M.P.hp|0)<50:!(Array.isArray(M.P.bf)&&M.P.bf.includes(s.id));if(!need) continue;
         this.autoCastT=now+300;this.begin(s,null,now,null,id);return true;}}
@@ -5139,7 +5227,8 @@ const TownScreen={
   useItem(id,now){if(id==='potion') return this.drink(now);const c=this.ch,d=CONSUMABLES[id];if(!d) return;
     if(!(c.items[id]>0)){this.fx.push({x:this.p.x,y:this.p.y-70,text:`No ${d.name}s left`,color:'#ffcf7a',t0:now});return;}
     if(now<(this.cds[id]||0)) return;if(d.lvl&&(c.baseLevel||1)<d.lvl){toast(`${d.name} needs Base Level ${d.lvl}`);return;}
-    if(d.mana){const mx=this.maxRes();if((this.res||0)>=mx){if(now>(this._fullT||0)){this._fullT=now+1500;this.fx.push({x:this.p.x,y:this.p.y-70,text:'Mana is full',color:'#8fc8ff',t0:now,italic:true});}return;}const r=Math.min(Math.round(mx*d.mana[0]+d.mana[1]),Math.ceil(mx-(this.res||0)));this.res=Math.min(mx,(this.res||0)+r);
+    if(d.buff){this.addBuff(d,1,now);this.fx.push({x:this.p.x,y:this.p.y-64,text:d.name,color:d.color,t0:now,italic:true});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:700,color:d.color});}
+    else if(d.mana){const mx=this.maxRes();if((this.res||0)>=mx){if(now>(this._fullT||0)){this._fullT=now+1500;this.fx.push({x:this.p.x,y:this.p.y-70,text:'Mana is full',color:'#8fc8ff',t0:now,italic:true});}return;}const r=Math.min(Math.round(mx*d.mana[0]+d.mana[1]),Math.ceil(mx-(this.res||0)));this.res=Math.min(mx,(this.res||0)+r);
       this.fx.push({x:this.p.x,y:this.p.y-64,text:`+${r} MP`,color:'#8fc8ff',t0:now,big:true});this.hudBars();this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:700,color:'#8fc8ff'});}
     else{if(c.hp>=this.maxHp()) return;const h=Math.round(this.maxHp()*.6+120);c.hp=Math.min(this.maxHp(),c.hp+h);
       this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});this.wfx.push({k:'heal',x:this.p.x,y:this.p.y,t0:now,dur:800,color:'#ffc27a'});}
@@ -6523,7 +6612,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14d';
+const BUILD='2026-11-14e';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

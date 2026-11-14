@@ -1,1 +1,1 @@
-build: 2026-11-14d (Tougher VIT)
+build: 2026-11-14e (Haste Potion, AUTO skills and AUTO potions)
