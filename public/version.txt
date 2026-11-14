@@ -1,1 +1,1 @@
-build: 2026-11-14r (Skill bar in the corner)
+build: 2026-11-14s (Two hands, arrows and Synthesis)
