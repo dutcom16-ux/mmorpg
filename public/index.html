@@ -2254,6 +2254,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14t',date:'2026-11-14',title:'Rings and amulets from Dorin',
+    new:['Dorin\'s workshop has an Accessories tab: a Heroic ring and a Heroic amulet from Base Level 40, and all six Legendary accessories from Base Level 70 (Bloodfang Ring, Hawkeye Signet, Archmage\'s Seal, Heart of the Mountain, Fortune\'s Charm and Seraph\'s Tear), each made from its own monster materials plus Iron Ingots, Arcane Dust and Halo Fragments',
+      'Greta\'s Equipment Shop sells a ring and an amulet for your level and the next']},
   {v:'2026-11-14s',date:'2026-11-14',title:'Two hands, arrows and Synthesis',
     new:['Two hand slots: the left hand holds your main weapon, the right hand a shield, arrows or a second one-handed weapon. Two-handed weapons fill both hands and hit 40% harder; a weapon in the right hand adds 40% of its Attack',
       'Who holds what: Recruits and the Melee line use one-handed swords (one in each hand, or with a shield) or two-handed greatswords. Mages use a two-handed staff, or a wand with a shield. Channelers and Hierophants use a wand and a shield. Arbiters use hammers (one-handed with a shield, or a two-handed maul), and only Arbiters can use hammers. Archers use a bow with arrows in the right hand. Specters, Void Blades and Tricksters can hold a dagger in each hand',
@@ -3524,7 +3527,7 @@ const TOWN_NPCS={
     talk(c){return {opts:[{label:'Show me what you can craft',action:t=>{t.closeDialogue();if(t.shopTab==='Synthesis') t.shopTab='Wings';t.openShop('craft');return {pages:['']};}},
         {label:'Synthesis: forge my gear one rarity higher',action:t=>{t.closeDialogue();t.shopTab='Synthesis';t.openShop('craft');return {pages:['']};}}],
       pages:['Dorin, artificer. Greta hammers steel; I make things that fly.',
-        (c.baseLevel||1)<20?'Wings take a seasoned traveller. Come back at Base Level 20 with Cloud Wisps and Gale Fur from Skyward Ridge.':'Wings, Heroic and Mythic gear: bring me the materials and the gold, and I\'ll have it done before you blink.']};}},
+        (c.baseLevel||1)<20?'Wings take a seasoned traveller. Come back at Base Level 20 with Cloud Wisps and Gale Fur from Skyward Ridge.':'Wings, Heroic and Mythic gear, rings and amulets, even the Legendary ones: bring me the materials and the gold, and I\'ll have it done before you blink.']};}},
   scholar:{name:'Master Orrin',title:'Scholar',barks:['Fascinating...','Where did I put my notes?','Aetherite, Aetherite...'],
     talk(c){return {pages:['Mm? Oh, a new face. Forgive me, I was reading about the Aetherite cores.',
       'Before the Fracture, the floating island temples kept the crystals in balance. Now the shards are scattered, and the World Bosses wake as they fall.']};}},
@@ -5608,7 +5611,7 @@ const TownScreen={
     ...Object.entries(g.bonus||{}).map(([k,n])=>`${k} <b>+${n}</b>`)].filter(Boolean).join(' · ');},
   /* what kind of piece it is: one- or two-handed weapon, shield, arrows, legendary accessory */
   gearKind(g){const B=GEAR_BASES[g.base];if(g.slot==='weapon') return B.hand===2?'two-handed weapon':'one-handed weapon';if(B.kind==='arrows') return 'arrows (right hand)';
-    if(g.slot==='offhand') return 'shield (right hand)';if(g.uniq) return (g.slot==='ring'?'ring':'amulet')+' · '+LEGEND_ACC[g.uniq].desc.toLowerCase();return this.slotName(g.slot).toLowerCase();},
+    if(g.slot==='offhand') return 'shield (right hand)';if(g.uniq){const d=LEGEND_ACC[g.uniq].desc;return (g.slot==='ring'?'ring':'amulet')+' · '+(/^[A-Z][a-z]/.test(d)?d[0].toLowerCase()+d.slice(1):d);}return this.slotName(g.slot).toLowerCase();},
   reqLine(g,lvl){const c=this.ch,L=c.baseLevel||1,need=lvl||gearReq(g),lv=L>=need,hand=g.slot==='weapon'||g.slot==='offhand',cls=!hand||this.canUse(g,true);
     return `<span class="${lv?'ok':'no'}">Base Lv ${need}</span>${hand?` · <span class="${cls?'ok':'no'}">${esc(gearFor(g.base))}</span>`:' · any job'}`;},
   renderShop(){if(this.win!=='shopwin') return;const c=this.ch,k=this.shopKind,L=c.baseLevel||1,line=this.line();let h='';
@@ -5623,8 +5626,8 @@ const TownScreen={
         h+=`<div class="shrow"><div class="ic">${itemIcon(d.id)}</div><div><div class="nm" style="color:${d.color}">${esc(d.name)} <span style="color:var(--muted);font-size:12px">· you have ${c.items[d.id]||0}</span></div><div class="st">${esc(d.desc)}${d.lvl?`<br><span class="${lv?'ok':'no'}">Base Lv ${d.lvl}</span>`:''}</div></div>`+
           `<div class="buy"><span class="price">${d.price} gold each</span><div class="qty">${[1,5,20].map(n=>{const why=!lv?`Base Lv ${d.lvl}`:(c.gold||0)<d.price*n?'Not enough gold':'';return `<button class="btn" data-pot="${d.id}|${n}" ${why?`disabled title="${why}"`:''} aria-label="Buy ${n} ${esc(d.name)} for ${d.price*n} gold">×${n}</button>`;}).join('')}</div></div></div>`;}
       h+=`<div class="shtabs"><button class="btn" id="sh-sellmats">Sell all my monster materials</button></div>`;}
-    else{$('#sh-title').textContent='Dorin’s Workshop · Crafting';$('#sh-sub').textContent=`wings and top-end gear · you have ${c.gold||0} gold`;const tab=this.shopTab;
-      h+=`<div class="shtabs">${['Wings','Weapons','Armour','Synthesis'].map(g=>`<button class="btn" data-tab="${g}" aria-pressed="${g===tab}">${g}</button>`).join('')}</div>`;
+    else{$('#sh-title').textContent='Dorin’s Workshop · Crafting';$('#sh-sub').textContent=`wings, top-end gear, rings and amulets · you have ${c.gold||0} gold`;const tab=this.shopTab;
+      h+=`<div class="shtabs">${['Wings','Weapons','Armour','Accessories','Synthesis'].map(g=>`<button class="btn" data-tab="${g}" aria-pressed="${g===tab}">${g}</button>`).join('')}</div>`;
       const kit=kitOf(c.job.classId);if(tab==='Synthesis') h+=this.synthHtml();else for(const r of RECIPES.filter(r=>r.group===tab&&(!r.base||kit.includes(r.base)))){const g=recipePreview(r,line),why=this.craftWhy(r,g),mats=Object.entries(r.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
           return `<span class="${have>=n?'ok':'no'}">${esc(d.name)} ${Math.min(have,n)}/${n}</span>${have<n?`<button class="lw-find" data-find="${id}" title="Where to get ${esc(d.name)}" aria-label="Where to get ${esc(d.name)}">⌕</button>`:''}`;}).join(' · ');
         h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm" style="color:${RARITY[g.rar].color}">${esc(g.name)}</div><div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · ${this.gearLine(g)}<br>${this.reqLine(g,r.lvl)}<br>${mats} · <span class="${(c.gold||0)>=r.gold?'ok':'no'}">${r.gold} gold</span></div></div>`+
@@ -6285,6 +6288,7 @@ const TownScreen={
       else if((B.slot==='weapon'||B.slot==='offhand')&&!kit.includes(b)){rows.push({t:'Any monster',s:`${Math.round(GEAR_DROP*100)}% chance of gear per kill, now and then another job's weapon`});note=`${gearFor(b)} use ${LOC_GEAR[b].toLowerCase()}. Greta, Dorin and the bosses make weapons for your own job only.`;}
       else{npc('blacksmith',b==='ring'||b==='amulet'?`${LOC_GEAR[b].toLowerCase()} for your level`:'pieces for your level, Common to Superior');
         if(b!=='ring'&&b!=='amulet') npc('artificer',`Heroic (Base Lv 40) and Mythic (Base Lv 70) ${B.slot==='weapon'?'weapons':B.slot==='offhand'?LOC_GEAR[b].toLowerCase():'armour'}`);
+        else npc('artificer',`a Heroic ${b} (Base Lv 40) and the Legendary ${b==='ring'?'Bloodfang Ring, Hawkeye Signet and Archmage\'s Seal':'Heart of the Mountain, Fortune\'s Charm and Seraph\'s Tear'} (Base Lv 70)`);
         npc('artificer',b==='ring'||b==='amulet'?'Synthesis: an Epic one becomes a Legendary of your choice (50%)':'Synthesis: one rarity higher');
         for(const k of BOSS_KINDS) boss(k,'Rare to Legendary gear');
         rows.push({t:'Any monster',s:`${Math.round(GEAR_DROP*100)}% chance of gear per kill, around the monster's level`});}}
@@ -7073,7 +7077,15 @@ const RECIPES=[
   ...KIT_BASES.flatMap(b=>[{id:'hw'+b,group:'Weapons',base:b,lvl:40,weapon:true,need:{stinger:12,shell:10,ingot:18,dust:8},gold:3000,make:()=>craftGear(b,45,3)},   // a Heroic and a Mythic piece
     {id:'mw'+b,group:'Weapons',base:b,lvl:70,weapon:true,need:{dscale:20,core:15,ingot:40,dust:30},gold:15000,make:()=>craftGear(b,75,4)}]),                     // for each of your job's hands
   ...['body','head','hands','feet'].map(b=>({id:'ha'+b,group:'Armour',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear(b,45,3)})),
-  ...['body','head','hands','feet'].map(b=>({id:'ma'+b,group:'Armour',lvl:70,need:{dscale:12,stone:10,ingot:28,dust:20},gold:9000,make:()=>craftGear(b,75,4)}))];
+  ...['body','head','hands','feet'].map(b=>({id:'ma'+b,group:'Armour',lvl:70,need:{dscale:12,stone:10,ingot:28,dust:20},gold:9000,make:()=>craftGear(b,75,4)})),
+  /* build 14t: rings and amulets. A Heroic (Epic) ring and amulet from Base Lv 40, and each of the six Legendary
+     accessories from Base Lv 70, every one with its own materials */
+  {id:'hring',group:'Accessories',lvl:40,need:{stone:8,wisp:8,ingot:12,dust:5},gold:2000,make:()=>craftGear('ring',45,3)},
+  {id:'hamulet',group:'Accessories',lvl:40,need:{shell:8,scale:8,ingot:12,dust:5},gold:2000,make:()=>craftGear('amulet',45,3)},
+  ...Object.entries({bloodfang:{core:12,dscale:10,ember:15},hawkeye:{feather:12,fur:15,stinger:12},archmage:{stone:15,wisp:15,ember:10},
+      mountain:{shell:15,scale:15,core:10},fortune:{wisp:12,fur:12,vsteel:6},seraphtear:{feather:15,vsteel:8,wisp:10}})
+    .map(([id,m])=>({id:'la'+id,group:'Accessories',lvl:70,need:{...m,ingot:30,dust:25,halo:id==='seraphtear'?3:2},gold:20000,
+      make:()=>legendAcc(craftGear(LEGEND_ACC[id].slot==='ring'?'ring':'amulet',75,4),id)}))];
 function craftGear(base,lvl,rar){const g=makeGear(base,lvl,rar);g.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);g.crafted=true;return g;}
 /* the wing kind (0-6) of a wings item: g.wing, or from its name for old saves; -1 for none */
 const wingKindOf=g=>g?(g.wing??GEAR_BASES.wings.names.indexOf(String(g.name||'').replace(/^(Fine|Superior|Heroic|Mythic) /,''))):-1;
@@ -7124,7 +7136,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14s';
+const BUILD='2026-11-14t';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

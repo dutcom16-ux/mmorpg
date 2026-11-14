@@ -1,1 +1,1 @@
-build: 2026-11-14s (Two hands, arrows and Synthesis)
+build: 2026-11-14t (Rings and amulets from Dorin)
