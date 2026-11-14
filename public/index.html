@@ -2221,6 +2221,10 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-14g',date:'2026-11-14',title:'Tougher elites',
+    balance:['Elite monsters are 10 levels above the monsters around them, so they are harder to hit and give more EXP',
+      'Elites have much more health and 50% more armour and magic resistance. A character at the map\'s level with decent gear now needs 1 to 2 minutes and a good supply of healing potions to beat one alone. Bring a party for a quicker kill',
+      'An elite hits 3 times as hard as an ordinary monster of its kind on that map, so every job can still win alone. Its gear drop is now at a level you can wear (3 above the map)']},
   {v:'2026-11-14f',date:'2026-11-14',title:'Elite monsters',
     new:['Elite monsters: every hunting map now has one elite of each monster that lives there. It is the same monster at 2.5 times the size, with a glowing ember ring, a ★ gold name and an orange dot on the minimap',
       'An elite is half as strong as a boss: about 20 times the health of its kind and 5 times the damage. It is worth 20 times the EXP and drops gold, a piece of gear (Uncommon to Epic), 3 potions and 3 of its materials. It counts as its kind for quests',
@@ -3105,16 +3109,18 @@ Object.assign(MOB_ARMOR,{slimequeen:[1.1,1.2],slimeking:[1.2,1],lavagolem:[1.5,1
 for(const D of Object.values(MOB_DEFS)) if(D.acts){if(D.heal) D.acts.push({id:'heal',kind:'heal',special:true,windup:D.heal.channel,recover:.35});
   for(const a of D.acts) a.total=a.windup+(a.jump||0)+(a.active||0)+a.recover;}
 /* ====================== elite monsters (mini bosses) ======================
-   Every map has one elite of each monster kind that lives there: the same monster, 2.5x its size, with half of a boss's
-   edge over an ordinary monster. A boss is defined with about 39x the health of its kind (the Slime Queen 30x, the Lava
-   Dragon Golem 48x) and hits 1.5x as hard, then twice as hard again for the characters' 301x health (2001x / 301x
-   = 6.6x), so ~10x what an ordinary monster does to you. An elite: 19.5x the health of its kind, 5x its damage to you
-   (a Recruit, with no 301x health, takes 5x the ordinary hit too), its kind's armour and speed. (Bosses also get a
-   fight-length multiplier tuned for end-game parties, 10 minutes alone; elites don't: about a minute alone at the map's
-   level.) It comes back 4-6 minutes after it falls, gives 20x the EXP and drops more (ELITE_LOOT). It counts as its
-   kind for quests. On every player's game the elites come after the map's ordinary monsters, so the list (and the
+   Every map has one elite of each monster kind that lives there: the same monster, 2.5x its size and 10 levels above
+   the map's ones of its kind (so it is harder to hit, dodges more and is worth more). Tuned (tests/elite_ttk.py) so a
+   mid-tier character - at the map's level, in the job of that level, Rare gear of its level, a +4 weapon, AUTO with
+   its skills and potions - wins alone in 1-2 minutes, drinking about 5-30 healing potions:
+   - health: an average monster of the elite's level (its kind's own health factor left out, its armour kept) x hpAt(level)
+   - armour and magic resistance x1.5 (up to 62% / 55%)
+   - its hit: 3x what an ordinary one of its kind on the map hits, measured against your health like a boss's
+     (x301 for every job, x1 for a Recruit). More than that and mid-tier mages and archers fall in seconds alone.
+   It comes back 4-6 minutes after it falls, gives 20x the EXP of its level and drops more (ELITE_LOOT). It counts as
+   its kind for quests. On every player's game the elites come after the map's ordinary monsters, so the list (and the
    host's snapshot) stays the same everywhere. */
-const ELITE={size:2.5,hp:.5*(30+48)/2,dmg:.5*1.5*2001/301,exp:20,respawn:[240,360],reach:1.8,color:'#ffb347'};
+const ELITE={size:2.5,lvl:10,hpAt:L=>.58*L+6,dmg:3,def:1.5,dpCap:.62,mpCap:.55,exp:20,respawn:[240,360],reach:1.8,color:'#ffb347'};
 const ELITE_LOOT={gold:12,gear:1,rar:[.5,.35,.15],potions:3,mats:3};   // gold x the level; gear: Uncommon / Rare / Epic chances
 const ELITE_DEFS={};
 function eliteDef(kind){if(ELITE_DEFS[kind]) return ELITE_DEFS[kind];const D=MOB_DEFS[kind];
@@ -4412,7 +4418,7 @@ const TownScreen={
     if(m!==E.boss) return;m.act=null;this.bshots=[];E.t0=0;E.targets=[];if(E.cfg.gm){m.respawnAt=1e15;E.gmDead=now;}   // a GameMaster's boss does not come back
     for(const s of E.slots){if(s.state!=='dead'){s.state='dead';s.deadT=now;if(this.target===s) this.target=null;if(this.mp) this.mp.dmg.delete(s);}s.respawnAt=1e15;s.act=null;s.hostile=false;}},
   eliteLoot(m,now){const L=ELITE_LOOT;this.spawnDrop(m,now,{kind:'gold',n:Math.round(m.lvl*L.gold*(.85+Math.random()*.3))});
-    for(let i=0;i<L.gear;i++){const r=Math.random(),rar=r<L.rar[0]?1:r<L.rar[0]+L.rar[1]?2:3,bases=[WEAPON_OF[this.line()],'body','head','hands','feet','ring'],g=craftGear(bases[Math.floor(Math.random()*bases.length)],m.lvl,rar);delete g.crafted;this.spawnDrop(m,now,{kind:'gear',g});}
+    for(let i=0;i<L.gear;i++){const r=Math.random(),rar=r<L.rar[0]?1:r<L.rar[0]+L.rar[1]?2:3,bases=[WEAPON_OF[this.line()],'body','head','hands','feet','ring'],g=craftGear(bases[Math.floor(Math.random()*bases.length)],m.lvl-ELITE.lvl+3,rar);delete g.crafted;this.spawnDrop(m,now,{kind:'gear',g});}
     this.spawnDrop(m,now,{kind:'potion',n:L.potions});const mat=DROPS[m.kind];if(mat) this.spawnDrop(m,now,{kind:'mat',mat,n:L.mats});
     AudioFX.sfx('level');toast(`${m.def.name} defeated!`,3500);},
   eliteNotice(m){if(!this.ch) return;this.log('sys',null,`★ An ${m.def.name} has appeared in ${MAP_NAMES[this.mapId]||'this area'}!`);},
@@ -4584,8 +4590,9 @@ const TownScreen={
       const m=this.newMob(z,true);m.i=this.mobs.length;this.mobs.push(m);}},
   freeSpot(z){for(let t=0;t<60;t++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*z.r,x=z.x+Math.cos(a)*r,y=z.y+Math.sin(a)*r*.8;
       if(this.free(x,y)&&this.free(x+7,y)&&this.free(x-7,y)&&this.free(x,y-5)&&Math.hypot(x-this.p.x,y-this.p.y)>110) return [x,y];}return null;},
-  newMob(z,elite){const s=this.freeSpot(z)||[z.x,z.y];const D=elite?eliteDef(z.kind):MOB_DEFS[z.kind],st=mobStats(z.kind,z.lvl);
-    if(elite){st.hp=Math.round(st.hp*ELITE.hp);st.atk=st.atk.map(v=>Math.round(v*ELITE.dmg));st.exp=Math.round(st.exp*ELITE.exp);}
+  newMob(z,elite){const s=this.freeSpot(z)||[z.x,z.y];const D=elite?eliteDef(z.kind):MOB_DEFS[z.kind],st=mobStats(z.kind,elite?(z.lvl||D.lvl)+ELITE.lvl:z.lvl);
+    if(elite){st.hp=Math.round(st.hp/D.hp*ELITE.hpAt(st.lvl));st.atk=mobStats(z.kind,z.lvl).atk.map(v=>Math.round(v*ELITE.dmg));st.exp=Math.round(st.exp*ELITE.exp);   // atk: ELITE.dmg x what an ordinary one of the map hits
+      st.dp=Math.min(ELITE.dpCap,st.dp*ELITE.def);st.mp=Math.min(ELITE.mpCap,st.mp*ELITE.def);}
     return {kind:z.kind,def:D,zone:z,...st,maxHp:st.hp,elite:!!elite,x:s[0],y:s[1],dir:(Math.random()*8)|0,state:'idle',until:performance.now()+Math.random()*3000,walkT:0,moving:false,
       hostile:false,nextHit:0,hitT:-1e9,deadT:0,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*10,bornT:-1e9,barkAt:0,bubble:null};},
   respawn(m){const s=this.freeSpot(m.zone);if(!s){m.respawnAt=performance.now()+3000;return;}if(m.elite) this.eliteNotice(m);
@@ -6651,7 +6658,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-14f';
+const BUILD='2026-11-14g';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
