@@ -1,1 +1,1 @@
-build: 2026-11-15h (AUTO picks monster kinds)
+build: 2026-11-15i (Sanctuary floor and detours)
