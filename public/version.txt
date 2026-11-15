@@ -1,1 +1,1 @@
-build: 2026-11-15e (AUTO buffs row)
+build: 2026-11-15f (Bulwark sword combo)
