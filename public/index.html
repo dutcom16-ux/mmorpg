@@ -1677,7 +1677,7 @@ const Store={
   /* the account vault: shared by every character. Another tab may have changed it: the newer copy wins before every use and every write */
   syncVault(){try{const raw=localStorage.getItem(this.key),L=raw&&JSON.parse(raw),r=Array.isArray(L)&&L.find(c=>c&&c.id===this.VID);if(r&&(!this.vrec||(r.savedAt||0)>(this.vrec.savedAt||0))) this.vrec=r;}catch(e){}},
   getVault(){this.load();this.syncVault();if(!this.vrec) this.vrec={id:this.VID,name:'Account vault',savedAt:0,vault:{bag:[],items:{},gold:0}};
-    const v=this.vrec.vault=this.vrec.vault||{};if(!Array.isArray(v.bag)) v.bag=[];v.items=v.items||{};v.gold=v.gold|0;return v;},
+    const v=this.vrec.vault=this.vrec.vault||{};if(!Array.isArray(v.bag)) v.bag=[];for(const g of v.bag) normGear(g);v.items=v.items||{};v.gold=v.gold|0;return v;},
   touchVault(){this.getVault();this.vrec.savedAt=Date.now();this.saveLocal();Cloud.schedule(1500);},
   /* vaults that characters carried before the vault became the account's: pour them all into the account vault, once */
   mergeVaults(){const V=this.getVault();let n=0;
@@ -2278,6 +2278,14 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15k',date:'2026-11-15',title:'Gear in percent, shield reflect',
+    new:['Every piece of gear now gives percentages. Weapons give +% Attack; armour and shields give +% DEF, MDEF and HP; rings and amulets give +% HP and MDEF; Legendary rings and amulets give their attack and defence as % too. Your gear is converted and stays about as strong as before',
+      'Two-handed weapons give 1.4 times the Attack % of a one-handed weapon of the same level and rarity. A second weapon in the right hand adds 40% of its Attack %',
+      'Shields no longer roll INT, AGI or DEX. Those lines are now Reflect melee, Reflect ranged or Reflect magic (that share of a blow goes back to the attacker) or Block chance (stops a melee or ranged blow dead). Old shields have those lines turned into the new ones',
+      'The stats window (C) shows Block and Reflect (melee, ranged and magic). Auto Guard adds to Block and Reflect Shield adds to melee and ranged Reflect. Block is at most 50%, each Reflect at most 60%'],
+    balance:['Judgement Laser, Solarius\'s ultimate, hits 80% harder',
+      'Enhancement raises a piece\'s percentages by 10% of themselves per level. The four Legendary wings keep their fixed numbers and still multiply on top of your other gear',
+      'Percentages grow with your own stats, so the same piece gives a little more to a character with high STR, INT or VIT and a little less to one with low stats']},
   {v:'2026-11-15j',date:'2026-11-15',title:'Flat angels in the Sanctuary',
     balance:['Celestial Sanctuary: the six angel statues of the upper half (the two top corners, the upper terrace and the two beside the great circle) are flat now. You walk over them like the floor, and they never hide you',
       'The two angel statues by the south stairway still stand: you walk round them, and they hide you when you go behind them']},
@@ -3170,11 +3178,26 @@ const LEGEND_ACC={
   mountain:{slot:'neck',name:'Heart of the Mountain',color:'#8fe08a',desc:'Max HP, defence and magic defence',make:L=>({hp:Math.round((4+L*1.5)*2.3*1.4),def:accD(L,.7),mdef:accD(L,.9),bonus:{VIT:3+Math.floor(L/12)}})},
   fortune:{slot:'neck',name:"Fortune's Charm",color:'#ffe08a',desc:'LUK, AGI and critical hits',make:L=>({crit:Math.round(6+L/15),hp:Math.round((4+L*1.5)*2.3*.6),bonus:{LUK:5+Math.floor(L/8),AGI:2+Math.floor(L/20)}})},
   seraphtear:{slot:'neck',name:"Seraph's Tear",color:'#bfe8ff',desc:'Stronger heals, magic attack and magic defence',make:L=>({heal:Math.round(10+L/6),matk:accW(L,.25),mdef:accD(L,.9),bonus:{INT:2+Math.floor(L/15)}})}};
-const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','crit','heal','psn','stn'];
+const GEAR_STATS=['atk','patk','ratk','matk','def','mdef','hp','atkPct','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','crit','heal','psn','stn','reflP','reflR','reflM','block'];
+/* build 15k: every piece's numbers are percentages. A piece is still rolled from the same curves as before (item level x
+   rarity x roll x slot share), then each flat number becomes a percentage through PCT_PER: what one point of that stat
+   was worth at that item level against a typical character of that level (Attack: weapons ~28-34% of your attack;
+   DEF: a chest piece ~35-37%; MDEF: a shield ~35%; HP: a chest piece ~7-9%). So every piece keeps its place among the
+   others, and pieces made before are converted the same way (normGear) */
+const PCT_PER={atk:L=>(27+L*.07)/(3+L*1.2),def:L=>(34+L*.03)/(1+L*.28),mdef:L=>(55+L*.05)/(1+L*.28),hp:L=>Math.max(6,9-L*.02)/(6+L*2)};
+const PCT_OF={atk:'atkPct',patk:'patkPct',ratk:'ratkPct',matk:'matkPct',def:'defPct',mdef:'mdefPct',hp:'hpPct'};
+const PCT_CURVE={atk:'atk',patk:'atk',ratk:'atk',matk:'atk',def:'def',mdef:'mdef',hp:'hp'};
+function toPct(g){const L=g.lvl||1;for(const [k,pk] of Object.entries(PCT_OF)){const v=g[k];if(!v) {delete g[k];continue;}
+    g[pk]=(g[pk]||0)+Math.max(1,Math.round(v*PCT_PER[PCT_CURVE[k]](L)));delete g[k];}
+  g.pv=1;return g;}
+/* shields (build 15k): no INT, AGI or DEX lines. Those are reflect (melee, ranged or magic: that share of the blow
+   goes back to the attacker) or block (the chance to stop a melee or ranged blow dead) */
+const SHIELD_LINE_KEYS=['STR','VIT','LUK','reflP','reflR','reflM','block'],SHIELD_SPECIAL=['reflP','reflR','reflM','block'];
+const shieldLine=(k,lvl,rar,rnd)=>k==='block'?1+Math.floor(lvl/25)+Math.floor(rnd()*(Math.floor(rar/2)+1)):2+Math.floor(lvl/20)+Math.floor(rnd()*(rar+1));
 const DIVINE_X=1.25;   // a Divine Legendary accessory or wing: its numbers x1.25
 function legendAcc(g,id){const A=LEGEND_ACC[id];if(!A||GEAR_BASES[g.base].slot!==A.slot) return g;for(const k of GEAR_STATS) delete g[k];
   const div=g.rar>=5,x=div?DIVINE_X:1,o=A.make(g.lvl);for(const k of GEAR_STATS) if(o[k]) g[k]=Math.round(o[k]*x);
-  g.bonus=Object.fromEntries(Object.entries(o.bonus||{}).map(([k,v])=>[k,Math.round(v*x)]));g.uniq=id;g.name=(div?'Divine ':'')+A.name;g.rar=div?5:4;return g;}
+  g.bonus=Object.fromEntries(Object.entries(o.bonus||{}).map(([k,v])=>[k,Math.round(v*x)]));g.uniq=id;g.name=(div?'Divine ':'')+A.name;g.rar=div?5:4;return toPct(g);}
 /* the four Legendary wings each have their own role (build 14s) and fixed numbers, all percentages (builds 14u, 14v):
    Phoenix Wings +19% melee attack, Celestial Wings +19% magic attack, Godwings of Night +19% ranged attack, Godwings
    of Dawn +20% max HP; each also raises DEF and MDEF by a percentage, and the attack wings add a little LUK. Divine
@@ -3186,9 +3209,16 @@ const WING_LVL=[22,42,57,77,97,102,102,102];   // each kind's item level
 function roleWing(g){const k=wingKindOf(g),W=WING_STATS[k];if(!W) return g;const x=g.rar>=5?DIVINE_X:1;
   for(const s of GEAR_STATS) delete g[s];g.wing=k;g.bonus={};
   for(const s of GEAR_STATS) if(W[s]) g[s]=Math.round(W[s]*x);for(const [s,v] of Object.entries(W.bonus||{})) g.bonus[s]=Math.round(v*x);
-  return g;}
+  g.pv=1;return g;}
 /* every piece that comes in from a save, the vault or a trade goes through here (safe to repeat) */
-function normGear(g){if(g&&g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null) roleWing(g);return g;}
+function normGear(g){if(!g) return g;if(g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null) return roleWing(g);
+  if(g.pv) return g;
+  if(g.uniq&&LEGEND_ACC[g.uniq]) return legendAcc(g,g.uniq);
+  if(g.base==='shield'){   // its INT / AGI / DEX lines become reflect or block lines (the same number of lines, rolled from its uid)
+    let h=0;for(const ch of String(g.uid||g.name||'')) h=(h*31+ch.charCodeAt(0))>>>0;const rnd=()=>((h=(h*1103515245+12345)>>>0)%10000)/10000;
+    for(const k of ['INT','AGI','DEX']){const v=(g.bonus||{})[k];if(!v) continue;delete g.bonus[k];
+      const n=Math.max(1,Math.round(v/(1+Math.floor(g.lvl/10)+g.rar/2)));for(let i=0;i<n;i++){const q=SHIELD_SPECIAL[Math.floor(rnd()*4)];g[q]=(g[q]||0)+shieldLine(q,g.lvl,g.rar,rnd);}}}
+  return toPct(g);}
 /* a piece remade as another kind of the same family (an Arbiter's scepter into a hammer): same level, rarity and numbers */
 function reforgeGear(g,base){const B=GEAR_BASES[base];g.base=base;g.slot=B.slot;if(!g.uniq) g.name=(RARITY_WORD[g.rar]?RARITY_WORD[g.rar]+' ':'')+B.names[Math.min(4,Math.floor((g.lvl-1)/10))];return g;}
 const SLOT_SVG=Object.fromEntries(Object.entries({weapon:'<path d="M5 19L18 6M14 5h5v5M4 14l6 6"/>',head:'<path d="M5 16a7 7 0 0 1 14 0v4H5z"/><path d="M9 16h6"/>',
@@ -3200,13 +3230,17 @@ const SLOT_SVG=Object.fromEntries(Object.entries({weapon:'<path d="M5 19L18 6M14
   .map(([k,p])=>[k,`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`]));
 /* a piece's number for one stat, with its enhancement (+10% per level, at least +1; chances and % bonuses +1 per 2
    levels). A two-handed weapon's Attack counts TWO_HAND times */
-const PCT_STATS=new Set(['crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct']);
-const gearVal=(g,k)=>{let x=g[k]||0;if(!x) return 0;if(k==='atk'&&isTwoHand(g)) x=Math.round(x*TWO_HAND);
-  if(PCT_STATS.has(k)) return x+Math.floor((g.enh||0)/2);return x+Math.max(g.enh||0,Math.round(x*.1*(g.enh||0)));};
-const STAT_LABEL={atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',patkPct:'Melee attack',ratkPct:'Ranged attack',matkPct:'Magic attack',defPct:'Defence',mdefPct:'Magic defence',hpPct:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
+const PCT_STATS=new Set(['crit','heal','psn','stn','atkPct','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','reflP','reflR','reflM','block']);
+const MAIN_PCT=new Set(['atkPct','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct']);
+/* enhancement: a piece's main percentages +10% of themselves per level (at least +1 per 2 levels); chances, reflect,
+   block and the four Legendary wings' fixed numbers +1 per 2 levels. A two-handed weapon's Attack counts TWO_HAND times */
+const gearVal=(g,k)=>{let x=g[k]||0;if(!x) return 0;const e=g.enh||0;if((k==='atk'||k==='atkPct')&&isTwoHand(g)) x=Math.round(x*TWO_HAND);
+  if(MAIN_PCT.has(k)&&!(g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null)) return x+Math.max(Math.floor(e/2),Math.round(x*.1*e));
+  if(PCT_STATS.has(k)) return x+Math.floor(e/2);return x+Math.max(e,Math.round(x*.1*e));};
+const STAT_LABEL={atkPct:'Attack',reflP:'Reflect melee',reflR:'Reflect ranged',reflM:'Reflect magic',block:'Block chance',atk:'Attack',patk:'Melee attack',ratk:'Ranged attack',matk:'Magic attack',def:'Defence',mdef:'Magic defence',hp:'Max HP',patkPct:'Melee attack',ratkPct:'Ranged attack',matkPct:'Magic attack',defPct:'Defence',mdefPct:'Magic defence',hpPct:'Max HP',crit:'Critical',heal:'Healing',psn:'Poison chance',stn:'Stun chance'};
 const statText=(k,v)=>PCT_STATS.has(k)?`+${v}%`:k==='hp'?`+${v}`:`${v}`;
 const gearScore=g=>Math.round(gearVal(g,'atk')*2+(gearVal(g,'patk')+gearVal(g,'ratk')+gearVal(g,'matk'))*2+gearVal(g,'def')*3+gearVal(g,'mdef')*2.5+gearVal(g,'hp')*.25
-  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+(gearVal(g,'patkPct')+gearVal(g,'ratkPct')+gearVal(g,'matkPct'))*15+gearVal(g,'defPct')*12+gearVal(g,'mdefPct')*10+gearVal(g,'hpPct')*15+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
+  +(gearVal(g,'crit')+gearVal(g,'psn'))*5+gearVal(g,'stn')*8+gearVal(g,'heal')*4+(gearVal(g,'atkPct')+gearVal(g,'patkPct')+gearVal(g,'ratkPct')+gearVal(g,'matkPct'))*4.5+(gearVal(g,'reflP')+gearVal(g,'reflR')+gearVal(g,'reflM'))*6+gearVal(g,'block')*8+gearVal(g,'defPct')*1.4+gearVal(g,'mdefPct')*.65+gearVal(g,'hpPct')*3+Object.values(g.bonus||{}).reduce((a,b)=>a+b,0)*3);
 const gearReq=g=>g.slot==='wings'&&g.wing===GM_WING?1:Math.max(1,g.lvl-3);   // GameMaster wings: any level
 const gearPrice=g=>Math.round((4+g.lvl*1.5)*(1+g.rar*.9)*(1+(g.enh||0)*.15));
 const gearSmelt=g=>({ingot:1+Math.floor(g.lvl/12)+g.rar+Math.floor((g.enh||0)/2),dust:g.rar});
@@ -3231,11 +3265,13 @@ function makeGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar],v=()=>.88
   const g={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8),base,slot:B.slot,lvl,rar,enh:0,
     name:(RARITY_WORD[rar]?RARITY_WORD[rar]+' ':'')+B.names[Math.min(4,Math.floor((lvl-1)/10))],bonus:{}};
   gearBase(g,B,lvl,R,v);
-  for(let i=0;i<R.lines;i++){const k=STAT_KEYS[Math.floor(Math.random()*6)];g.bonus[k]=(g.bonus[k]||0)+1+Math.floor(lvl/10)+Math.floor(Math.random()*(rar+1));}
+  for(let i=0;i<R.lines;i++){if(base==='shield'){const k=SHIELD_LINE_KEYS[Math.floor(Math.random()*SHIELD_LINE_KEYS.length)];
+      if(SHIELD_SPECIAL.includes(k)){g[k]=(g[k]||0)+shieldLine(k,lvl,rar,Math.random);continue;}g.bonus[k]=(g.bonus[k]||0)+1+Math.floor(lvl/10)+Math.floor(Math.random()*(rar+1));continue;}
+    const k=STAT_KEYS[Math.floor(Math.random()*6)];g.bonus[k]=(g.bonus[k]||0)+1+Math.floor(lvl/10)+Math.floor(Math.random()*(rar+1));}
   if(B.slot==='ring'&&!R.lines) g.bonus.LUK=1+Math.floor(lvl/15);
   if(B.slot==='neck'&&!R.lines) g.bonus.VIT=1+Math.floor(lvl/15);
   if((B.slot==='ring'||B.slot==='neck')&&rar>=4){const ids=Object.keys(LEGEND_ACC).filter(k=>LEGEND_ACC[k].slot===B.slot);legendAcc(g,ids[Math.floor(Math.random()*ids.length)]);}
-  return g;}
+  return toPct(g);}
 function rollRarity(){const r=Math.random();let a=0;for(let i=0;i<RARITY_ROLL.length;i++){a+=RARITY_ROLL[i];if(r<a) return i;}return 0;}
 function rollGear(lvl,job){let base;const K=kitOf(job);
   if(Math.random()<.3) base=Math.random()<.6?K[Math.floor(Math.random()*K.length)]:KIT_BASES[Math.floor(Math.random()*KIT_BASES.length)];
@@ -3448,7 +3484,7 @@ Object.assign(MOB_DEFS,{
       // her ultimate, Judgement Laser: a laser from the sky onto every player in the arena (build 14n) and 5 more spread
       // across it; red circles grow while she casts (2.5 s), then they all strike. First 12 s into the fight, then
       // every 25 s, before anything else. v: its version, part of mobSig (older games placed the circles differently)
-      {id:'jlaser',v:2,name:'Judgement Laser',kind:'rain',ult:true,prio:true,first:12,range:[0,1e4],cd:25,windup:2.5,recover:1,dmg:3.6,arm:{at:350,per:.001,min:.85,max:1.1},r:85,n:5,maxPts:12,major:true,mag:true,shake:true,color:'#ff3b3b',fx:'laser',anim:{set:'sunAtk',row:0,flip:true,seq:[[1,0],[3,2.5]]}},
+      {id:'jlaser',v:2,name:'Judgement Laser',kind:'rain',ult:true,prio:true,first:12,range:[0,1e4],cd:25,windup:2.5,recover:1,dmg:6.48,arm:{at:350,per:.001,min:.85,max:1.1},r:85,n:5,maxPts:12,major:true,mag:true,shake:true,color:'#ff3b3b',fx:'laser',anim:{set:'sunAtk',row:0,flip:true,seq:[[1,0],[3,2.5]]}},
       {id:'summon',kind:'summon',special:true,windup:1.5,recover:.6,anim:{set:'sunAtk',row:0,hold:1,seq:[[1,0]]}}]},
   dawnvalk:{el:'holy',name:'Dawn Valkyrie',lvl:MAX_BASE-1,hp:2.2,atk:1,exp:1,speed:[60,96],sight:0,reach:30,cd:9,h:70,respawn:[1,1],barks:['For the Archangel!','*her spear rings*'],
     sheet:'sunboss',set:'valk',walkFps:9,size:1,body:20,keep:[0,34],summonArt:[80,6],
@@ -3830,9 +3866,9 @@ const TownScreen={
   st(){const S=this.ch.stats||{},G=this.gear(),M=this.mods(),o={};for(const k of STAT_KEYS) o[k]=(S[k]||1)+(G[k]||0)+Math.floor(M[k]||0);return o;},   // with gear and skills
   lvlAtk(){const c=this.ch;return 8+Math.floor((c.baseLevel||1)*1.5)+(JOBS[c.job.classId]?.tier||0)*6;},
   statusAtk(){const S=this.st(),rg=this.line()==='Ranged',a=rg?S.DEX:S.STR,b=rg?S.STR:S.DEX;return a+Math.floor(a/10)**2+Math.floor(b/5)+Math.floor(S.LUK/5);},
-  atkPower(){const M=this.mods(),G=this.gear(),ln=this.line(),x=ln==='Ranged'?G.ratk:this.magicLine()?0:G.patk,xp=ln==='Ranged'?G.ratkPct:this.magicLine()?0:G.patkPct;   // melee or ranged attack on gear counts for those jobs only
-    return Math.max(1,Math.round((this.statusAtk()+this.lvlAtk()+G.atk+x+(M.atk||0))*(1+(M.atkPct||0)+xp/100)));},
-  matk(){const S=this.st(),M=this.mods(),I=S.INT,ln=this.line(),G=this.gear(),b=this.lvlAtk()+Math.floor(S.LUK/5)+(M.matk||0)+G.matk+(ln==='Magic'||ln==='Support'?G.atk:0),k=1+(M.matkPct||0)+G.matkPct/100;
+  atkPower(){const M=this.mods(),G=this.gear(),ln=this.line(),x=ln==='Ranged'?G.ratk:this.magicLine()?0:G.patk,xp=(ln==='Ranged'?G.ratkPct:this.magicLine()?0:G.patkPct)+G.atkPct,wp=ln==='Ranged'?G.wratkPct:this.magicLine()?0:G.wpatkPct;   // melee or ranged attack on gear counts for those jobs only; a weapon's Attack % for everyone
+    return Math.max(1,Math.round((this.statusAtk()+this.lvlAtk()+G.atk+x+(M.atk||0))*(1+(M.atkPct||0)+xp/100)*(1+wp/100)));},
+  matk(){const S=this.st(),M=this.mods(),I=S.INT,ln=this.line(),G=this.gear(),b=this.lvlAtk()+Math.floor(S.LUK/5)+(M.matk||0)+G.matk+(ln==='Magic'||ln==='Support'?G.atk:0),k=(1+(M.matkPct||0)+(G.matkPct+(ln==='Magic'||ln==='Support'?G.atkPct:0))/100)*(1+G.wmatkPct/100);
     return [Math.round((I+Math.floor(I/7)**2+b)*k),Math.round((I+Math.floor(I/5)**2+b)*k)];},
   magicLine(){const ln=this.line();return ln==='Magic'||ln==='Support';},
   atkStyle(){return attackStyleOf(this.ch.job.classId);},
@@ -3844,12 +3880,16 @@ const TownScreen={
   flee(){const S=this.st(),L=this.ch.baseLevel||1;return 100+L+S.AGI+Math.floor(S.LUK/5)+(this.mods().flee||0);},
   critRate(){return this.st().LUK*.3+1+(this.ch.job.classId==='recruit'?0:CRIT_BONUS)+(this.mods().crit||0)+this.gear().crit;},
   critMul(){return 1.4+(this.mods().critDmg||0);},
+  /* block (melee and ranged blows): Auto Guard + the shield's block lines, at most 50%. Reflect, per kind of blow: Reflect
+     Shield (melee and ranged) + the shield's reflect lines, at most 60% each. All in % */
+  blockRate(){return Math.min(50,Math.round(((this.mods().block||0)*100+this.gear().block)*10)/10);},
+  reflectRate(kind){const M=this.mods(),G=this.gear(),sk=(M.reflect||0)*100;return Math.min(60,Math.round((kind==='m'?G.reflM:kind==='r'?sk+G.reflR:sk+G.reflP)*10)/10);},
   mobFlee(m){return 100+m.lvl+Math.floor(m.lvl*.35);},
   mobHit(m,now){return (175+m.lvl+Math.floor(m.lvl*.5))*(now<(m.blindUntil||0)?.7:1)*(m.elite?ELITE.hit:1);},      // elites: 60% more accurate
-  defence(){const S=this.st(),L=this.ch.baseLevel||1,G=this.gear();return Math.max(0,Math.floor((Math.floor(S.VIT*.8)+G.def+Math.floor(L*.3)+(this.mods().def||0))*(1+G.defPct/100)));},
-  mdef(){const G=this.gear();return Math.max(0,Math.floor((Math.floor(this.st().VIT*.8)+G.mdef+(this.mods().mdef||0))*(1+G.mdefPct/100)));},
+  defence(){const S=this.st(),L=this.ch.baseLevel||1,G=this.gear();return Math.max(0,Math.floor((Math.floor(S.VIT*.8)+G.def+Math.floor(L*.3)+(this.mods().def||0))*(1+G.defPct/100)*(1+G.wdefPct/100)));},
+  mdef(){const G=this.gear();return Math.max(0,Math.floor((Math.floor(this.st().VIT*.8)+G.mdef+(this.mods().mdef||0))*(1+G.mdefPct/100)*(1+G.wmdefPct/100)));},
   maxHp(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
-    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX()*(1+this.gear().hpPct/100);},
+    return (Math.floor((100+(L-1)*14+t*30)*(HP_MOD[this.line()]||1)*(1+S.VIT/100)*(1+(M.hpPct||0)))+this.gear().hp)*this.hpX()*(1+this.gear().hpPct/100)*(1+this.gear().whpPct/100);},
   hpX(){return this.ch&&this.ch.job.classId==='recruit'?1:CHAR_HP_X;},     // Recruits keep their original HP
   maxRes(){const c=this.ch,S=this.st(),L=c.baseLevel||1,M=this.mods(),t=JOBS[c.job.classId]?.tier||0;
     return Math.floor((40+(L-1)*3+t*20)*(SP_MOD[this.line()]||1)*(1+S.INT/100)*(1+(M.spPct||0)));},
@@ -4268,12 +4308,12 @@ const TownScreen={
   hurtPlayer(m,now,o){o=o||{};const c=this.ch,M=this.mods(),D=o.mag!=null?{...m.def,mag:o.mag}:m.def;      // o (boss attacks): mult x damage, mag, sure = can't be dodged
     const hc=Math.max(5,Math.min(95,this.mobHit(m,now)-this.flee()));
     if(!o.sure&&Math.random()*100>=hc){this.fx.push({x:this.p.x,y:this.p.y-62,miss:true,sty:'miss',t0:now});AudioFX.sfx('dodge');return;}
-    if(M.block&&!D.mag&&Math.random()<M.block){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('block');return;}
+    const blk=this.blockRate()/100;if(blk>0&&!D.mag&&Math.random()<blk){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('block');return;}
     const raw=(m.atk[0]+Math.random()*(m.atk[1]-m.atk[0]))*(o.mult||1)*(m.elite?this.hpX():1);      // an elite's hit grows with your health (x301), like a boss's
     let dmg=D.mag?Math.max(raw*.15,raw-this.mdef()*1.2-(this.ch.baseLevel||1)*.2):Math.max(raw*.15,raw-this.defence());
     if(o.arm){const A=o.arm;dmg*=Math.max(A.min,Math.min(A.max,1-(this.defence()+this.mdef()-A.at)*A.per));}      // an attack where armour decides who lives (Judgement Laser)
     if(M.dr) dmg*=1-Math.min(.6,M.dr);dmg=Math.max(1,Math.round(dmg));
-    if(M.reflect&&!D.mag){const back=Math.max(1,Math.round(raw*M.reflect));this.dealHit(m,now,{fixed:back,noMiss:1,noCrit:1,noBoss:1,src:'skill',num:'skill'});}
+    {const rf=this.reflectRate(D.mag?'m':o.ranged?'r':'p')/100;if(rf>0){const back=Math.max(1,Math.round(raw*rf));this.dealHit(m,now,{fixed:back,noMiss:1,noCrit:1,noBoss:1,src:'skill',num:'skill'});}}   // melee, ranged or magic: its own reflect
     if(this.barrier&&this.barrier.hp>0){const ab=Math.min(this.barrier.hp,dmg);this.barrier.hp-=ab;dmg-=ab;
       this.fx.push({x:this.p.x,y:this.p.y-70,text:`Shield ${ab}`,color:'#fff8d0',t0:now,italic:true});if(this.barrier.hp<=0) this.barrier=null;this.renderBuffs(now);if(dmg<=0) return;}
     c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});
@@ -4426,6 +4466,8 @@ const TownScreen={
       <dt>HIT</dt><dd>${this.hitRate()}</dd><dt>FLEE</dt><dd>${this.flee()}</dd><dt>CRIT</dt><dd>${this.critRate().toFixed(1)}%</dd><dt>ASPD</dt><dd>${this.aspd()} <small>(${(1/this.swingCd()).toFixed(2)}/s)</small></dd>
       <dt>Cast time</dt><dd>${Math.round(this.castMul()*100)}%</dd><dt>Max HP</dt><dd>${this.maxHp()}</dd><dt>Max ${esc(this.resName())} (SP)</dt><dd>${this.maxRes()}</dd>
       <dt>Range</dt><dd>${LINES[ln].reach>40?`Ranged · ${this.reach()} px`:'Melee'}</dd><dt>Gear score</dt><dd>${this.gearScoreWorn()}</dd>
+      <dt title="Chance to stop a melee or ranged blow dead (shield lines, Auto Guard)">Block</dt><dd>${this.blockRate()}%</dd>
+      <dt title="Share of a blow sent back to the attacker (shield lines, Reflect Shield)">Reflect</dt><dd><small>melee</small> ${this.reflectRate('p')}% · <small>ranged</small> ${this.reflectRate('r')}% · <small>magic</small> ${this.reflectRate('m')}%</dd>
       <dt>Gold</dt><dd>${c.gold||0}</dd><dt>Healing Draughts</dt><dd>${c.items.potion||0}</dd><dt>Skill points</dt><dd>${c.skillPoints||0}</dd></dl>
       <div class="note">Each level gives Floor((Lv-1)/5)+3 stat points (48 to start, 1,225 more by Level 99). Raising a stat costs Floor((value-1)/10)+2 points; stats go up to 99.
       Your chance to hit a monster is HIT minus its FLEE; its chance to hit you is its HIT minus your FLEE. <span class="better">Green</span> numbers come from gear and skills.</div></div></div>`;
@@ -5188,7 +5230,7 @@ const TownScreen={
      The host decides who is hit and sends one 'mh' per player hit, with the attack in e[3] ('o' orb, 's' slash,
      'b' burst); every game draws it from that. An orb's damage lands when it arrives. */
   mobShoot(m,P,now){m.atkKind='o';const dur=this.mobOrb(m,P.x,P.y,now);
-    if(P.key==='me') this.later(now+dur,t=>{if(!this.dead&&!this.travelling) this.hurtPlayer(m,t);});
+    if(P.key==='me') this.later(now+dur,t=>{if(!this.dead&&!this.travelling) this.hurtPlayer(m,t,{ranged:1});});
     if(this.others&&this.others.size) this.pushRing('mh',[++Net.seq,m.i,P.key==='me'?Net.label():P.key,'o'],10);},
   mobOrb(m,tx,ty,now){const D=m.def,x0=m.x+(tx>m.x?10:-10),y0=m.y-D.h*.62-(D.float?6:0),d=Math.hypot(tx-x0,ty-24-y0),dur=Math.max(160,d/D.ranged.speed*1000);
     (this.mobFx=this.mobFx||[]).push({k:'orb',x0,y0,x1:tx,y1:ty-24,t0:now+120,dur});if(!this.hid(m.x,m.y)) AudioFX.sfx('shoot',.7);return dur+120;},
@@ -5480,7 +5522,7 @@ const TownScreen={
   netMobHitIn(e,now,me){const m=this.mobs[e[1]|0];if(!m||m.state==='dead') return;m.lunge=now;const k=e[3],mine=me&&e[2]===me,t=mine?null:this.others.get(e[2]);
     if(mine){m.lx=this.p.x;m.ly=this.p.y;}else if(t){m.lx=t.x;m.ly=t.y;}
     if(k){m.atkKind=k;const live=()=>!this.dead&&!this.travelling;      // the angels' attacks (see mobShoot / mobSwing)
-      if(k==='o'){if(mine||t){const dur=this.mobOrb(m,m.lx,m.ly,now);if(mine) this.later(now+dur,tt=>{if(live()) this.hurtPlayer(m,tt);});}return;}
+      if(k==='o'){if(mine||t){const dur=this.mobOrb(m,m.lx,m.ly,now);if(mine) this.later(now+dur,tt=>{if(live()) this.hurtPlayer(m,tt,{ranged:1});});}return;}
       const face=e[4]!=null?+e[4]:Math.atan2(((m.ly??m.y)-m.y)*1.3,(m.lx??m.x)-m.x);this.mobFxAt(m,k,now,face);
       if(mine&&live()) this.hurtPlayer(m,now,k==='b'?{mult:m.def.aoe.burstMult,mag:1}:{});return;}
     if(mine&&!this.dead&&!this.travelling) this.hurtPlayer(m,now);},
@@ -5989,9 +6031,12 @@ const TownScreen={
   whyNot(g,slot){const H=holdOf(this.ch.job.classId),rule=H.rule&&(g.slot==='weapon'||g.slot==='offhand')?` · ${H.rule}`:'';
     if(!this.canUse(g,true)) return `Only ${gearFor(g.base)} can use ${g.name}${rule}`;if(slot&&!this.canUse(g,true,slot)) return `Your ${this.slotName(slot).toLowerCase()} can't hold ${g.name}${rule}`;
     if(slot==='offhand'&&this.twoHanded()) return `Your ${this.ch.equip.weapon.name} takes both hands · take it off first`;return `${g.name} needs Base Level ${gearReq(g)}`;},
-  gear(){if(this._gt) return this._gt;const t={},E=this.ch.equip||{},two=this.twoHanded();for(const k of GEAR_STATS) t[k]=0;for(const k of STAT_KEYS) t[k]=0;
+  /* totals of what you wear. The four Legendary wings' percentages (w+stat) multiply on their own, after the gear's,
+     as they did when the rest of the gear gave flat numbers (build 15k) */
+  gear(){if(this._gt) return this._gt;const t={},E=this.ch.equip||{},two=this.twoHanded();for(const k of GEAR_STATS) t[k]=0;for(const k of STAT_KEYS) t[k]=0;for(const k of MAIN_PCT) t['w'+k]=0;
     for(const [k] of GEAR_SLOTS){const g=E[k];if(!g||!this.canUse(g,true,k==='weapon'||k==='offhand'?k:undefined)||(k==='offhand'&&two)) continue;
-      for(const s of GEAR_STATS){let v=gearVal(g,s);if(!v) continue;if(k==='offhand'&&g.slot==='weapon'&&s==='atk') v=Math.round(v*OFF_ATK);t[s]+=v;}   // a second weapon adds 40% of its Attack
+      const role=g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null;
+      for(const s of GEAR_STATS){let v=gearVal(g,s);if(!v) continue;if(role&&MAIN_PCT.has(s)){t['w'+s]+=v;continue;}if(k==='offhand'&&g.slot==='weapon'&&(s==='atk'||s==='atkPct')) v=Math.round(v*OFF_ATK);t[s]+=v;}   // a second weapon adds 40% of its Attack
       for(const s in g.bonus||{}) t[s]=(t[s]||0)+g.bonus[s];}
     return this._gt=t;},
   gearScoreWorn(){const E=this.ch.equip;return GEAR_SLOTS.reduce((a,[k])=>a+(E[k]?gearScore(E[k]):0),0);},
@@ -6057,7 +6102,7 @@ const TownScreen={
     const notes=[isTwoHand(g)?`Takes both hands: its Attack counts ${TWO_HAND}×, and nothing goes in your right hand${!eq&&c.equip.offhand?` (your ${esc(c.equip.offhand.name)} goes to the bag)`:''}`:'',
       !eq&&g.slot==='offhand'&&this.twoHanded()?`Your ${esc(c.equip.weapon.name)} takes both hands: take it off to hold this`:'',
       g.slot==='weapon'&&H.off.includes(g.base)&&!isTwoHand(g)?`In your right hand it adds ${Math.round(OFF_ATK*100)}% of its Attack`:'',
-      eq&&sel.eq==='offhand'&&g.slot==='weapon'?`Right hand: ${Math.round(gearVal(g,'atk')*OFF_ATK)} Attack counts`:'',
+      eq&&sel.eq==='offhand'&&g.slot==='weapon'?`Right hand: +${Math.round(gearVal(g,'atkPct')*OFF_ATK)}% Attack counts`:'',
       g.psn?'Each arrow that hits may poison the target for 4 s':'',g.stn?'Each arrow that hits may stun the target for 1.5 s (bosses and elites shrug it off for a while)':'',
       g.uniq?`Legendary accessory: ${esc(LEGEND_ACC[g.uniq].desc)}`:''].filter(Boolean).map(t=>`<div class="hint2">${t}</div>`).join('');
     const k=enhCost(g),y=gearSmelt(g),sc=gearScore(g),sd=cur?sc-gearScore(cur):0,max=(g.enh||0)>=ENH_MAX;
@@ -6201,7 +6246,7 @@ const TownScreen={
     this.log('sys',null,`Trade · trading with ${T.n}`);AudioFX.sfx('quest');this.openWin('tradewin');this.tradeSend(now);},
   /* what is on the table, as small as it can be (one presence packet is at most 6000 characters) */
   tradeGear(){const T=this.trade,c=this.ch;return T.mine.w.map(u=>c.bag.find(g=>g.uid===u)||(T.esc&&T.esc.w.find(g=>g.uid===u))).filter(Boolean);},
-  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries(['patk','ratk','matk','mdef','crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct','uniq'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
+  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries([...GEAR_STATS,'uniq','pv'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
   tradeSend(now){const T=this.trade;if(!T||T.state!=='open') return;this.partySend('tof',T.id,T.tid,T.rev,this.tradePack());T.sentAt=now||performance.now();},
   /* what the other player says is on the table: only well-formed, in-range things are accepted */
   tradeParse(str){let o;try{o=JSON.parse(String(str).slice(0,4000));}catch(e){return null;}if(!o||typeof o!=='object') return null;
@@ -6209,10 +6254,12 @@ const TownScreen={
     for(const x of (Array.isArray(o.s)?o.s:[]).slice(0,TRADE.slots)){if(Array.isArray(x)&&itemDef(String(x[0]))&&clamp(x[1],0,99999)>0) out.s.push([String(x[0]),clamp(x[1],1,99999)]);}
     for(const x of (Array.isArray(o.w)?o.w:[]).slice(0,TRADE.slots)){if(!Array.isArray(x)) continue;const B=GEAR_BASES[x[0]];if(!B) continue;
       const g={base:String(x[0]),slot:B.slot,lvl:clamp(x[1],1,MAX_BASE),rar:clamp(x[2],0,RARITY.length-1),enh:clamp(x[3],0,ENH_MAX),name:String(x[4]||B.names[0]).replace(/[<>&"']/g,'').slice(0,40),bonus:{}};
-      if(B.slot==='weapon') g.atk=clamp(x[5],1,9999);else{if(x[6]) g.def=clamp(x[6],0,5000);if(x[7]) g.hp=clamp(x[7],0,50000);}
-      if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);
+      if(!(x[10]&&x[10].pv)){   // a piece from a game before build 15k: flat numbers, converted by normGear
+        if(B.slot==='weapon') g.atk=clamp(x[5],1,9999);else{if(x[6]) g.def=clamp(x[6],0,5000);if(x[7]) g.hp=clamp(x[7],0,50000);}
+        if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);}
       if(x[8]&&typeof x[8]==='object') for(const k of STAT_KEYS) if(x[8][k]) g.bonus[k]=clamp(x[8][k],0,200);
-      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of ['crit','heal','psn','stn','patkPct','ratkPct','matkPct','defPct','mdefPct','hpPct']) if(x[10][k]) g[k]=clamp(x[10][k],0,100);
+      if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of PCT_STATS) if(x[10][k]) g[k]=clamp(x[10][k],0,MAIN_PCT.has(k)?2000:100);
+        if(x[10].pv) g.pv=1;
         const u=String(x[10].uniq||'');if(LEGEND_ACC[u]&&LEGEND_ACC[u].slot===B.slot){g.uniq=u;g.name=(g.rar>=5?'Divine ':'')+LEGEND_ACC[u].name;}}
       if(B.slot==='wings'){g.wing=clamp(x[9],0,GEAR_BASES.wings.names.length-1);if(g.wing===GM_WING) continue;}out.w.push(normGear(g));}
     if(out.s.length+out.w.length>TRADE.slots) return null;return out;},
@@ -6281,7 +6328,8 @@ const TownScreen={
     const got=[...(O.g?[`${O.g} gold`]:[]),...O.s.map(([id,n])=>`${n} ${itemDef(id).name}`),...O.w.map(g=>gearName(g))],gave=[...(E.g?[`${E.g} gold`]:[]),...Object.entries(E.s).map(([id,n])=>`${n} ${itemDef(id).name}`),...E.w.map(g=>gearName(g))];
     AudioFX.sfx('quest');toast(`Trade complete with ${T.n}`);this.log('sys',null,`Trade · with ${T.n}: you gave ${gave.join(', ')||'nothing'}; you got ${got.join(', ')||'nothing'}`);
     T.summary={got,gave};this.gearChanged&&this.gearChanged();this.save();this.renderTrade();this.tradeHb(now);},
-  tradeTip(g){const b=Object.entries(g.bonus||{}).filter(([k,v])=>v).map(([k,v])=>`+${v} ${k}`);return `${RARITY[g.rar].name} ${gearName(g)} · item Lv ${g.lvl}${g.atk?` · ATK ${g.atk}`:''}${g.def?` · DEF ${g.def}`:''}${g.hp?` · HP ${g.hp}`:''}${b.length?' · '+b.join(' '):''}`;},
+  tradeTip(g){const b=Object.entries(g.bonus||{}).filter(([k,v])=>v).map(([k,v])=>`+${v} ${k}`),st=GEAR_STATS.filter(k=>gearVal(g,k)).map(k=>`${STAT_LABEL[k]} ${statText(k,gearVal(g,k))}`);
+    return `${RARITY[g.rar].name} ${gearName(g)} · item Lv ${g.lvl}${st.length?' · '+st.join(' · '):''}${b.length?' · '+b.join(' '):''}`;},
   renderTrade(){if(this.win!=='tradewin') return;const T=this.trade,B=$('#tr-body');if(!T||T.state!=='open'){B.innerHTML='';return;}
     const c=this.ch,m=T.mine,O=T.theirs;
     const cell=(attrs,inner,cls,title)=>`<button class="islot has ${cls||''}" ${attrs} title="${esc(title)}" aria-label="${esc(title)}" ${T.lock||T.done?'disabled':''}>${inner}</button>`;
@@ -7337,7 +7385,7 @@ function shopGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar];
   const g={uid:'shop-'+base+lvl+rar,base,slot:B.slot,lvl,rar,enh:0,name:(RARITY_WORD[rar]?RARITY_WORD[rar]+' ':'')+B.names[Math.min(4,Math.floor((lvl-1)/10))],bonus:{}};
   gearBase(g,B,lvl,R,()=>1);if(B.slot==='ring') g.bonus.LUK=1+Math.floor(lvl/15);
   if(R.lines){const k=['staff','wand','scepter','hammer','greathammer'].includes(base)?'INT':base==='bow'||B.kind==='arrows'?'DEX':base==='dagger'?'AGI':base==='ring'?'LUK':base==='sword'||base==='greatsword'?'STR':'VIT';g.bonus[k]=(g.bonus[k]||0)+1+Math.floor(lvl/10);}
-  return g;}
+  return toPct(g);}
 const shopPrice=g=>Math.round(gearPrice(g)*5);
 /* Synthesis costs: Iron Ingots, Arcane Dust (from Rare up) and gold by the rarity you are making and the item level,
    plus monster materials for Epic, Legendary and Divine (Halo Fragments and Valkyrie Steel at the top). Wings too
@@ -7375,7 +7423,7 @@ function craftGear(base,lvl,rar){const g=makeGear(base,lvl,rar);g.uid=Date.now()
 /* the wing kind (0-6) of a wings item: g.wing, or from its name for old saves; -1 for none */
 const wingKindOf=g=>g?(g.wing??GEAR_BASES.wings.names.indexOf(String(g.name||'').replace(/^(Fine|Superior|Heroic|Mythic|Divine) /,''))):-1;
 function craftWings(tier,lvl,rar){const g=craftGear('wings',lvl,rar);g.name=(rar>=5?'Divine ':'')+GEAR_BASES.wings.names[tier];g.wing=tier;
-  if(tier>=GOD_WING){const m=tier===GM_WING?2:1.6,b=tier===GM_WING?10:6;g.def=Math.round(g.def*m);g.hp=Math.round(g.hp*m);for(const k of ['STR','AGI','VIT','INT','DEX','LUK']) g.bonus[k]=(g.bonus[k]||0)+b;}   // god tier: tougher, +6 to every stat (GameMaster wings: x2, +10)
+  if(tier>=GOD_WING){const m=tier===GM_WING?2:1.6,b=tier===GM_WING?10:6;g.defPct=Math.round((g.defPct||0)*m);g.hpPct=Math.round((g.hpPct||0)*m);for(const k of ['STR','AGI','VIT','INT','DEX','LUK']) g.bonus[k]=(g.bonus[k]||0)+b;}   // god tier: tougher, +6 to every stat (GameMaster wings: x2, +10)
   return normGear(g);}   // the four Legendary wings: their own stats (roleWing)
 const recipeKey=(r,line)=>'pv'+r.id+(r.weapon?line:'');
 function recipePreview(r,line){const k=recipeKey(r,line);return RECIPE_PV[k]||(RECIPE_PV[k]=r.make(line));}
@@ -7421,7 +7469,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-15j';
+const BUILD='2026-11-15k';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
