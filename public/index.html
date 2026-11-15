@@ -636,6 +636,7 @@ dl dd.main{color:var(--gold)}
 .autocfg{display:none;position:absolute;bottom:84px;right:0;width:270px;padding:12px 14px;z-index:9}
 .autocfg.on{display:block}
 .autocfg label{display:flex;gap:9px;align-items:center;font-weight:800;font-size:13px;margin-top:7px;cursor:pointer}
+.autocfg .ac-kind{cursor:default}.autocfg .ac-kind select{margin-left:auto;flex:1;min-width:0;padding:4px 6px;border-radius:8px;background:rgba(10,16,38,.75);color:var(--text);border:1px solid rgba(255,255,255,.2);font:800 12px Nunito,sans-serif}
 .autocfg input[type=range]{width:100%}
 /* character sheet */
 .charwin{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94vw);max-height:88vh;overflow:auto;z-index:8;padding:16px 18px}
@@ -1141,6 +1142,7 @@ html.phone .aw-grid{grid-template-columns:1fr 1fr}
         <div class="autocfg glass" id="auto-cfg">
           <div class="panel-title" style="margin:0">Auto-attack</div>
           <label><input type="checkbox" id="ac-target"> Auto-target monsters</label>
+          <label class="ac-kind">Attack <select id="ac-kind" aria-label="Which monsters AUTO attacks"></select></label>
           <label><input type="checkbox" id="ac-eat"> Auto-drink potions at <span id="ac-eat-v">35</span>% HP</label>
           <input type="range" id="ac-eat-at" min="10" max="80" step="5" aria-label="Potion threshold">
           <label><input type="checkbox" id="ac-cast"> Auto-cast the AUTO skills (K)</label>
@@ -2276,6 +2278,11 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15h',date:'2026-11-15',title:'AUTO picks monster kinds',
+    new:['AUTO can choose which monsters to attack: All monsters, Elite monsters first, Elite monsters only, or Normal monsters only. Pick it in the Auto window (Targets) or in the AUTO panel',
+      'Elite monsters first goes for any elite in range, then the rest. Elite monsters only waits for elites. Normal monsters only leaves elites and bosses alone',
+      'Your target order (nearest, weakest, strongest, quest, aggressive) still applies within the kind you chose. With Fight back first on, AUTO still answers whatever is hitting you'],
+    fixes:['Switching to a kind that does not fit the monster AUTO is fighting makes AUTO look for a new target']},
   {v:'2026-11-15g',date:'2026-11-15',title:'Bulwark greatswords',
     balance:['Bulwarks can hold a two-handed greatsword again, with no shield. They can still hold one sword with a shield, never two swords',
       'Equipping a greatsword moves your shield to the bag. A shield can\'t go on while you hold a greatsword: take the greatsword off first'],
@@ -2635,7 +2642,9 @@ const STRIDE=104;                       // px of ground per walk-animation secon
 const dirVec=r=>{const a=((r+2)%8)*Math.PI/4;return [Math.cos(a),Math.sin(a)];};   // sprite row -> screen vector
 const handAt=(x,y,dir)=>{const [vx,vy]=dirVec(dir);return [x+vx*12,y-31+vy*5];};    // where a bow or casting hand is, facing dir
 const ATK_HIT=.56;                                                     // the blow lands as the slash frame starts
-const COMBO_GAP=700;                                                   // ms: a swing this soon after the last one's turn continues the combo
+const COMBO_GAP=700;
+const isEliteMob=m=>!!(m.elite||(m.def&&m.def.elite)),isNormalMob=m=>!isEliteMob(m)&&!(m.def&&m.def.acts);   // AUTO's monster kinds (bosses are neither)
+const AUTO_KINDS=[['all','All monsters'],['elite1','Elite monsters first'],['elite','Elite monsters only'],['normal','Normal monsters only']];                                                   // ms: a swing this soon after the last one's turn continues the combo
 const MOB_SLOTS=[[-22,2],[22,2],[-15,-13],[15,-13],[-12,14],[12,14]];  // where attackers stand around you
 const expNeed=l=>Math.round(20*Math.pow(l,1.35)),jobNeed=l=>Math.round(18*Math.pow(l,1.35));
 /* ------------------------------ combat lines ------------------------------
@@ -3685,6 +3694,7 @@ const TownScreen={
     $('#btn-auto').onclick=()=>this.toggleAuto();$('#ac-more').onclick=()=>{$('#auto-cfg').classList.remove('on');$('#btn-auto-cfg').setAttribute('aria-expanded',false);AudioFX.sfx('ui');this.openWin('autowin');};
     $('#btn-auto-cfg').onclick=()=>{const o=$('#auto-cfg').classList.toggle('on');$('#btn-auto-cfg').setAttribute('aria-expanded',o);AudioFX.sfx('ui');};
     for(const [id,key] of [['ac-target','target'],['ac-eat','eat'],['ac-cast','cast'],['ac-buff','buffCast'],['ac-pick','pick']]) $('#'+id).onchange=e=>{this.ch.auto[key]=e.target.checked;this.save();};
+    $('#ac-kind').onchange=e=>{const a=this.ch.auto;a.kind=e.target.value;if(this.target&&a.on&&!this.autoKindOk(this.target)) this.target=null;this.save();if(this.win==='autowin') this.renderAuto();};
     $('#ac-eat-at').oninput=e=>{this.ch.auto.eatAt=+e.target.value;$('#ac-eat-v').textContent=e.target.value;this.save();};
     document.addEventListener('keydown',e=>{if(activeScreen!==this) return;if(e.target&&e.target.matches&&e.target.matches('input,textarea,select')) return;const k=e.key.toLowerCase();
       if(this.dlg){if(k===' '||k==='enter'||k==='e'){e.preventDefault();this.advance();}else if(k==='escape') this.closeDialogue();
@@ -4138,18 +4148,24 @@ const TownScreen={
   lootPending(now){const a=this.ch.auto;if(!a.pick||a.lootOrder==='clear'||!(now<(this.lootHold||0))) return false;const R=a.range||320;
     return (this.drops||[]).some(d=>!(d.full>now)&&this.wantLoot(d)&&Math.hypot(d.x-this.p.x,d.y-this.p.y)<R);},
   /* which monster AUTO goes for. Monsters already hitting you come first unless "fight back first" is off. */
-  autoPick(now,fo){const a=this.ch.auto,R=a.range||320,L=this.ch.baseLevel||1,skip=a.skip||[],qk=a.prio==='quest'?this.questKinds(now):[];
-    const ok=[];for(const m of this.mobs){if(m.state==='dead'||m.noReach>now||skip.includes(m.kind)||(m.def.acts&&this.enc&&!this.enc.inside)) continue;if(fo&&Math.hypot(m.x-fo.x,m.y-fo.y)>240) continue;
+  /* which kind of monster AUTO attacks (auto.kind): 'all' (any), 'elite1' (elites first, then the others), 'elite' (elites
+     only), 'normal' (no elites and no bosses). With "fight back first" on, anything already hitting you is still fought */
+  autoPick(now,fo){const a=this.ch.auto,R=a.range||320,L=this.ch.baseLevel||1,skip=a.skip||[],qk=a.prio==='quest'?this.questKinds(now):[],K=a.kind||'all';
+    let ok=[];for(const m of this.mobs){if(m.state==='dead'||m.noReach>now||skip.includes(m.kind)||(m.def.acts&&this.enc&&!this.enc.inside)) continue;if(fo&&Math.hypot(m.x-fo.x,m.y-fo.y)>240) continue;
       const d=Math.hypot(m.x-this.p.x,m.y-this.p.y),me=m.hostile&&(!m.tgt||m.tgt==='me');if(d>R+(me?120:0)) continue;
-      if(a.maxAbove&&m.lvl>L+a.maxAbove&&!me) continue;ok.push({m,d,me});}
+      if(a.maxAbove&&m.lvl>L+a.maxAbove&&!me) continue;
+      if(!(me&&a.defend!==false)&&(K==='elite'&&!isEliteMob(m)||K==='normal'&&!isNormalMob(m))) continue;
+      ok.push({m,d,me});}
     if(!ok.length) return null;const by=f=>ok.reduce((b,x)=>f(x)<f(b)?x:b).m;
     if(a.defend!==false&&ok.some(x=>x.me)) return ok.filter(x=>x.me).reduce((b,x)=>x.d<b.d?x:b).m;
+    if(K==='elite1'&&ok.some(x=>isEliteMob(x.m))) ok=ok.filter(x=>isEliteMob(x.m));
     switch(a.prio){
       case 'weak':return by(x=>x.m.hp*1e4+x.d);
       case 'strong':return by(x=>-x.m.lvl*1e6-x.m.maxHp+x.d*.01);
       case 'quest':{const q=ok.filter(x=>qk.includes(x.m.kind));return (q.length?q:ok).reduce((b,x)=>x.d<b.d?x:b).m;}
       case 'attacker':return by(x=>x.d-(x.m.hostile?400:0));
       default:return by(x=>x.d-(x.m.hostile?120:0));}},
+  autoKindOk(m){const K=this.ch.auto.kind||'all';return K==='elite'?isEliteMob(m):K==='normal'?isNormalMob(m):true;},
   questKinds(now){if(this._qk&&now<this._qk.t) return this._qk.v;const v=this.activeQuests().map(q=>q.dest&&q.dest.kind).filter(Boolean);this._qk={t:now+2000,v};return v;},
   wantLoot(d){const l=this.ch.auto.loot||{};if(d.kind==='gold') return l.gold!==false;if(d.kind==='potion') return l.pots!==false;if(d.kind==='mat') return l.mats!==false;
     if(d.kind==='gear') return l.gear!==false&&d.g.rar>=(l.gearMin||0);return true;},
@@ -4192,6 +4208,7 @@ const TownScreen={
     const opt=(v,t,cur)=>`<option value="${v}" ${String(cur)===String(v)?'selected':''}>${t}</option>`;
     $('#aw-body').innerHTML=`
     <div class="aw-sec"><h4>Targets</h4>
+      <div class="aw-row">Attack <select id="aw-kind" aria-label="Which monsters">${AUTO_KINDS.map(([v,t])=>opt(v,t,a.kind||'all')).join('')}</select></div>
       <div class="aw-row">Go for <select id="aw-prio" aria-label="Target priority">${opt('near','the nearest monster',a.prio)}${opt('weak','the weakest (lowest HP)',a.prio)}${opt('strong','the strongest (highest level)',a.prio)}${opt('quest','quest monsters first',a.prio)}${opt('attacker','aggressive monsters first',a.prio)}</select></div>
       <label><input type="checkbox" id="aw-defend" ${a.defend!==false?'checked':''}> Fight back first: anything already hitting me</label>
       <div class="aw-row">Skip monsters more than <select id="aw-above" aria-label="Level limit">${opt(0,'any number of',a.maxAbove)}${[3,5,10,15].map(n=>opt(n,n,a.maxAbove)).join('')}</select> levels above me (Base Lv ${L})</div>
@@ -4221,7 +4238,7 @@ const TownScreen={
       <button class="btn" id="aw-editbf" style="margin-top:8px;min-height:32px">Edit the AUTO buffs (K)…</button>
       <div class="aw-hint">AUTO recasts a buff when it runs out, top to bottom, before any AUTO skill. Support buffs also go on party members who are missing them.</div></div>`;
     const B=$('#aw-body'),save=()=>{this.save();this.syncAuto();},re=()=>{save();this.renderAuto();};
-    B.querySelector('#aw-prio').onchange=e=>{a.prio=e.target.value;save();};B.querySelector('#aw-defend').onchange=e=>{a.defend=e.target.checked;save();};
+    B.querySelector('#aw-prio').onchange=e=>{a.prio=e.target.value;save();};B.querySelector('#aw-kind').onchange=e=>{a.kind=e.target.value;if(this.target&&a.on&&!this.autoKindOk(this.target)) this.target=null;save();};B.querySelector('#aw-defend').onchange=e=>{a.defend=e.target.checked;save();};
     B.querySelector('#aw-above').onchange=e=>{a.maxAbove=+e.target.value;save();};
     B.querySelectorAll('[data-kind]').forEach(x=>x.onchange=()=>{const k=x.dataset.kind;a.skip=(a.skip||[]).filter(y=>y!==k);if(!x.checked) a.skip.push(k);if(this.target&&a.skip.includes(this.target.kind)&&a.on) this.target=null;save();});
     B.querySelector('#ac-pick2').onchange=e=>{a.pick=e.target.checked;save();};
@@ -5906,7 +5923,7 @@ const TownScreen={
     return {pages:[`There you are: ${n} Healing Draughts. Press 8, or let the AUTO setting drink them for you when you're hurt. You have ${c.items.potion} now.`]};},
   /* ---------- AUTO: target, drink and cast on its own (Caps Lock) ---------- */
   syncAuto(){const a=this.ch.auto;$('#btn-auto').classList.toggle('on',a.on);$('#btn-auto').setAttribute('aria-pressed',a.on);
-    $('#ac-target').checked=a.target;$('#ac-eat').checked=a.eat;$('#ac-cast').checked=a.cast;$('#ac-buff').checked=a.buffCast!==false;$('#ac-pick').checked=!!a.pick;$('#ac-eat-at').value=a.eatAt;$('#ac-eat-v').textContent=a.eatAt;$('#ac-range').value=a.range||320;$('#ac-range-v').textContent=a.range||320;},
+    $('#ac-target').checked=a.target;$('#ac-eat').checked=a.eat;$('#ac-cast').checked=a.cast;{const k=$('#ac-kind');if(k&&!k.options.length) k.innerHTML=AUTO_KINDS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');if(k) k.value=a.kind||'all';}$('#ac-buff').checked=a.buffCast!==false;$('#ac-pick').checked=!!a.pick;$('#ac-eat-at').value=a.eatAt;$('#ac-eat-v').textContent=a.eatAt;$('#ac-range').value=a.range||320;$('#ac-range-v').textContent=a.range||320;},
   toggleAuto(on){const a=this.ch.auto;a.on=on??!a.on;this.syncAuto();toast(a.on?'AUTO on · hunting nearby monsters':'AUTO off');if(!a.on){this.target=null;this.path=null;}this.save();},
   /* ---------- character sheet (C) ---------- */
   /* ---------- windows: Character (C), Inventory (I), Skills (K), Quest Journal (J), Settings (Esc); one at a time ---------- */
@@ -7390,7 +7407,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-15g';
+const BUILD='2026-11-15h';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

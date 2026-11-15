@@ -1,1 +1,1 @@
-build: 2026-11-15g (Bulwark greatswords)
+build: 2026-11-15h (AUTO picks monster kinds)
