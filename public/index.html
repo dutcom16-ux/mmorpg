@@ -624,6 +624,7 @@ dl dd.main{color:var(--gold)}
 .hslot .cd{position:absolute;inset:0;border-radius:11px;background:conic-gradient(rgba(5,8,20,.72) calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
 .hslot .cdt{position:absolute;inset:0;display:grid;place-items:center;font:900 14px Nunito,sans-serif;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .hslot.low{border-color:rgba(255,129,147,.6)}
+.hslot.noshield .gi,.hslot.noshield svg{filter:grayscale(1) brightness(.6)}.hslot.noshield{border-color:rgba(255,129,147,.45)}
 .hslot.flash{box-shadow:0 0 0 2px var(--aether),0 0 18px rgba(127,227,255,.6)}
 .hslot .tip{display:none;position:absolute;bottom:58px;left:50%;transform:translateX(-50%);width:230px;padding:9px 11px;border-radius:12px;background:rgba(10,16,38,.94);border:1px solid var(--line);font:700 12px/1.45 Nunito,sans-serif;color:var(--text);text-align:left;pointer-events:none;z-index:9}
 .hslot .tip b{display:block;color:var(--gold);font-size:13px}
@@ -2275,6 +2276,13 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15g',date:'2026-11-15',title:'Bulwark greatswords',
+    balance:['Bulwarks can hold a two-handed greatsword again, with no shield. They can still hold one sword with a shield, never two swords',
+      'Equipping a greatsword moves your shield to the bag. A shield can\'t go on while you hold a greatsword: take the greatsword off first'],
+    new:['Shield skills need a shield in your right hand: Shield Charge, Shield Boomerang, Auto Guard and Reflect Shield. Without one they are greyed out on the skill bar and AUTO skips them; the Skills window marks them NEEDS A SHIELD',
+      'Taking the shield off (or picking up a greatsword) ends Auto Guard and Reflect Shield'],
+    fixes:['A shield\'s Equip button is greyed out while you hold a greatsword, and the item says why',
+      'Bulwarks who never had a shield get a basic one, once, so their shield skills work']},
   {v:'2026-11-15f',date:'2026-11-15',title:'Bulwark sword combo',
     new:['The Bulwark has a new painted basic attack: a two-swing sword combo with blue energy slashes. The first swing is a quick horizontal slash; the next one raises the sword and spins a wide crescent. Back-to-back attacks alternate between the two',
       'The blow lands just as the slash appears, once per swing, at your attack speed. The swings face your target in all 8 directions, and other players see the same combo',
@@ -2761,11 +2769,11 @@ const SKILLDB={
     SKP({id:'twoHandMastery',name:'Two-Hand Mastery',pas:{atk:[4,4]},color:'#ffd36b',desc:'The great weapon feels light.'}),
     SKP({id:'warlordsMight',name:"Warlord's Might",req:10,pas:{hpPct:[.02,.02],critDmg:[.02,.02]},color:'#ff8a5a',desc:'Built for the front line.'})],
   bulwark:[
-    SKA({id:'shieldCharge',name:'Shield Charge',k:'strike',start:1,max:5,mult:[1.2,.2],st:{stun:[[20,5],3]},knock:36,cost:10,cd:4,fx:'earth',fxs:.4,color:'#c8d4e8',desc:'Ram the target with your shield.'}),
-    SKA({id:'shieldBoomerang',name:'Shield Boomerang',k:'strike',max:5,range:150,shot:SHOTS.disc,mult:[1.3,.3],cost:12,cd:3,color:'#e8eef8',desc:'Hurl your shield and catch it on the way back.'}),
-    SKA({id:'autoGuard',name:'Auto Guard',k:'buff',req:5,buff:{dur:300,m:{block:[.05,.02]}},cost:[12,2],cd:60,fx:'holy',fxs:.45,color:'#fff3a0',desc:'Your shield arm moves on its own: some blows are stopped dead.'}),
+    SKA({id:'shieldCharge',name:'Shield Charge',k:'strike',start:1,max:5,shield:1,mult:[1.2,.2],st:{stun:[[20,5],3]},knock:36,cost:10,cd:4,fx:'earth',fxs:.4,color:'#c8d4e8',desc:'Ram the target with your shield.'}),
+    SKA({id:'shieldBoomerang',name:'Shield Boomerang',k:'strike',max:5,shield:1,range:150,shot:SHOTS.disc,mult:[1.3,.3],cost:12,cd:3,color:'#e8eef8',desc:'Hurl your shield and catch it on the way back.'}),
+    SKA({id:'autoGuard',name:'Auto Guard',k:'buff',req:5,shield:1,buff:{dur:300,m:{block:[.05,.02]}},cost:[12,2],cd:60,fx:'holy',fxs:.45,color:'#fff3a0',desc:'Your shield arm moves on its own: some blows are stopped dead.'}),
     SKA({id:'holyCross',name:'Holy Cross',k:'strike',req:10,el:'holy',hits:2,mult:[.9,.15],st:{blind:[[3,3],4]},cost:[11,1],cd:3,fx:'holy',fxs:.5,color:'#fff3a0',desc:'Two strokes in the shape of a cross, burning with light.'}),
-    SKA({id:'reflectShield',name:'Reflect Shield',k:'buff',req:15,buff:{dur:300,m:{reflect:[.13,.03]}},cost:[35,5],cd:60,fx:'holy',fxs:.45,color:'#c8d4e8',desc:'Blows that land on you come back to the one who struck.'}),
+    SKA({id:'reflectShield',name:'Reflect Shield',k:'buff',req:15,shield:1,buff:{dur:300,m:{reflect:[.13,.03]}},cost:[35,5],cd:60,fx:'holy',fxs:.45,color:'#c8d4e8',desc:'Blows that land on you come back to the one who struck.'}),
     SKP({id:'bastion',name:'Bastion',pas:{def:[2,2],hpPct:[.01,.01]},color:'#c8d4e8',desc:'Armour worn like a second skin.'}),
     SKP({id:'steadfast',name:'Steadfast',req:8,pas:{hpRegen:[.1,.1],mdef:[1,1]},color:'#8fe3a8',desc:'You do not break.'})],
   chronomage:[
@@ -3103,9 +3111,10 @@ const HOLD={Recruit:{main:['sword','greatsword'],off:['sword','shield']},Melee:{
   Magic:{main:['staff','wand'],off:['shield']},Ranged:{main:['bow'],off:['arrow','parrow','sarrow']},
   Support:{main:['wand','scepter'],off:['shield']},Stealth:{main:['dagger'],off:['dagger']}},
   HOLD_JOB={arbiter:{main:['hammer','greathammer'],off:['shield']},
-    // build 15f: the Bulwark fights with ONE one-handed sword (left hand) and ONE shield (right hand): no greatswords, no
-    // second sword, nothing else in the shield hand. fixHands() puts old gear right when a save loads or the job changes
-    bulwark:{main:['sword'],off:['shield'],rule:'Bulwarks fight with one sword (left hand) and one shield (right hand)'}};
+    // the Bulwark (15f, 15g): ONE one-handed sword (left hand) with ONE shield (right hand), or ONE two-handed greatsword
+    // and no shield (equipping it takes the shield off; a shield can't go on while it is held). Never a second sword,
+    // nothing but a shield in the right hand. fixHands() puts old gear right when a save loads or the job changes
+    bulwark:{main:['sword','greatsword'],off:['shield'],rule:'Bulwarks hold one sword with a shield, or one two-handed greatsword (no shield)'}};
 const holdOf=job=>HOLD_JOB[job]||HOLD[lineOf(job)]||HOLD.Recruit;
 const mainWeaponOf=job=>holdOf(job).main[0];
 const KIT_BASES=['sword','greatsword','staff','wand','bow','arrow','parrow','sarrow','hammer','greathammer','dagger','shield'];
@@ -3853,7 +3862,15 @@ const TownScreen={
       (this.barrier?`<span class="bf shield" title="Shield: ${this.barrier.hp} damage left"><b>${this.barrier.hp}</b></span>`:'');
     if(el._h!==h){el._h=h;el.innerHTML=h;}},
   /* use a skill: cast time first (moving cancels it), then it goes off */
-  begin(s,m,now,at,ally){const r=this.rank(s.id),ct=this.castTime(s,r);
+  /* shield skills (s.shield: Shield Charge, Shield Boomerang, Auto Guard, Reflect Shield) need a shield in the right hand
+     (none with a two-handed weapon) */
+  hasShield(){const o=this.ch.equip&&this.ch.equip.offhand;return !!o&&o.base==='shield'&&!this.twoHanded()&&this.canUse(o,true,'offhand');},
+  noShield(s,now,auto){if(auto) return;this.fx.push({x:this.p.x,y:this.p.y-70,text:'Needs a shield',color:'#ffcf7a',t0:now});
+    if(now>(this.shieldWarn||0)){this.shieldWarn=now+1500;toast(`${s.name} needs a shield in your right hand${this.twoHanded()?` · your ${this.ch.equip.weapon.name} takes both hands`:''}`);}},
+  /* the shield came off: the buffs that work through it end */
+  shieldOff(now){if(this.hasShield()||!this.buffs) return;let n=0;for(const id of Object.keys(this.buffs)){const s=skillById(id);if(s&&s.shield){delete this.buffs[id];n++;}}
+    if(n){this.dirtyMods();this.renderBuffs(now);this.log('sys',null,'Your shield is off: Auto Guard and Reflect Shield end');}},
+  begin(s,m,now,at,ally){if(s.shield&&!this.hasShield()){this.noShield(s,now);return;}const r=this.rank(s.id),ct=this.castTime(s,r);
     if(ct>.05){this.casting={s,m,r,t0:now,until:now+ct*1000,at:at||(m&&s.at==='target'?[m.x,m.y]:null),ally};if(ally){const M=this.allyOk(ally);if(M) this.dir=this.faceTo(M.o.x-this.p.x,M.o.y-this.p.y);}this.queued=null;this.path=null;if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
       if(m) this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);const fx=fxOf(s);AudioFX.cast(fx);
       if(this.mp&&Net.room){const si=FX_ROWS.indexOf(fx)+1,dur=Math.round(ct*1000),send=(x,y,rr)=>this.pushRing('vf',[++Net.seq,'cast',Math.round(x),Math.round(y),rr,dur,s.color||FX_COL[fx],si,0],10);
@@ -4058,7 +4075,7 @@ const TownScreen={
     $$('#hotbar .hslot[data-i]').forEach(b=>{const s=S[+b.dataset.i];if(!s) return;const until=this.cds[s.id]||0,left=Math.max(0,(until-now)/1000),full=s.consumable?s.cd:this.cdOf(s,Math.max(1,this.rank(s.id)));
       b.querySelector('.cd').style.setProperty('--cd',left>0?Math.min(1,left/full):0);b.querySelector('.cdt').textContent=left>0.05?(left>=1?Math.ceil(left):left.toFixed(1)):'';
       if(s.consumable){const n=this.ch.items[s.id]||0;b.querySelector('.n').textContent=n;b.classList.toggle('low',n===0);}
-      else b.classList.toggle('low',(this.res||0)<this.costOf(s,Math.max(1,this.rank(s.id))));});},
+      else{b.classList.toggle('low',(this.res||0)<this.costOf(s,Math.max(1,this.rank(s.id))));b.classList.toggle('noshield',!!s.shield&&!this.hasShield());}});},
   useSlot(i,auto){if(this.dlg||this.dead||this.travelling) return;const s=this.slots()[i];if(!s) return;
     const b=$(`#hotbar .hslot[data-i="${i}"]`);if(b){b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),160);}
     this.useSkill(s,auto,i);},
@@ -4068,6 +4085,7 @@ const TownScreen={
     if(now<(this.cds[s.id]||0)) return;
     if(s.consumable) return this.useItem(s.id,now);
     if(this.casting) return;
+    if(s.shield&&!this.hasShield()){this.noShield(s,now,auto);return;}
     const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)){this.fx.push({x:this.p.x,y:this.p.y-70,text:'Not enough mana',color:'#ffcf7a',t0:now});return;}
     if(!auto&&ALLY_SKILLS.has(s.id)&&this.ally){if(this.supportCast(s,this.ally,now)) return;if(this.inParty(this.ally)) toast(`${(this.party.m.find(x=>x[0]===this.ally)||[0,'They'])[1]} is out of reach · cast on you`);}
     if(s.k==='heal'||s.k==='buff'||s.k==='veil'||((s.k==='aoe'||s.k==='zone')&&s.at!=='target')) return this.begin(s,null,now);
@@ -4096,9 +4114,9 @@ const TownScreen={
       if(T0&&a.buffPot&&!(this.buffs||{})[a.buffPot]){const id=this.autoPot('buff',now);if(id) this.useItem(id,now);}}
     const S=a.cast?this.autoList():[],B=a.buffCast!==false?this.autoList(1):[];   // the AUTO skills and the AUTO buffs, each with its own switch
     if((S.length||B.length)&&!this.casting&&!this.atk&&now>=(this.autoCastT||0)&&!this.autoSupport(now,[...S,...B])){const T=this.target&&this.target.state!=='dead'?this.target:null,go=s=>{this.autoCastT=now+300;this.useSkill(s,true);};
-      let done=0;if(T||a.buffWhen==='always') for(const s of B){if(now<(this.cds[s.id]||0)||(this.res||0)<this.costOf(s,this.rank(s.id))) continue;   // buffs first: kept up, top to bottom
+      let done=0;if(T||a.buffWhen==='always') for(const s of B){if(now<(this.cds[s.id]||0)||(this.res||0)<this.costOf(s,this.rank(s.id))||(s.shield&&!this.hasShield())) continue;   // buffs first: kept up, top to bottom
         if(!(this.buffs||{})[s.id]){go(s);done=1;break;}}
-      if(!done) for(const s of S){if(now<(this.cds[s.id]||0)) continue;const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)) continue;
+      if(!done) for(const s of S){if(now<(this.cds[s.id]||0)||(s.shield&&!this.hasShield())) continue;const r=this.rank(s.id);if((this.res||0)<this.costOf(s,r)) continue;
         if(s.k==='heal'){if(c.hp<this.maxHp()*.5){go(s);break;}continue;}
         if(s.k==='veil') continue;
         if(s.k==='buff'){if(T&&!(this.buffs||{})[s.id]){go(s);break;}continue;}
@@ -4311,7 +4329,7 @@ const TownScreen={
         const r=this.rank(s.id),open=this.skillUnlocked(s),on=onBar(s.id),act=s.t==='A';
         const now=r>0?this.describe(s,r):'',next=r<s.max?this.describe(s,r+1):'';
         return `<div class="skrow ${r?'':'unl'} ${open?'':'locked'}" id="sk-${s.id}"><div class="ic" ${act&&r?`draggable="true" data-sk="${s.id}" title="Drag to the skill bar"`:''}>${skillIcon(s)}</div>
-        <div><b>${esc(s.name)}</b> <span class="meta">${act?'ACTIVE':'PASSIVE'} · RANK ${r}/${s.max}${open?'':` · UNLOCKS AT JOB LV ${s.req}`}</span><p>${esc(s.desc)}</p>
+        <div><b>${esc(s.name)}</b> <span class="meta">${act?'ACTIVE':'PASSIVE'} · RANK ${r}/${s.max}${open?'':` · UNLOCKS AT JOB LV ${s.req}`}${s.shield?` · <span style="color:${this.hasShield()?'inherit':'#ff8193'}">NEEDS A SHIELD</span>`:''}</span><p>${esc(s.desc)}</p>
         ${r?`<p class="now">${esc(now)}</p>`:''}${r<s.max?`<p class="next">${r?'Next rank':'Rank 1'}: ${esc(next)}</p>`:''}</div>
         <div class="act"><button class="btn" data-up="${s.id}" ${pts>0&&open&&r<s.max?'':'disabled'} aria-label="${r?'Rank up':'Learn'} ${esc(s.name)}">${r?'Rank up':'Learn'}</button>
         ${act?(on?`<button class="btn" data-off="${s.id}">Remove from bar</button>`:`<button class="btn" data-bar="${s.id}" ${r?'':'disabled'} title="${r?'':'Learn it first'}">Add to bar</button>`):''}
@@ -4653,7 +4671,7 @@ const TownScreen={
   save(){const c=this.ch;if(!c) return;const list=Store.load(),i=list.findIndex(x=>x.id===c.id);
     if(i>=0){list[i]={...list[i],quests:c.quests,waystones:c.waystones,introSeen:true,map:c.map,hp:Math.max(1,Math.round(c.hp)),
       baseLevel:c.baseLevel,baseExp:c.baseExp,statPoints:c.statPoints,autoStats:!!c.autoStats,skillPoints:c.skillPoints,sys:c.sys,job:c.job,stats:c.stats,gold:c.gold,items:c.items,auto:c.auto,
-      hotbar:c.hotbar,autoSkills:c.autoSkills,autoBuffs:c.autoBuffs,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,matq:c.matq||[],mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
+      hotbar:c.hotbar,shieldGift:c.shieldGift,autoSkills:c.autoSkills,autoBuffs:c.autoBuffs,skills:c.skills,equip:c.equip,bag:c.bag,loot:c.loot,mail:c.mail,matq:c.matq||[],mailGot:c.mailGot,pk:c.pk,guild:c.guild,party:this.party?{i:this.party.i,l:this.party.l,n:this.party.n,m:this.party.m,s:this.party.s||0}:null,savedAt:Date.now()};Store.save();}},
   questDone(id,next){const c=this.ch;c.quests[id]='done';AudioFX.sfx('quest');this.log('sys',null,`Quest complete · ${QUEST_INFO[id].title}`);toast(`Quest complete · ${QUEST_INFO[id].title}`);
     if(next&&!c.quests[next]){c.quests[next]='active';if(next==='horizon') c.quests.slimes=0;this.log('sys',null,`New quest · ${QUEST_INFO[next].title}`);}
     this.tracker();this.save();this.questCheck();},
@@ -5904,7 +5922,12 @@ const TownScreen={
     for(const [k] of GEAR_SLOTS) if(c.equip[k]===undefined) c.equip[k]=null;
     c.bag=Array.isArray(c.bag)?c.bag:[];c.loot={smelt:true,smeltUpTo:0,sell:true,sellUpTo:1,weaker:true,...(c.loot||{})};
     for(const g of [...Object.values(c.equip),...c.bag]){if(!g) continue;normGear(g);if(g.base==='scepter'&&c.job.classId==='arbiter') reforgeGear(g,'hammer');}   // build 14s: an Arbiter's scepters become hammers
-    this.fixHands(true);this._gt=null;},
+    this.fixHands(true);
+    // build 15g: shield skills need a shield. A Bulwark who never got one (Bulwarks made before 15f) gets a basic one, once
+    const H=holdOf(c.job.classId);if(H.rule&&H.off.includes('shield')&&!c.shieldGift){c.shieldGift=1;
+      if(!(c.equip.offhand&&c.equip.offhand.base==='shield')&&!c.bag.some(g=>g.base==='shield')){const sh=makeGear('shield',c.baseLevel||1,0);
+        if(!c.equip.offhand&&!isTwoHand(c.equip.weapon)) c.equip.offhand=sh;else c.bag.unshift(sh);this.log('sys',null,`A gift for your shield skills · ${sh.name}${c.equip.offhand===sh?'':' (in your bag)'}`);}}
+    this._gt=null;},
   /* the hands follow the job's rules (HOLD / HOLD_JOB) whatever the save holds: a piece a hand may not hold goes to the
      bag (even a full one: nothing is lost, the bag just takes no loot until there is room), and so does anything in the
      right hand next to a two-handed weapon. An empty left hand takes the best weapon from the bag that it may hold; for
@@ -5977,7 +6000,7 @@ const TownScreen={
   hoverDetail(src){const el=$('#iw-detail');if(!el) return;el.innerHTML=this.itemDetail(src||this.invSel||null);if(src) el.querySelectorAll('[data-act]').forEach(b=>b.disabled=true);else if(this.bindDetail) this.bindDetail();},
   unequip(slot){const c=this.ch,g=c.equip[slot];if(!g) return;if(this.bagUsed()>=BAG_SIZE){toast('Bag full');return;}
     c.equip[slot]=null;c.bag.unshift(g);this.invSel={uid:g.uid};this.gearChanged(`Took off ${gearName(g)}`);},
-  gearChanged(msg){const c=this.ch;this._gt=null;c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());AudioFX.sfx('ui');
+  gearChanged(msg){const c=this.ch;this._gt=null;this.shieldOff(performance.now());c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());AudioFX.sfx('ui');
     if(msg) this.log('sys',null,msg);this.hudBars();this.renderInv();this.renderChar();this.save();},
   enhance(g){const c=this.ch,k=enhCost(g);if((g.enh||0)>=ENH_MAX) return;
     if((c.items.ingot||0)<k.ingot||(c.items.dust||0)<k.dust||(c.gold||0)<k.gold){toast(`+${(g.enh||0)+1} needs ${k.ingot} Iron Ingots${k.dust?`, ${k.dust} Arcane Dust`:''} and ${k.gold} gold`);return;}
@@ -6000,7 +6023,8 @@ const TownScreen={
     const bon=Object.entries(g.bonus||{}).map(([k,v])=>`<div class="ln"><span>${k}</span><i class="better">+${v}</i></div>`).join('');
     const use=this.canUse(g),why=!this.canUse(g,true)?`<div class="worse">Only ${gearFor(g.base)} can use this${H.rule&&(g.slot==='weapon'||g.slot==='offhand')?` · ${esc(H.rule)}`:''}</div>`:!use?`<div class="worse">Needs Base Level ${gearReq(g)}</div>`:'';
     const both=!eq&&use&&g.slot==='weapon'&&H.main.includes(g.base)&&H.off.includes(g.base)&&!isTwoHand(g);   // swords and daggers: either hand
-    const notes=[isTwoHand(g)?`Takes both hands: its Attack counts ${TWO_HAND}×, and nothing goes in your right hand`:'',
+    const notes=[isTwoHand(g)?`Takes both hands: its Attack counts ${TWO_HAND}×, and nothing goes in your right hand${!eq&&c.equip.offhand?` (your ${esc(c.equip.offhand.name)} goes to the bag)`:''}`:'',
+      !eq&&g.slot==='offhand'&&this.twoHanded()?`Your ${esc(c.equip.weapon.name)} takes both hands: take it off to hold this`:'',
       g.slot==='weapon'&&H.off.includes(g.base)&&!isTwoHand(g)?`In your right hand it adds ${Math.round(OFF_ATK*100)}% of its Attack`:'',
       eq&&sel.eq==='offhand'&&g.slot==='weapon'?`Right hand: ${Math.round(gearVal(g,'atk')*OFF_ATK)} Attack counts`:'',
       g.psn?'Each arrow that hits may poison the target for 4 s':'',g.stn?'Each arrow that hits may stun the target for 1.5 s (bosses and elites shrug it off for a while)':'',
@@ -6011,7 +6035,7 @@ const TownScreen={
       ${GEAR_STATS.map(cmp).join('')}${bon}
       <div class="ln"><span>Gear score</span><i>${sc}${cur&&sd?` <span class="${sd>0?'better':'worse'}">(${sd>0?'+':''}${sd} vs worn)</span>`:''}</i></div>
       <div class="acts">${eq?'<button class="btn" data-act="unequip">Take off</button>':both?`<button class="btn btn-primary" data-act="equipL">Equip · left hand</button><button class="btn btn-primary" data-act="equipR" ${this.twoHanded()?'disabled':''}>Equip · right hand</button>`
-          :`<button class="btn btn-primary" data-act="equip" ${use?'':'disabled'}>Equip${g.slot==='offhand'||to==='offhand'?' · right hand':g.slot==='weapon'?' · left hand':''}</button>`}
+          :`<button class="btn btn-primary" data-act="equip" ${use&&!(g.slot==='offhand'&&this.twoHanded())?'':'disabled'}>Equip${g.slot==='offhand'||to==='offhand'?' · right hand':g.slot==='weapon'?' · left hand':''}</button>`}
         <button class="btn" data-act="enh" ${max?'disabled':''}>${max?'Enhanced to +10':`Enhance to +${(g.enh||0)+1} · ${k.ingot} ingot${k.dust?` + ${k.dust} dust`:''} + ${k.gold} gold`}</button>
         ${eq?'':`<button class="btn" data-act="sell">Sell · ${gearPrice(g)} gold</button><button class="btn" data-act="smelt">Smelt · ${y.ingot} ingot${y.dust?` + ${y.dust} dust`:''}</button>`}</div>`;},
   drawDoll(){const cv=$('#doll-cv');if(!cv||!this.comp) return;const dpr=Math.min(2,window.devicePixelRatio||1),W=cv.clientWidth||150,H=cv.clientHeight||230;
@@ -7366,7 +7390,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-15f';
+const BUILD='2026-11-15g';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */

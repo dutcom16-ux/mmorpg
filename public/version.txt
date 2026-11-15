@@ -1,1 +1,1 @@
-build: 2026-11-15f (Bulwark sword combo)
+build: 2026-11-15g (Bulwark greatswords)
