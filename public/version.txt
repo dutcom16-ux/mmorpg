@@ -1,1 +1,1 @@
-build: 2026-11-15l (Weapon bonuses, Divine sets, crafting for others)
+build: 2026-11-15m (Monsters keep clear of portals)

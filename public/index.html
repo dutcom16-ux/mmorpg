@@ -2284,6 +2284,9 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15m',date:'2026-11-19',title:'Monsters keep clear of portals',
+    balance:['Monsters and elites keep clear of portals. The ground around every portal, where you arrive too, is off limits to them: they never spawn, wander, chase or path onto it, and one knocked onto it walks out',
+      'Standing by a portal, monsters leave you be. One already after you waits at the edge and gives up after 4 seconds unless you keep hitting it. Bosses are not affected']},
   {v:'2026-11-15l',date:'2026-11-19',title:'Weapon bonuses, Divine sets, crafting for others',
     new:['Weapon bonuses: what you hold now gives one special bonus. A one-handed weapon with a shield (a wand too) gives Reflect Damage: 6% of every blow, melee, ranged and magic, goes back to the attacker (half of that against players). A two-handed weapon gives +5% critical rate and +20% critical damage. A staff gives 15% Magic Pierce instead (your spells ignore that share of a monster\'s magic resistance). A bow keeps the archer\'s own arrows; two weapons, one weapon alone or a shield alone give nothing',
       'Divine sets: every Divine piece now belongs to one job\'s set. Wear 2, 3, 4 or 5 Divine pieces made for your job to unlock that job\'s set bonuses, tier by tier, up to a unique 5-piece effect. All 16 jobs have their own set; pieces of different jobs never add up, and Legendary or lower pieces never count',
@@ -3233,6 +3236,7 @@ function roleWing(g){const k=wingKindOf(g),W=WING_STATS[k];if(!W) return g;const
       The Arbiter (a Support job that fights with a hammer on INT) is never converted; mages, archers and supports keep
       their stats. Legendary accessories and the four role wings keep their own designed numbers. Which job a piece is
       made for: g.cls (chosen when it is forged at Dorin's), or for an untagged weapon, every job that can hold it */
+const PORTAL_CLEAR={r:150,yk:1.25,wait:4};      // build 15m: monsters keep this far from portals (see portalZone)
 const LEGEND_STR={minRar:4,from:'INT',to:'STR',lines:['Recruit','Melee','Stealth'],keep:['arbiter']};
 const isMeleeJob=j=>LEGEND_STR.lines.includes(lineOf(j))&&!LEGEND_STR.keep.includes(j);
 const jobsFor=base=>Object.keys(JOBS).filter(j=>kitOf(j).includes(base));      // every job that can hold this kind of weapon or right-hand piece
@@ -4923,7 +4927,7 @@ const TownScreen={
   findPath(tx,ty,from0){
     const C=this.cell,W=this.gw,H=this.gh,G=this.grid,P0=from0||this.p;
     const s=this.nearestFree(Math.floor(P0.x/C),Math.floor(P0.y/C),6),t=this.nearestFree(Math.max(0,Math.min(W-1,Math.floor(tx/C))),Math.max(0,Math.min(H-1,Math.floor(ty/C))));
-    if(!s||!t) return null;const S=s[1]*W+s[0],T=t[1]*W+t[0],N=W*H;
+    if(!s||!t) return null;const S=s[1]*W+s[0],T=t[1]*W+t[0],N=W*H,PM=from0&&from0.def&&!from0.def.acts?this.portalMask():null;   // monsters: round the portals' clear ground
     const g=new Float32Array(N).fill(1e9),from=new Int32Array(N).fill(-1),closed=new Uint8Array(N);
     const heap=[];const push=(i,f)=>{heap.push([f,i]);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(heap[p][0]<=heap[k][0]) break;[heap[p],heap[k]]=[heap[k],heap[p]];k=p;}};
     const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<heap.length&&heap[l][0]<heap[m][0]) m=l;if(r<heap.length&&heap[r][0]<heap[m][0]) m=r;if(m===k) break;[heap[m],heap[k]]=[heap[k],heap[m]];k=m;}}return top;};
@@ -4931,7 +4935,7 @@ const TownScreen={
     g[S]=0;push(S,hx(S));let it=0;const cap=from0?60000:Math.max(60000,N*.6);    // big maps (the Sanctuary is 512 x 512 cells): room for a long walk
     while(heap.length&&it++<cap){const [,i]=pop();if(closed[i]) continue;closed[i]=1;if(i===T) break;const x=i%W,y=i/W|0;
       for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy) continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H) continue;const j=ny*W+nx;
-        if(!G[j]||closed[j]) continue;if(dx&&dy&&(!G[y*W+nx]||!G[ny*W+x])) continue;
+        if(!G[j]||closed[j]) continue;if(dx&&dy&&(!G[y*W+nx]||!G[ny*W+x])) continue;if(PM&&PM[j]&&!PM[i]) continue;
         const ng=g[i]+(dx&&dy?1.414:1);if(ng<g[j]){g[j]=ng;from[j]=i;push(j,ng+hx(j));}}}
     if(from[T]<0&&S!==T) return null;
     const cells=[];for(let i=T;i!==-1;i=from[i]){cells.push([(i%W+.5)*C,((i/W|0)+.5)*C]);if(i===S) break;}cells.reverse();
@@ -5319,19 +5323,33 @@ const TownScreen={
     let h=2166136261;for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619);}
     this._sigK=k;return this._sig=(h>>>0).toString(36);},
   freeSpot(z){for(let t=0;t<60;t++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*z.r,x=z.x+Math.cos(a)*r,y=z.y+Math.sin(a)*r*.8;
-      if(this.free(x,y)&&this.free(x+7,y)&&this.free(x-7,y)&&this.free(x,y-5)&&Math.hypot(x-this.p.x,y-this.p.y)>110) return [x,y];}return null;},
+      if(this.free(x,y)&&this.free(x+7,y)&&this.free(x-7,y)&&this.free(x,y-5)&&Math.hypot(x-this.p.x,y-this.p.y)>110&&!this.portalZone(x,y)) return [x,y];}return null;},
+  /* build 15m: normal and elite monsters keep clear of portals: the ground around every portal (where you arrive, too)
+     is theirs to avoid. They never spawn, wander, chase or path into it, they don't notice a player standing in it, and
+     one that ends up inside walks out. Bosses are not affected. PORTAL_CLEAR.r: the radius (y counts x yk, as for portals) */
+  portalZone(x,y){for(const p of this.meta.portals||[]) if(Math.hypot(x-p.x,(y-p.y)*PORTAL_CLEAR.yk)<PORTAL_CLEAR.r) return p;return null;},
+  /* the nearest point just outside the clear ground (of every portal) from (x, y), on open ground when there is one close */
+  outsidePortal(x,y,pad=8){for(let k=0;k<3;k++){const p=this.portalZone(x,y);if(!p) break;let dx=x-p.x,dy=(y-p.y)*PORTAL_CLEAR.yk;const l=Math.hypot(dx,dy);if(l<1){dx=0;dy=1;}
+      const L=Math.hypot(dx,dy),R=PORTAL_CLEAR.r+pad;x=p.x+dx/L*R;y=p.y+dy/L*R/PORTAL_CLEAR.yk;}
+    if(!this.free(x,y)){const f=this.landNear(x,y);if(!this.portalZone(f[0],f[1])) [x,y]=f;}return [x,y];},
+  /* the grid cells a monster's path may not enter (cached per map) */
+  portalMask(){if(this._pm&&this._pm.id===this.mapId&&this._pm.n===this.gw*this.gh) return this._pm.m;const C=this.cell,W=this.gw,H=this.gh,M=new Uint8Array(W*H);
+    for(const p of this.meta.portals||[]){const rx=Math.ceil(PORTAL_CLEAR.r/C)+1,ry=Math.ceil(PORTAL_CLEAR.r/PORTAL_CLEAR.yk/C)+1,cx=Math.floor(p.x/C),cy=Math.floor(p.y/C);
+      for(let y=Math.max(0,cy-ry);y<=Math.min(H-1,cy+ry);y++)for(let x=Math.max(0,cx-rx);x<=Math.min(W-1,cx+rx);x++) if(Math.hypot((x+.5)*C-p.x,((y+.5)*C-p.y)*PORTAL_CLEAR.yk)<PORTAL_CLEAR.r) M[y*W+x]=1;}
+    this._pm={id:this.mapId,n:W*H,m:M};return M;},
   /* the nearest open ground to a point: where a monster stands when its zone has no free spot (never in water) */
   landNear(x,y){const C=this.cell,f=this.nearestFree(Math.max(0,Math.min(this.gw-1,Math.floor(x/C))),Math.max(0,Math.min(this.gh-1,Math.floor(y/C))),80);return f?[(f[0]+.5)*C,(f[1]+.5)*C]:[x,y];},
-  newMob(z,elite){const s=this.freeSpot(z)||this.landNear(z.x,z.y);const D=elite?eliteDef(z.kind):MOB_DEFS[z.kind],st=mobStats(z.kind,elite?(z.lvl||D.lvl)+ELITE.lvl:z.lvl);
+  newMob(z,elite){const s=this.freeSpot(z)||this.outsidePortal(...this.landNear(z.x,z.y));const D=elite?eliteDef(z.kind):MOB_DEFS[z.kind],st=mobStats(z.kind,elite?(z.lvl||D.lvl)+ELITE.lvl:z.lvl);
     if(elite){st.hp=Math.round(st.hp/D.hp*ELITE.hpAt(st.lvl)*ELITE.stat);st.atk=mobStats(z.kind,z.lvl).atk.map(v=>Math.round(v*ELITE.dmg*ELITE.stat));st.exp=Math.round(st.exp*ELITE.exp);   // atk: ELITE.dmg x ELITE.stat x what an ordinary one of the map hits
       st.dp=Math.min(ELITE.dpCap,st.dp*ELITE.def);st.mp=Math.min(ELITE.mpCap,st.mp*ELITE.def);}
     return {kind:z.kind,def:D,zone:z,...st,maxHp:st.hp,elite:!!elite,x:s[0],y:s[1],dir:(Math.random()*8)|0,state:'idle',until:performance.now()+Math.random()*3000,walkT:0,moving:false,
       hostile:false,nextHit:0,hitT:-1e9,deadT:0,lunge:-1e9,goal:null,path:null,repath:0,occ:null,phase:Math.random()*10,bornT:-1e9,barkAt:0,bubble:null};},
   respawn(m){let s=this.freeSpot(m.zone);if(!s&&(m.spawnTries=(m.spawnTries||0)+1)<4){m.respawnAt=performance.now()+3000;return;}   // try again in 3 s, then the nearest open ground
-    m.spawnTries=0;s=s||this.landNear(m.zone.x,m.zone.y);if(m.elite) this.eliteNotice(m);
+    m.spawnTries=0;s=s||this.outsidePortal(...this.landNear(m.zone.x,m.zone.y));if(m.elite) this.eliteNotice(m);
     Object.assign(m,{lex:false,stolen:false,markUntil:0,brkUntil:0,blindUntil:0,poisonUntil:0,burnUntil:0,bleedUntil:0,x:s[0],y:s[1],hp:m.maxHp,state:'idle',hostile:false,until:performance.now()+1500,goal:null,path:null,occ:null,bornT:performance.now(),bubble:null});},
   moveMob(m,tx,ty,sp){const dx=tx-m.x,dy=ty-m.y,d=Math.hypot(dx,dy);if(d<.5) return true;const st=Math.min(d,sp),nx=m.x+dx/d*st,ny=m.y+dy/d*st;
-    if(this.free(nx,ny)){m.x=nx;m.y=ny;}else if(Math.abs(dx)>.3&&this.free(nx,m.y)) m.x=nx;else if(Math.abs(dy)>.3&&this.free(m.x,ny)) m.y=ny;else return false;
+    const keep=!m.def.acts&&!this.portalZone(m.x,m.y),ok=(x,y)=>this.free(x,y)&&!(keep&&this.portalZone(x,y));      // build 15m: never into a portal's clear ground
+    if(ok(nx,ny)){m.x=nx;m.y=ny;}else if(Math.abs(dx)>.3&&ok(nx,m.y)) m.x=nx;else if(Math.abs(dy)>.3&&ok(m.x,ny)) m.y=ny;else return false;
     m.dir=dirOf(dx,dy);m.moving=true;return true;},
   aggro(m,now,T){if(m.hostile||m.def.acts) return;T=T||{key:'me',x:this.p.x,y:this.p.y};m.hostile=true;m.state='fight';m.tgt=T.key;const D=m.def;
     const used=new Set(this.mobs.filter(o=>o!==m&&o.hostile&&o.tgt===m.tgt).map(o=>o.slot));let k=0;while(used.has(k)&&k<MOB_SLOTS.length-1) k++;
@@ -5341,9 +5359,10 @@ const TownScreen={
     if(this.mp&&!this.mp.amHost){this.mobFollow(dt,now);this.bossFrame(dt,now);return;}
     const pl=[];if(!this.dead&&!this.travelling) pl.push({key:'me',x:this.p.x,y:this.p.y,veil:now<this.veilUntil});
     if(this.others) for(const o of this.others.values()) if(!o.dead) pl.push({key:o.peer,x:o.x,y:o.y,veil:o.veil});
-    const dist=(P,m)=>Math.hypot(P.x-m.x,(P.y-m.y)*1.3),nearest=(m,r)=>{let b=null,bd=r;for(const P of pl){if(P.veil) continue;const d=dist(P,m);if(d<bd){bd=d;b=P;}}return b;};
+    for(const P of pl) P.safe=!!this.portalZone(P.x,P.y);      // build 15m: standing by a portal, monsters leave you be
+    const dist=(P,m)=>Math.hypot(P.x-m.x,(P.y-m.y)*1.3),nearest=(m,r)=>{let b=null,bd=r;for(const P of pl){if(P.veil||P.safe) continue;const d=dist(P,m);if(d<bd){bd=d;b=P;}}return b;};
     this.encTick(now,pl);
-    const goHome=m=>{m.hostile=false;m.state='return';m.goal=[m.zone.x+(Math.random()-.5)*m.zone.r*.6,m.zone.y+(Math.random()-.5)*m.zone.r*.4];};
+    const goHome=m=>{m.hostile=false;m.state='return';m.goal=this.outsidePortal(m.zone.x+(Math.random()-.5)*m.zone.r*.6,m.zone.y+(Math.random()-.5)*m.zone.r*.4);};
     for(const m of this.mobs){const D=m.def;m.moving=false;
       if(D.acts){this.actorAI(m,dt,now);continue;}
       if(m.state==='dead'){if(now>=m.respawnAt) this.respawn(m);continue;}
@@ -5354,6 +5373,8 @@ const TownScreen={
       if(!m.hostile&&D.sight&&m.state!=='return'){const n=nearest(m,D.sight);if(n){this.aggro(m,now,n);P=n;}}
       if(m.hostile){const d=dist(P,m);
         if(home>m.zone.r+230||d>340){goHome(m);continue;}
+        // its target stands on a portal's clear ground: it waits at the edge, and gives up after PORTAL_CLEAR.wait s without being hit
+        if(P.safe){m.safeT=m.safeT||now;if(now-m.safeT>PORTAL_CLEAR.wait*1000&&now-(m.hitT||0)>PORTAL_CLEAR.wait*1000){m.safeT=0;goHome(m);continue;}}else m.safeT=0;
         // each attacker takes its own spot beside its target (left, right, behind...) instead of piling on;
         // a shooter (the Cherub Scout) holds still while it has range and a clear line, backs off when crowded
         let gx,gy;
@@ -5362,6 +5383,7 @@ const TownScreen={
           if(m.los&&d<=R.range&&d>=R.keep*.6){gx=m.x;gy=m.y;}
           else{const k=m.los&&d<=R.range?R.keep:Math.min(R.keep,l*.6);gx=P.x+ax/l*k;gy=P.y+ay/l*k;}}
         else{const [sx,sy]=MOB_SLOTS[m.slot||0];gx=P.x+sx*(D.elite?ELITE.reach:D.h>34?1.15:1);gy=P.y+sy*(D.elite?1.4:1);}
+        if(this.portalZone(gx,gy)) [gx,gy]=this.outsidePortal(gx,gy);      // its spot is by a portal: the nearest point outside
         const gd=Math.hypot(gx-m.x,gy-m.y),sp=D.speed[1]*dtm;
         if(gd>2.5){
           /* straight at its spot; when that stops bringing it closer (a statue, wall or rock in the way: it only slides
@@ -5369,7 +5391,7 @@ const TownScreen={
           if(gd>(m.bestGd||0)+40||!m.bestT){m.bestGd=gd;m.bestT=now;}   // the target moved off: measure again
           let ok=!(now<(m.detourUntil||0))&&this.moveMob(m,gx,gy,sp);
           if(ok){if(gd<m.bestGd-.8){m.bestGd=gd;m.bestT=now;}else if(now-m.bestT>500){ok=false;m.detourUntil=now+1600;m.path=null;}}
-          if(!ok){const free=this.free(gx,gy),tx0=free?gx:P.x,ty0=free?gy:P.y;
+          if(!ok){const free=this.free(gx,gy),pp=P.safe?this.outsidePortal(P.x,P.y):[P.x,P.y],tx0=free?gx:pp[0],ty0=free?gy:pp[1];
             if(!m.path||!m.path.length||now>m.repath){m.path=this.findPath(tx0,ty0,m)||[];m.repath=now+700;}
             if(m.path.length){const [tx,ty]=m.path[0];if(Math.hypot(tx-m.x,ty-m.y)<3) m.path.shift();else this.moveMob(m,tx,ty,sp);}else m.detourUntil=0;
             m.bestGd=gd;m.bestT=now;}
@@ -5386,9 +5408,10 @@ const TownScreen={
         if(!m.goal){m.state='idle';continue;}
         const ok=this.moveMob(m,m.goal[0],m.goal[1],D.speed[0]*dtm*(m.state==='return'?1.8:1));m.walkT+=dtm;
         if(!ok||Math.hypot(m.goal[0]-m.x,m.goal[1]-m.y)<1.5){if(m.state==='return') m.hp=m.maxHp;m.state='idle';m.goal=null;m.until=now+1500+Math.random()*3500;}}
+      else if(this.portalZone(m.x,m.y)){m.goal=this.outsidePortal(m.x,m.y,20);m.state='walk';}      // pushed or spawned by a portal: walk out (build 15m)
       else if(now>=m.until){const a=Math.random()*Math.PI*2,r=24+Math.random()*60;let gx=m.x+Math.cos(a)*r,gy=m.y+Math.sin(a)*r*.7;
         if(Math.hypot(gx-m.zone.x,gy-m.zone.y)>m.zone.r){gx=m.x+(m.zone.x-m.x)*.4;gy=m.y+(m.zone.y-m.y)*.4;}
-        if(this.free(gx,gy)&&this.sight([m.x,m.y],[gx,gy])){m.goal=[gx,gy];m.state='walk';}else m.until=now+700;}
+        if(this.free(gx,gy)&&!this.portalZone(gx,gy)&&this.sight([m.x,m.y],[gx,gy])){m.goal=[gx,gy];m.state='walk';}else m.until=now+700;}
     }
     this.bossFrame(dt,now);
   },
@@ -7676,7 +7699,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-15l';
+const BUILD='2026-11-15m';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
