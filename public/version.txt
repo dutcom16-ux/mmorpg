@@ -1,1 +1,1 @@
-build: 2026-11-15k (Gear in percent, shield reflect)
+build: 2026-11-15l (Weapon bonuses, Divine sets, crafting for others)

@@ -477,6 +477,8 @@ svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,
 .eslot .gi{width:50px;height:50px}
 .shnote{font-size:12.5px;color:var(--muted);margin:2px 0 8px;line-height:1.45}.synres{padding:7px 10px;border-radius:10px;font-weight:900;margin-bottom:8px}.synres.ok{background:rgba(111,220,122,.16);color:#9ff0a8}.synres.no{background:rgba(255,110,120,.16);color:#ff9aa4}
 .shrow .buy .mq{margin-top:5px;min-height:26px;padding:2px 10px;font-size:11.5px}.shrow .buy .mq.on{border-color:#8fe3a8;color:#aef0bf;background:rgba(111,220,122,.14)}.qj .st .qdrop{margin-left:6px;min-height:28px;padding:2px 10px;font-size:12px}
+.craftfor{align-items:center;margin-top:8px}.craftfor>span{font-size:12px;color:var(--muted);font-weight:800}.xcls{color:#ffcf7a}
+.syncls{display:inline-flex;align-items:center;gap:6px;margin:4px 0 2px;font-size:12px;color:var(--muted)}.syncls select{max-width:190px}
 .synpick{display:inline-flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}.synpick .btn{min-height:24px;padding:2px 8px;font-size:11.5px}.synpick .btn[aria-pressed=true]{border-color:#ffa63d;color:#ffd08a;background:rgba(255,166,61,.16)}
 .eslot .h2,.islot .h2{position:absolute;left:4px;top:2px;font:900 9.5px Nunito,sans-serif;color:#bfe8ff;letter-spacing:.04em;text-shadow:0 1px 2px #000,0 0 3px #000}
 .eslot.both>.gi,.eslot.both>svg{opacity:.32;filter:grayscale(.6)}.idetail .hint2{font-size:12px;color:#bfe8ff;margin-top:3px}
@@ -490,6 +492,10 @@ svg.tile{display:block;width:84%;height:84%;filter:drop-shadow(0 1px 1px rgba(0,
 .sel{outline:2px solid #fff;outline-offset:2px}
 .eqstats{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 10px;margin:12px 0 0;font-size:13px}
 .eqrule{margin:10px 0 0;font-size:11.5px;font-weight:800;color:#8fd0ff;line-height:1.35}
+.eqbonus{margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(10,14,34,.55);border:1px solid rgba(216,179,92,.28);font-size:11.5px;line-height:1.35}
+.eqbonus .eb-h{font-weight:900;letter-spacing:.04em;color:#ffd98a;margin:6px 0 3px;font-size:11px}.eqbonus .eb-h:first-child{margin-top:0}
+.eqbonus .eb-r{color:var(--muted);margin:2px 0}.eqbonus .eb-r b{font-weight:900;color:#8a90a8;margin-right:2px}.eqbonus .eb-r.on{color:#e8ecf8}.eqbonus .eb-r.on b{color:#6fdc7a}
+.eqbonus .eb-r.worse{color:#ff9a8a}
 .eqstats dt{color:var(--muted);font-weight:700}.eqstats dd{margin:0;font-weight:900}
 .bagbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .bagbar .tab{min-height:30px;padding:3px 12px;font-size:12px}
@@ -2278,6 +2284,15 @@ $('#hair-val').textContent=APPEARANCE.label('hair',a.hairColor);
 /* ---------- patch notes (sign-in screen) ----------
    The real notes for each build, newest first. Groups: new content, events, balance changes, bug fixes. */
 const PATCH_NOTES=[
+  {v:'2026-11-15l',date:'2026-11-19',title:'Weapon bonuses, Divine sets, crafting for others',
+    new:['Weapon bonuses: what you hold now gives one special bonus. A one-handed weapon with a shield (a wand too) gives Reflect Damage: 6% of every blow, melee, ranged and magic, goes back to the attacker (half of that against players). A two-handed weapon gives +5% critical rate and +20% critical damage. A staff gives 15% Magic Pierce instead (your spells ignore that share of a monster\'s magic resistance). A bow keeps the archer\'s own arrows; two weapons, one weapon alone or a shield alone give nothing',
+      'Divine sets: every Divine piece now belongs to one job\'s set. Wear 2, 3, 4 or 5 Divine pieces made for your job to unlock that job\'s set bonuses, tier by tier, up to a unique 5-piece effect. All 16 jobs have their own set; pieces of different jobs never add up, and Legendary or lower pieces never count',
+      'Archer sets: Eagle\'s Precision (DEX, ranged attack), Deadly Aim (critical rate and damage), Windrunner (attack speed, move speed, ranged skill damage) and Divine Predator (ranged damage, critical damage and a unique effect: the Wayfinder\'s mark, the Sharpshooter\'s always-critical opening shots, the Skywarden\'s stronger falcon)',
+      'The equipment window shows your weapon bonus and your Divine set: every tier, [ACTIVE] or [LOCKED], updated the moment you change gear. A piece\'s details name the job it was made for and its set',
+      'Crafting for others: Dorin\'s Weapons tab lists every job\'s recipes (Show: Every job or For my job). Anyone can craft any job\'s piece with the same materials, gold and level; who can hold it is unchanged. Synthesis forges Legendary and Divine pieces for the job you choose',
+      'The stats window shows critical damage, magic pierce and skill damage'],
+    balance:['Legendary and Divine pieces made for melee jobs (Recruit, Vanguard, Juggernaut, Bulwark, Specter, Void Blade, Trickster) carry STR instead of INT, the same amount. Your pieces are converted. The Arbiter, mages, archers and supports keep their stats',
+      'Old Legendary and Divine pieces take your job. Becoming a 2nd job carries your Divine pieces over to your new job\'s set']},
   {v:'2026-11-15k',date:'2026-11-15',title:'Gear in percent, shield reflect',
     new:['Every piece of gear now gives percentages. Weapons give +% Attack; armour and shields give +% DEF, MDEF and HP; rings and amulets give +% HP and MDEF; Legendary rings and amulets give their attack and defence as % too. Your gear is converted and stays about as strong as before',
       'Two-handed weapons give 1.4 times the Attack % of a one-handed weapon of the same level and rarity. A second weapon in the right hand adds 40% of its Attack %',
@@ -2877,7 +2892,9 @@ const MOD_INFO={atk:['ATK',''],atkPct:['ATK','%'],matk:['MATK',''],matkPct:['MAT
   cdPct:['Cooldowns','-%'],STR:['STR',''],AGI:['AGI',''],VIT:['VIT',''],INT:['INT',''],DEX:['DEX',''],LUK:['LUK',''],hpRegen:['HP recovery','%'],
   spRegen:['SP recovery','%'],moveSpd:['Move speed','%'],block:['Block chance','%'],reflect:['Reflects melee damage','%'],dr:['Damage taken','-%'],
   double:['Double attack chance','%'],range:['Range',' px'],goldPct:['Gold found','%'],healPct:['Healing','%'],fireDmg:['Fire damage','%'],
-  burnDmg:['Burn damage','%'],dmgPct:['Damage','%']};
+  burnDmg:['Burn damage','%'],dmgPct:['Damage','%'],
+  pierce:['Magic pierce','%'],skillPct:['Skill damage','%'],buffPct:['Buff duration','%'],threat:['Threat (your hits pull monsters onto you)','%'],
+  reflAll:['Reflect damage (melee, ranged and magic)','%'],galeChance:['Gale Sweep chance','%'],galePow:['Gale Sweep damage','%']};   // build 15l: set and weapon bonuses
 const PCT_MODS=new Set(Object.keys(MOD_INFO).filter(k=>MOD_INFO[k][1].includes('%')));
 /* elements: attacker vs defender. Water beats fire, fire beats earth, earth beats wind, wind beats water;
    holy and shadow beat each other; the same element resists itself */
@@ -3210,15 +3227,117 @@ function roleWing(g){const k=wingKindOf(g),W=WING_STATS[k];if(!W) return g;const
   for(const s of GEAR_STATS) delete g[s];g.wing=k;g.bonus={};
   for(const s of GEAR_STATS) if(W[s]) g[s]=Math.round(W[s]*x);for(const [s,v] of Object.entries(W.bonus||{})) g.bonus[s]=Math.round(v*x);
   g.pv=1;return g;}
+/* ======================= build 15l: equipment bonuses · every number lives here =======================
+   1. LEGEND_STR: a Legendary or Divine piece made for a melee job (Recruit, the Melee and Stealth lines) carries STR
+      where it would carry INT: its INT line becomes a STR line of the same size, so the piece's total is unchanged.
+      The Arbiter (a Support job that fights with a hammer on INT) is never converted; mages, archers and supports keep
+      their stats. Legendary accessories and the four role wings keep their own designed numbers. Which job a piece is
+      made for: g.cls (chosen when it is forged at Dorin's), or for an untagged weapon, every job that can hold it */
+const LEGEND_STR={minRar:4,from:'INT',to:'STR',lines:['Recruit','Melee','Stealth'],keep:['arbiter']};
+const isMeleeJob=j=>LEGEND_STR.lines.includes(lineOf(j))&&!LEGEND_STR.keep.includes(j);
+const jobsFor=base=>Object.keys(JOBS).filter(j=>kitOf(j).includes(base));      // every job that can hold this kind of weapon or right-hand piece
+const clsFor=g=>(g.slot==='weapon'||g.slot==='offhand')&&KIT_BASES.includes(g.base)?jobsFor(g.base):Object.keys(JOBS);   // the jobs a piece can be made for
+function meleePiece(g){if(g.cls&&JOBS[g.cls]) return isMeleeJob(g.cls);if(g.slot!=='weapon'&&g.slot!=='offhand') return false;const J=jobsFor(g.base);return J.length>0&&J.every(isMeleeJob);}
+function legendStr(g){if(!g||g.rar<LEGEND_STR.minRar||g.uniq||g.base==='wings'||!g.bonus||!g.bonus[LEGEND_STR.from]||!meleePiece(g)) return g;
+  g.bonus[LEGEND_STR.to]=(g.bonus[LEGEND_STR.to]||0)+g.bonus[LEGEND_STR.from];delete g.bonus[LEGEND_STR.from];g.strc=1;return g;}
+/* a Legendary or Divine piece without a job takes one: its owner's when the owner can use it, else the nearest job of
+   the owner's line that can, else the first that can (pieces from before this build, drops, mail, old trades) */
+function tagGear(g,job){if(!g||g.rar<LEGEND_STR.minRar) return g;if(!(g.cls&&JOBS[g.cls])){const o=clsFor(g);
+    g.cls=o.includes(job)?job:o.find(j=>lineOf(j)===lineOf(job))||o[0]||job;}return legendStr(g);}
+/* 2. WEAPON BONUSES: what you hold gives ONE special bonus, worked out from the pieces in your hands every time your
+   gear or job changes (never stored on the pieces, never changing their own numbers). The left hand decides first:
+   a bow keeps the archer's own mechanics (no other bonus), a staff gives Magic Pierce (not the two-handed bonus), any
+   other two-handed weapon the critical bonus; a one-handed weapon (a wand too) with a shield in the right hand gives
+   Reflect Damage; two one-handed weapons, one alone, or a shield alone give nothing. mods: the same keys as skills
+   and buffs (MOD_INFO). Reflect Damage sends that share of every blow (melee, ranged and magic) back; against
+   players it counts REFLECT.pvp of itself, and a reflected blow is never reflected again */
+const WEAPON_BONUS={
+  shield:{title:'One-handed weapon + Shield',name:'Reflect Damage',mods:{reflAll:.06}},
+  wandShield:{title:'One-handed Wand + Shield',name:'Reflect Damage',mods:{reflAll:.06}},
+  twoHand:{title:'Two-handed weapon',name:'Two-Handed Critical',mods:{crit:5,critDmg:.2}},
+  staff:{title:'Staff',name:'Staff Magic Pierce',mods:{pierce:.15}},
+  bow:{title:'Bow',name:'Archer weapon',mods:{},note:'Archer mechanics: arrows in the right hand (poison and stun arrows), no other weapon bonus'},
+  dual:{title:'Two one-handed weapons',name:'',mods:{},note:'No special weapon bonus (the right-hand weapon adds 40% of its Attack)'},
+  one:{title:'One-handed weapon',name:'',mods:{},note:'No special weapon bonus · hold a shield with it for Reflect Damage'},
+  shieldOnly:{title:'Shield only',name:'',mods:{},note:'No special weapon bonus · hold a one-handed weapon with it for Reflect Damage'},
+  none:{title:'No weapon',name:'',mods:{}}};
+const REFLECT={pvp:.5};
+const WAND_BASES=['wand','scepter'],STAFF_BASES=['staff'],BOW_BASES=['bow'];
+/* w, o: the usable pieces in the left and right hand (null when empty, not usable, or under a two-handed weapon) */
+function weaponKind(w,o){if(w&&BOW_BASES.includes(w.base)) return 'bow';if(w&&STAFF_BASES.includes(w.base)) return 'staff';if(w&&isTwoHand(w)) return 'twoHand';
+  if(w&&o&&o.base==='shield') return WAND_BASES.includes(w.base)?'wandShield':'shield';if(w&&o&&o.slot==='weapon') return 'dual';if(w) return 'one';
+  if(o&&o.base==='shield') return 'shieldOnly';return 'none';}
+/* 3. DIVINE SETS: every Divine piece belongs to one job's set (g.cls). Wearing 2 to 5 Divine pieces of YOUR job's set
+   gives that set's bonuses, tier by tier (2, 3, 4 and 5 pieces). Another job's Divine pieces, and Legendary or lower
+   pieces, never count, and two jobs' pieces never add up. Becoming a 2nd job carries your pieces over to the new job's
+   set. Each tier: n = its name, m = modifiers (MOD_INFO keys), fx = the 5-piece effect (DIVINE_FX) */
+const DIVINE_SET={rar:5,max:5,tiers:[2,3,4,5]};
+const DIVINE_SETS={
+  recruit:{role:'Melee',t:{2:{n:"Fledgling's Grit",m:{STR:5,hpPct:.05}},3:{n:'Steady Hands',m:{crit:3,hit:10}},4:{n:'Quick Feet',m:{aspd:.05,moveSpd:.05}},
+    5:{n:'Second Wind',m:{atkPct:.05},fx:{k:'secondwind',below:.3,heal:.25,cd:60}}}},
+  vanguard:{role:'Melee DPS',t:{2:{n:"Valor's Edge",m:{STR:8,atkPct:.05}},3:{n:'Blade Fury',m:{crit:4,critDmg:.15}},4:{n:'Relentless',m:{aspd:.08,atkPct:.04}},
+    5:{n:'Divine Vanguard',m:{dmgPct:.06},fx:{k:'cleave',pct:.4,r:80}}}},
+  juggernaut:{role:'Melee DPS',t:{2:{n:"Titan's Might",m:{STR:10,atkPct:.06}},3:{n:'Crushing Blows',m:{critDmg:.25}},4:{n:'Unstoppable',m:{crit:3,aspd:.06,hpPct:.05}},
+    5:{n:'Divine Rampage',m:{dmgPct:.06},fx:{k:'frenzy',dur:5,aspd:.1,dmg:.08}}}},
+  bulwark:{role:'Tank',t:{2:{n:"Bulwark's Resolve",m:{hpPct:.08,def:10}},3:{n:'Iron Wall',m:{block:.06,dr:.04}},4:{n:'Living Fortress',m:{dr:.05,hpPct:.06,threat:.35}},
+    5:{n:'Divine Bastion',m:{reflect:.06},fx:{k:'bastion',below:.35,pct:.25,dur:8,r:160,cd:45}}}},
+  elementalist:{role:'Magic DPS',t:{2:{n:'Arcane Focus',m:{INT:8,matkPct:.05}},3:{n:'Piercing Spells',m:{pierce:.08,skillPct:.05}},4:{n:'Elemental Mastery',m:{matkPct:.06,castPct:.08}},
+    5:{n:'Divine Resonance',m:{skillPct:.06},fx:{k:'echo',chance:.15,pct:.5}}}},
+  chronomage:{role:'Magic DPS',t:{2:{n:'Temporal Mind',m:{INT:8,cdPct:.05}},3:{n:'Time Pierce',m:{pierce:.08,matkPct:.05}},4:{n:'Haste of Ages',m:{castPct:.1,cdPct:.05,skillPct:.04}},
+    5:{n:'Divine Rewind',m:{skillPct:.06},fx:{k:'rewind',chance:.2,cut:.5}}}},
+  pyromancer:{role:'Magic DPS',t:{2:{n:'Kindled Soul',m:{INT:8,fireDmg:.06}},3:{n:'Scorching Pierce',m:{pierce:.1,matkPct:.04}},4:{n:'Firestorm',m:{skillPct:.07,burnDmg:.15}},
+    5:{n:'Divine Inferno',m:{matkPct:.06},fx:{k:'inferno',chance:.35,dur:3}}}},
+  wayfinder:{role:'Archer',t:{2:{n:"Eagle's Precision",m:{DEX:8,atkPct:.06}},3:{n:'Deadly Aim',m:{crit:4,critDmg:.15}},4:{n:'Windrunner',m:{aspd:.06,moveSpd:.08,skillPct:.06}},
+    5:{n:'Divine Predator',m:{dmgPct:.06,critDmg:.1},fx:{k:'predator',dur:5,pct:.12}}}},
+  sharpshooter:{role:'Archer',t:{2:{n:"Eagle's Precision",m:{DEX:10,atkPct:.06}},3:{n:'Deadly Aim',m:{crit:5,critDmg:.18}},4:{n:'Windrunner',m:{aspd:.05,moveSpd:.06,skillPct:.08}},
+    5:{n:'Divine Predator',m:{dmgPct:.06,critDmg:.12},fx:{k:'deadeye',above:.8}}}},
+  skywarden:{role:'Archer',t:{2:{n:"Eagle's Precision",m:{DEX:8,atkPct:.05}},3:{n:'Deadly Aim',m:{crit:4,critDmg:.15}},4:{n:'Windrunner',m:{aspd:.07,moveSpd:.1,skillPct:.05}},
+    5:{n:'Divine Predator',m:{dmgPct:.06,critDmg:.1},fx:{k:'falcon',chance:.15,pow:.25}}}},
+  channeler:{role:'Support',t:{2:{n:'Gentle Light',m:{healPct:.08,hpPct:.05}},3:{n:'Quickened Grace',m:{cdPct:.06,buffPct:.15}},4:{n:'Sanctified',m:{healPct:.08,INT:8,dr:.04}},
+    5:{n:'Divine Grace',m:{buffPct:.1},fx:{k:'grace',pct:.15,dur:10,cd:12}}}},
+  hierophant:{role:'Support',t:{2:{n:'Holy Devotion',m:{healPct:.1,INT:6}},3:{n:'Blessed Rhythm',m:{cdPct:.07,buffPct:.15}},4:{n:'Choir of Light',m:{healPct:.08,hpPct:.08,spPct:.08}},
+    5:{n:'Divine Miracle',m:{dr:.05},fx:{k:'miracle',heal:.3,cd:90}}}},
+  arbiter:{role:'Hybrid · support and shield',t:{2:{n:'Verdict',m:{INT:8,matkPct:.05}},3:{n:'Aegis of Law',m:{block:.05,def:10}},4:{n:'Righteous Zeal',m:{healPct:.06,hpPct:.06,matkPct:.04}},
+    5:{n:'Divine Judgement',m:{dr:.04},fx:{k:'judgement',mult:1.2}}}},
+  specter:{role:'Melee DPS · stealth',t:{2:{n:'Shadow Edge',m:{AGI:8,atkPct:.05}},3:{n:'Ambush',m:{crit:5,critDmg:.12}},4:{n:'Fleetfoot',m:{aspd:.07,moveSpd:.06,flee:10}},
+    5:{n:'Divine Execution',m:{critDmg:.1},fx:{k:'execute',below:.3,pct:.25}}}},
+  voidblade:{role:'Melee DPS · stealth',t:{2:{n:'Void Edge',m:{AGI:8,atkPct:.06}},3:{n:'Abyssal Strikes',m:{crit:4,critDmg:.18}},4:{n:'Endless Night',m:{aspd:.08,double:.05}},
+    5:{n:'Divine Rend',m:{dmgPct:.06},fx:{k:'rend',dur:4}}}},
+  trickster:{role:'Hybrid · stealth and evasion',t:{2:{n:'Sleight of Hand',m:{AGI:6,LUK:6}},3:{n:'Lucky Strikes',m:{crit:5,double:.05}},4:{n:'Smoke and Mirrors',m:{flee:15,moveSpd:.08,skillPct:.05}},
+    5:{n:'Divine Phantom',m:{critDmg:.12},fx:{k:'phantom',chance:.08}}}}};
+const fxPct=v=>Math.round(v*100)+'%';
+const DIVINE_FX={
+  secondwind:p=>`below ${fxPct(p.below)} HP you heal ${fxPct(p.heal)} of your max HP (once every ${p.cd} s)`,
+  cleave:p=>`critical hits send ${fxPct(p.pct)} of their damage into the enemies around the target`,
+  frenzy:p=>`critical hits drive you into a frenzy for ${p.dur} s: +${fxPct(p.aspd)} attack speed, +${fxPct(p.dmg)} damage`,
+  bastion:p=>`below ${fxPct(p.below)} HP a barrier of ${fxPct(p.pct)} of your max HP holds for ${p.dur} s and the monsters around you turn on you (once every ${p.cd} s)`,
+  echo:p=>`magic skill hits have a ${fxPct(p.chance)} chance to echo for ${fxPct(p.pct)} of their damage`,
+  rewind:p=>`each skill you use has a ${fxPct(p.chance)} chance to come back ${fxPct(p.cut)} sooner`,
+  inferno:p=>`fire hits have a ${fxPct(p.chance)} chance to set the target burning for ${p.dur} s`,
+  predator:p=>`critical hits mark the target for ${p.dur} s: it takes +${fxPct(p.pct)} damage from you`,
+  deadeye:p=>`hits on a target above ${fxPct(p.above)} HP are always critical`,
+  falcon:p=>`your Gale Falcon sweeps more often (+${fxPct(p.chance)} Gale Sweep chance) and harder (+${fxPct(p.pow)} sweep damage)`,
+  grace:p=>`casting a heal or a buff wraps you in a barrier of ${fxPct(p.pct)} of your max HP for ${p.dur} s (once every ${p.cd} s)`,
+  miracle:p=>`a blow that would defeat you leaves you at ${fxPct(p.heal)} HP instead (once every ${p.cd} s)`,
+  judgement:p=>`blocking a blow smites the attacker with holy magic for ${fxPct(p.mult)} of your MATK`,
+  execute:p=>`+${fxPct(p.pct)} damage to targets below ${fxPct(p.below)} HP`,
+  rend:p=>`critical hits make the target bleed for ${p.dur} s`,
+  phantom:p=>`a ${fxPct(p.chance)} chance to slip out of any blow, and your next hit after that is critical`};
+const SET_LABEL={Ranged:{atkPct:'Ranged physical attack',critDmg:'Ranged critical damage',skillPct:'Ranged skill damage',dmgPct:'Ranged physical damage'}};
+/* one modifier as text, e.g. "+6% Max HP" (the same wording as skills and buffs) */
+function modText(k,v,job){const I=MOD_INFO[k];if(!I) return '';const lab=(SET_LABEL[lineOf(job)]||{})[k]||I[0];
+  return `${v<0||I[1]==='-%'?'-':'+'}${Math.abs(PCT_MODS.has(k)?Math.round(v*100):Math.floor(v*10)/10)}${I[1].replace('-','')} ${lab}`;}
+function setTierText(job,t){const T=(DIVINE_SETS[job]||{t:{}}).t[t];if(!T) return '';const p=Object.entries(T.m||{}).map(([k,v])=>modText(k,v,job));
+  if(T.fx&&DIVINE_FX[T.fx.k]) p.push(DIVINE_FX[T.fx.k](T.fx));return p.join(', ');}
 /* every piece that comes in from a save, the vault or a trade goes through here (safe to repeat) */
 function normGear(g){if(!g) return g;if(g.base==='wings'&&WING_ROLE[wingKindOf(g)]!=null) return roleWing(g);
-  if(g.pv) return g;
+  if(g.pv) return legendStr(g);
   if(g.uniq&&LEGEND_ACC[g.uniq]) return legendAcc(g,g.uniq);
   if(g.base==='shield'){   // its INT / AGI / DEX lines become reflect or block lines (the same number of lines, rolled from its uid)
     let h=0;for(const ch of String(g.uid||g.name||'')) h=(h*31+ch.charCodeAt(0))>>>0;const rnd=()=>((h=(h*1103515245+12345)>>>0)%10000)/10000;
     for(const k of ['INT','AGI','DEX']){const v=(g.bonus||{})[k];if(!v) continue;delete g.bonus[k];
       const n=Math.max(1,Math.round(v/(1+Math.floor(g.lvl/10)+g.rar/2)));for(let i=0;i<n;i++){const q=SHIELD_SPECIAL[Math.floor(rnd()*4)];g[q]=(g[q]||0)+shieldLine(q,g.lvl,g.rar,rnd);}}}
-  return toPct(g);}
+  return legendStr(toPct(g));}
 /* a piece remade as another kind of the same family (an Arbiter's scepter into a hammer): same level, rarity and numbers */
 function reforgeGear(g,base){const B=GEAR_BASES[base];g.base=base;g.slot=B.slot;if(!g.uniq) g.name=(RARITY_WORD[g.rar]?RARITY_WORD[g.rar]+' ':'')+B.names[Math.min(4,Math.floor((g.lvl-1)/10))];return g;}
 const SLOT_SVG=Object.fromEntries(Object.entries({weapon:'<path d="M5 19L18 6M14 5h5v5M4 14l6 6"/>',head:'<path d="M5 16a7 7 0 0 1 14 0v4H5z"/><path d="M9 16h6"/>',
@@ -3271,12 +3390,12 @@ function makeGear(base,lvl,rar){const B=GEAR_BASES[base],R=RARITY[rar],v=()=>.88
   if(B.slot==='ring'&&!R.lines) g.bonus.LUK=1+Math.floor(lvl/15);
   if(B.slot==='neck'&&!R.lines) g.bonus.VIT=1+Math.floor(lvl/15);
   if((B.slot==='ring'||B.slot==='neck')&&rar>=4){const ids=Object.keys(LEGEND_ACC).filter(k=>LEGEND_ACC[k].slot===B.slot);legendAcc(g,ids[Math.floor(Math.random()*ids.length)]);}
-  return toPct(g);}
+  return legendStr(toPct(g));}   // build 15l: a melee weapon's Legendary INT becomes STR
 function rollRarity(){const r=Math.random();let a=0;for(let i=0;i<RARITY_ROLL.length;i++){a+=RARITY_ROLL[i];if(r<a) return i;}return 0;}
 function rollGear(lvl,job){let base;const K=kitOf(job);
   if(Math.random()<.3) base=Math.random()<.6?K[Math.floor(Math.random()*K.length)]:KIT_BASES[Math.floor(Math.random()*KIT_BASES.length)];
   else base=['head','body','hands','feet','ring','amulet'][Math.floor(Math.random()*6)];
-  return makeGear(base,lvl,rollRarity());}
+  return tagGear(makeGear(base,lvl,rollRarity()),job);}
 /* filled tile icons in the painted icons' style (rounded tile, gold rim, glow of the item's colour, a solid silhouette
    with a dark outline) for things that have no painted icon: wings and the new potions */
 const TILE_PATHS={
@@ -3760,7 +3879,7 @@ const TownScreen={
   /* ---------- setup ---------- */
   async start(c){
     if(!BootAssets.ok) await BootAssets.start();     // never enter before the art is in
-    this.ch=c;this._gt=null;this._mods=null;this.buffs={};this.invSel=null;c.quests=c.quests||{firstSteps:'active'};c.waystones=c.waystones||[];c.introSeen=true;
+    this.ch=c;this._gt=null;this._mods=null;this._eb=null;this.frenzyOn=false;this.fxCd={};this.buffs={};this.invSel=null;c.quests=c.quests||{firstSteps:'active'};c.waystones=c.waystones||[];c.introSeen=true;
     c.baseLevel=c.baseLevel||1;c.baseExp=c.baseExp||0;if(c.hp==null||c.hp<=0) c.hp=this.maxHp();
     c.stats=c.stats||{STR:1,AGI:1,VIT:1,INT:1,DEX:1,LUK:1};c.statPoints=c.statPoints??statTotal(c.baseLevel);c.gold=c.gold??20;
     this.buffs={};this.barrier=null;this.casting=null;this._mods=null;let moved=null;
@@ -3858,11 +3977,26 @@ const TownScreen={
      ATK: melee STR + (STR/10)^2 + DEX/5 + LUK/5 · ranged DEX + (DEX/10)^2 + STR/5 + LUK/5, plus weapon, level and skills
      MATK: INT + (INT/7)^2 to INT + (INT/5)^2, + LUK/5 · HIT 175 + BaseLv + DEX + LUK/3 · FLEE 100 + BaseLv + AGI + LUK/5
      CRIT LUK x 0.3 + 1 % · VIT: +1% max HP, +0.8 DEF, +0.8 MDEF · INT: +1% max SP · DEX and INT shorten casts */
-  dirtyMods(){this._mods=null;this._gt=null;},
+  dirtyMods(){this._mods=null;this._gt=null;this._eb=null;},
   mods(){if(this._mods) return this._mods;const M={},c=this.ch,add=(k,v)=>{M[k]=(M[k]||0)+v;};
     for(const s of jobSkills(c.job.classId)) if(s.t==='P'&&s.pas){const r=this.rank(s.id);if(r>0) for(const [k,v] of Object.entries(s.pas)) add(k,SV(v,r));}
     for(const b of Object.values(this.buffs||{})){const B=b.s.buff;for(const [k,v] of Object.entries(B.m||{})) add(k,SV(v,b.r));if(B.onHit) M.onHit={...B.onHit,r:b.r};}
+    for(const [k,v] of Object.entries(this.equipBonus().mods)) add(k,v);      // build 15l: the weapon bonus and the Divine set
+    const F=this.equipBonus().fx.frenzy;if(F&&this.frenzyOn) {add('aspd',F.aspd);add('dmgPct',F.dmg);}
     return this._mods=M;},
+  /* build 15l: the special bonuses of what you wear, worked out again whenever gear or job changes (dirtyMods):
+     {wk: weapon configuration (WEAPON_BONUS key), set: {job, n} (Divine pieces of your job's set worn, at most 5),
+      mods: what they add (merged into mods()), fx: the active 5-piece effect, by kind}. Pieces count only when they are
+     usable where they are worn (the same rule as gear()) */
+  equipBonus(){if(this._eb) return this._eb;const c=this.ch,E=(c&&c.equip)||{},job=c?c.job.classId:'recruit',two=this.twoHanded();
+    const ok=k=>{const g=E[k];return g&&this.canUse(g,true,k)?g:null;},w=ok('weapon'),o=two?null:ok('offhand'),wk=weaponKind(w,o);
+    const mods={},fx={},add=m=>{for(const [k,v] of Object.entries(m||{})) mods[k]=(mods[k]||0)+v;};add(WEAPON_BONUS[wk].mods);
+    let n=0,other=0;for(const [k] of GEAR_SLOTS){const g=E[k];if(!g||g.rar<DIVINE_SET.rar) continue;
+      if(!this.canUse(g,true,k==='weapon'||k==='offhand'?k:undefined)||(k==='offhand'&&two)) continue;if(g.cls===job) n++;else other++;}
+    n=Math.min(DIVINE_SET.max,n);const S=DIVINE_SETS[job];
+    if(S) for(const t of DIVINE_SET.tiers){const T=S.t[t];if(n<t||!T) continue;add(T.m);if(T.fx) fx[T.fx.k]=T.fx;}
+    if(fx.falcon) add({galeChance:fx.falcon.chance,galePow:fx.falcon.pow});
+    return this._eb={wk,set:{job,n,other},mods,fx};},
   st(){const S=this.ch.stats||{},G=this.gear(),M=this.mods(),o={};for(const k of STAT_KEYS) o[k]=(S[k]||1)+(G[k]||0)+Math.floor(M[k]||0);return o;},   // with gear and skills
   lvlAtk(){const c=this.ch;return 8+Math.floor((c.baseLevel||1)*1.5)+(JOBS[c.job.classId]?.tier||0)*6;},
   statusAtk(){const S=this.st(),rg=this.line()==='Ranged',a=rg?S.DEX:S.STR,b=rg?S.STR:S.DEX;return a+Math.floor(a/10)**2+Math.floor(b/5)+Math.floor(S.LUK/5);},
@@ -3883,7 +4017,7 @@ const TownScreen={
   /* block (melee and ranged blows): Auto Guard + the shield's block lines, at most 50%. Reflect, per kind of blow: Reflect
      Shield (melee and ranged) + the shield's reflect lines, at most 60% each. All in % */
   blockRate(){return Math.min(50,Math.round(((this.mods().block||0)*100+this.gear().block)*10)/10);},
-  reflectRate(kind){const M=this.mods(),G=this.gear(),sk=(M.reflect||0)*100;return Math.min(60,Math.round((kind==='m'?G.reflM:kind==='r'?sk+G.reflR:sk+G.reflP)*10)/10);},
+  reflectRate(kind){const M=this.mods(),G=this.gear(),sk=(M.reflect||0)*100,all=(M.reflAll||0)*100;return Math.min(60,Math.round(((kind==='m'?G.reflM:kind==='r'?sk+G.reflR:sk+G.reflP)+all)*10)/10);},   // + the one-handed weapon + shield bonus (build 15l), every kind
   mobFlee(m){return 100+m.lvl+Math.floor(m.lvl*.35);},
   mobHit(m,now){return (175+m.lvl+Math.floor(m.lvl*.5))*(now<(m.blindUntil||0)?.7:1)*(m.elite?ELITE.hit:1);},      // elites: 60% more accurate
   defence(){const S=this.st(),L=this.ch.baseLevel||1,G=this.gear();return Math.max(0,Math.floor((Math.floor(S.VIT*.8)+G.def+Math.floor(L*.3)+(this.mods().def||0))*(1+G.defPct/100)*(1+G.wdefPct/100)));},
@@ -3907,10 +4041,10 @@ const TownScreen={
     const n=H.pct?this.maxHp()*SV(H.pct,r):(Math.floor(((c.baseLevel||1)+S.INT)/8)+1)*(4+8*r)*(H.ro||1)*this.hpX();return Math.max(1,Math.round(n*(1+(M.healPct||0)+this.gear().heal/100)));},
   /* ======================= skills: ranks, buffs, casting ======================= */
   rank(id){return (this.ch.skills||{})[id]|0;},
-  addBuff(s,r,now){this.buffs=this.buffs||{};const B=s.buff,dur=SV(B.dur,r);this.buffs[s.id]={s,r,until:now+dur*1000};
+  addBuff(s,r,now){this.buffs=this.buffs||{};const B=s.buff,dur=SV(B.dur,r)*(1+(this.mods().buffPct||0));this.buffs[s.id]={s,r,until:now+dur*1000};
     if(B.barrier) this.barrier={hp:Math.round(this.maxHp()*SV(B.barrier,r)),until:now+dur*1000};
     this.dirtyMods();this.hudBars();this.renderBuffs(now);this.renderChar();},
-  tickBuffs(now){let ch=false;for(const [id,b] of Object.entries(this.buffs||{})) if(now>=b.until){delete this.buffs[id];ch=true;this.log('sys',null,`${b.s.name} wore off`);}
+  tickBuffs(now){let ch=false;if(this.frenzyOn&&now>=(this.frenzyUntil||0)){this.frenzyOn=false;this.dirtyMods();}for(const [id,b] of Object.entries(this.buffs||{})) if(now>=b.until){delete this.buffs[id];ch=true;this.log('sys',null,`${b.s.name} wore off`);}
     if(this.barrier&&(now>=this.barrier.until||this.barrier.hp<=0)) this.barrier=null;
     if(ch){this.dirtyMods();const c=this.ch;c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());this.hudBars();this.renderChar();}
     if(now>=(this.buffT||0)){this.buffT=now+250;this.renderBuffs(now);}},
@@ -3941,7 +4075,7 @@ const TownScreen={
   cast(s,m,now,at,ally){const r=this.rank(s.id),c=this.ch,cost=this.costOf(s,r);
     if((this.res||0)<cost){this.fx.push({x:this.p.x,y:this.p.y-70,text:'Not enough mana',color:'#ffcf7a',t0:now});this.queued=null;return;}
     this.res-=cost;if(s.hpCost) c.hp=Math.max(1,c.hp-Math.round(c.hp*s.hpCost));
-    this.cds[s.id]=now+this.cdOf(s,r)*1000;this.queued=null;this.hudBars();
+    this.cds[s.id]=now+this.cdOf(s,r)*1000;this.queued=null;this.hudBars();this.divineCast(s,r,now);
     if(s.dash&&m){const dx=this.p.x-m.x,dy=this.p.y-m.y,d=Math.hypot(dx,dy)||1,sg=s.id==='voidStep'?-1:1,tx=m.x+dx/d*20*sg,ty=m.y+dy/d*20*sg;
       if(this.free(tx,ty)){this.fxN({k:'trail',x0:this.p.x,y0:this.p.y,x:tx,y:ty,t0:now,dur:260,color:s.color});this.p.x=tx;this.p.y=ty;}}
     if(m) this.dir=this.faceTo(m.x-this.p.x,m.y-this.p.y);else if(at) this.dir=this.faceTo(at[0]-this.p.x,at[1]-this.p.y);
@@ -4015,6 +4149,32 @@ const TownScreen={
       if(s.meteor) this.later(now+300,hit);else hit();}
     this.zones=this.zones.filter(z=>z.left>0);},
   /* poison, burn and bleed tick once a second for the one who put them there */
+  /* build 15l: what a landed hit sets off: the Divine 5-piece effects and the tank's threat. Follow-up hits carry proc:1,
+     so they never set anything off again */
+  divineProcs(m,now,o,dmg,crit,el,M,FX){
+    if(M.threat&&m.hostile&&m.tgt&&m.tgt!=='me'&&!m.def.acts&&Math.random()<M.threat){m.hostile=false;this.aggro(m,now);}      // threat: it turns on you
+    if(crit&&FX.cleave){const base=dmg/(m.def.acts?BOSS_TUNE.vsBoss:1),back=Math.max(1,Math.round(base*FX.cleave.pct));
+      for(const x of this.mobs) if(x!==m&&x.state!=='dead'&&Math.hypot(x.x-m.x,(x.y-m.y)*1.3)<=FX.cleave.r) this.dealHit(x,now,{fixed:back,noMiss:1,noCrit:1,src:'skill',num:'skill',proc:1});}
+    if(crit&&FX.predator) m.predUntil=now+FX.predator.dur*1000;
+    if(crit&&FX.frenzy){if(!this.frenzyOn){this.frenzyOn=true;this.dirtyMods();}this.frenzyUntil=now+FX.frenzy.dur*1000;}
+    if(crit&&FX.rend) this.addDot(m,'bleed',now,FX.rend.dur);
+    if(FX.inferno&&el==='fire'&&Math.random()<FX.inferno.chance) this.addDot(m,'burn',now,FX.inferno.dur);
+    if(FX.echo&&o.mag&&o.src!=='basic'&&Math.random()<FX.echo.chance) this.later(now+220,t=>{if(m.state!=='dead'){this.fx.push({x:m.x,y:m.y-m.def.h-22,text:'Echo!',color:'#c9b8ff',t0:t,label:true});
+      this.dealHit(m,t,{mag:true,mult:(o.mult??1)*FX.echo.pct,el:o.el,src:'skill',num:o.num,proc:1});}});},
+  /* Divine Rewind (a skill comes back sooner) and Divine Grace (a heal or buff wraps you in a barrier) */
+  divineCast(s,r,now){const FX=this.equipBonus().fx,cd=this.fxCd=this.fxCd||{};
+    if(FX.rewind&&!s.consumable&&Math.random()<FX.rewind.chance){this.cds[s.id]=now+this.cdOf(s,r)*1000*(1-FX.rewind.cut);this.fx.push({x:this.p.x,y:this.p.y-80,text:'Rewind!',color:'#a8d8ff',t0:now,label:true});}
+    if(FX.grace&&(s.k==='heal'||s.k==='buff')&&now>=(cd.grace||0)){cd.grace=now+FX.grace.cd*1000;const hp=Math.round(this.maxHp()*FX.grace.pct);
+      if(!this.barrier||this.barrier.hp<hp) this.barrier={hp,until:now+FX.grace.dur*1000};this.fx.push({x:this.p.x,y:this.p.y-80,text:'Divine Grace',color:'#fff3b0',t0:now,label:true});this.renderBuffs(now);}},
+  /* the Divine effects that keep you standing: a barrier and a taunt, a second wind, a miracle. Once per cooldown each */
+  divineGuard(now){const c=this.ch,FX=this.equipBonus().fx,cd=this.fxCd=this.fxCd||{},hm=this.maxHp(),say=(text,color)=>this.fx.push({x:this.p.x,y:this.p.y-80,text,color,t0:now,big:true});
+    if(c.hp<=0&&FX.miracle&&now>=(cd.miracle||0)){cd.miracle=now+FX.miracle.cd*1000;c.hp=Math.max(1,Math.round(hm*FX.miracle.heal));say('Divine Miracle','#fff3b0');AudioFX.sfx('level');return;}
+    if(c.hp<=0) return;
+    if(FX.bastion&&c.hp<hm*FX.bastion.below&&now>=(cd.bastion||0)){cd.bastion=now+FX.bastion.cd*1000;this.barrier={hp:Math.round(hm*FX.bastion.pct),until:now+FX.bastion.dur*1000};
+      for(const x of this.mobs) if(x.state!=='dead'&&!x.def.acts&&Math.hypot(x.x-this.p.x,x.y-this.p.y)<FX.bastion.r){x.hostile=false;this.aggro(x,now);}
+      say('Divine Bastion','#ffe9a8');this.renderBuffs(now);}
+    if(FX.secondwind&&c.hp<hm*FX.secondwind.below&&now>=(cd.secondwind||0)){cd.secondwind=now+FX.secondwind.cd*1000;const h=Math.round(hm*FX.secondwind.heal);c.hp=Math.min(hm,c.hp+h);
+      this.fx.push({x:this.p.x,y:this.p.y-64,dmg:h,sty:'heal',sign:'+',t0:now});say('Second Wind','#b8ffcf');}},
   addDot(m,kind,now,dur){const M=this.mods(),[a,b]=this.matk(),A=this.atkPower();
     const dmg=kind==='poison'?Math.max(1,Math.round(Math.min(m.maxHp*.03,A*.6)+A*.08)):kind==='burn'?Math.max(1,Math.round(((a+b)/2*.1+Math.min(m.maxHp*.025,(a+b)/2*.5))*(1+(M.burnDmg||0)))):Math.max(1,Math.round(A*.1+Math.min(m.maxHp*.02,A*.4)));
     this.dots=this.dots||[];const d=this.dots.find(d=>d.m===m&&d.kind===kind);
@@ -4041,21 +4201,27 @@ const TownScreen={
     if(!fixed&&!o.mag&&o.src!=='dot'&&this.line()==='Ranged'){const G=this.gear(),up=(k,p,d)=>{if(p>0){const o0=stv[k]||[0,0];stv={...stv,[k]:[Math.max(p,o0[0]),Math.max(d,o0[1])]};}};   // arrows (build 14s)
       up('poison',G.psn,4);up('stun',G.stn,1.5);}let crit=false;
     if(!fixed&&!o.noCrit&&!o.mag) crit=!!this.nextCrit||Math.random()*100<this.critRate()+(o.critB||0);
+    const FX=this.equipBonus().fx,proc=!fixed&&!o.proc&&!o.reflected&&o.src!=='dot';      // build 15l: Divine set effects (never from a reflected, fixed or follow-up hit)
+    if(!crit&&!fixed&&!o.noCrit&&!o.mag&&FX.deadeye&&m.hp>=m.maxHp*FX.deadeye.above) crit=true;
     if(!fixed&&!o.mag&&!o.noMiss&&!crit){const hc=Math.max(5,Math.min(100,this.hitRate()+(o.hitB||0)-this.mobFlee(m)));
       if(Math.random()*100>=hc){this.fx.push({x:m.x,y:m.y-m.def.h-4,miss:true,sty:'miss',t0:now});AudioFX.sfx('miss');return {miss:true};}}
     if(crit) this.nextCrit=false;
     let d;if(fixed) d=o.fixed;else if(o.mag){const [a,b]=this.matk();d=(a+Math.random()*(b-a))*(o.mult??1);}else d=this.atkPower()*(.9+Math.random()*.2)*(o.mult??1);
     const em=elemMod(el,m.def.el);d*=em;if(el==='fire'&&M.fireDmg) d*=1+M.fireDmg;
-    if(!fixed) d*=1-(o.mag?(m.mp||0):crit?0:(m.dp||0));      // the monster's armour or magic resistance
+    if(!fixed) d*=1-(o.mag?(m.mp||0)*(1-Math.min(.9,M.pierce||0)):crit?0:(m.dp||0));      // the monster's armour or magic resistance (Magic Pierce ignores that share of the resistance)
     if(crit){d*=this.critMul();if(now<(m.markUntil||0)) d*=1.3;}
     if(now<(m.brkUntil||0)) d*=1+(m.brkPct||.15);
     if(M.dmgPct&&!fixed) d*=1+M.dmgPct;
+    if(M.skillPct&&!fixed&&o.src!=='basic'&&o.src!=='dot') d*=1+M.skillPct;      // skill damage (build 15l)
+    if(!fixed&&FX.predator&&now<(m.predUntil||0)) d*=1+FX.predator.pct;
+    if(!fixed&&FX.execute&&m.hp<m.maxHp*FX.execute.below) d*=1+FX.execute.pct;
     if(m.lex&&!fixed){d*=2;m.lex=false;}
     if(o.veilBonus&&now<this.veilUntil) d*=1+o.veilBonus;
     if(m.def.acts&&!o.noBoss) d*=BOSS_TUNE.vsBoss;      // bosses and their summons have huge health: every hit on them counts 201x
     const dmg=Math.max(1,Math.round(d));m.hp-=dmg;m.hitT=now;
     const sty=crit?'crit':o.num||(o.src==='basic'?'normal':EL_NUM[el]||'skill');
     this.numFx(m.x+(Math.random()-.5)*12,m.y-m.def.h-4,dmg,sty,now,{weak:em>1,resist:em<1});if(o.src!=='dot') this.impact(m,sty,now);
+    if(proc) this.divineProcs(m,now,o,dmg,crit,el,M,FX);
     if(o.src!=='dot'){if(!crit&&o.arrow){if(!AudioFX.smp('arrow_impact',.9)) AudioFX.sfx('hit');}else if(!crit&&sty==='poison'){if(!AudioFX.smp('poison_hit',.55)) AudioFX.sfx('hit');}else AudioFX.sfx(crit?'crit':'hit');}
     let st=0,fz=0,sl=0,bl=0,bk=0;
     for(const [k,[p,dur]] of Object.entries(stv)){if(!(Math.random()*100<p)) continue;
@@ -4094,9 +4260,9 @@ const TownScreen={
     else{this.meleeSound();this.swordImp=!!(this.comp&&this.comp.meta.swordSheet);this.dealHit(m,now,spec);this.swordImp=false;if(M.double&&Math.random()<M.double) this.later(now+130,t=>{if(m.state!=='dead'){AudioFX.smp(this.line()==='Stealth'?'dual_blade_combo':'sword_slash_double',.7);this.fx.push({x:m.x,y:m.y-m.def.h-22,text:'Double!',color:'#e0d4ff',t0:t,label:true});this.dealHit(m,t,spec);}});}
     if(this.ch.job.classId==='skywarden') this.falconAttack(m,now);},
   /* the Skywarden's falcon: Gale Sweep (a sweep through the target and the enemies around it) and Symbiosis Strike */
-  falconAttack(m,now){const S=this.st(),gr=this.rank('galeSweep'),sr=this.rank('symbiosisStrike');
-    if(gr>0&&Math.random()<GALE_SWEEP.chance(S.LUK,gr)&&this.falcon.sweep(now))
-      this.later(now+270,t=>{for(const o of this.mobs) if(o.state!=='dead'&&Math.hypot(o.x-m.x,(o.y-m.y)*1.3)<=50) this.dealHit(o,t,{mult:GALE_SWEEP.power(gr)/100,el:'wind',src:'skill'});
+  falconAttack(m,now){const S=this.st(),M=this.mods(),gr=this.rank('galeSweep'),sr=this.rank('symbiosisStrike');
+    if(gr>0&&Math.random()<Math.min(.95,GALE_SWEEP.chance(S.LUK,gr)+(M.galeChance||0))&&this.falcon.sweep(now))      // + the Skywarden's Divine Predator (build 15l)
+      this.later(now+270,t=>{for(const o of this.mobs) if(o.state!=='dead'&&Math.hypot(o.x-m.x,(o.y-m.y)*1.3)<=50) this.dealHit(o,t,{mult:GALE_SWEEP.power(gr)/100*(1+(M.galePow||0)),el:'wind',src:'skill'});
         this.sfx('wind',m.x,m.y,.4,t);});
     if(sr>0&&Math.random()<SV(skillById('symbiosisStrike').falconStrike,sr))
       this.later(now+180,t=>{if(m.state==='dead') return;this.fx.push({x:m.x,y:m.y-m.def.h-24,text:'Symbiosis',color:'#e6f4ff',t0:t,label:true});
@@ -4308,15 +4474,18 @@ const TownScreen={
   hurtPlayer(m,now,o){o=o||{};const c=this.ch,M=this.mods(),D=o.mag!=null?{...m.def,mag:o.mag}:m.def;      // o (boss attacks): mult x damage, mag, sure = can't be dodged
     const hc=Math.max(5,Math.min(95,this.mobHit(m,now)-this.flee()));
     if(!o.sure&&Math.random()*100>=hc){this.fx.push({x:this.p.x,y:this.p.y-62,miss:true,sty:'miss',t0:now});AudioFX.sfx('dodge');return;}
-    const blk=this.blockRate()/100;if(blk>0&&!D.mag&&Math.random()<blk){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('block');return;}
+    const FX=this.equipBonus().fx;      // build 15l: Divine Phantom (slip out of the blow) and Divine Judgement (a block smites back)
+    if(FX.phantom&&!o.sure&&Math.random()<FX.phantom.chance){this.nextCrit=true;this.fx.push({x:this.p.x,y:this.p.y-62,text:'Phantom',color:'#d9c8ff',t0:now,italic:true});AudioFX.sfx('dodge');return;}
+    const blk=this.blockRate()/100;if(blk>0&&!D.mag&&Math.random()<blk){this.fx.push({x:this.p.x,y:this.p.y-62,text:'Block',color:'#fff3a0',t0:now,italic:true});AudioFX.sfx('block');
+      if(FX.judgement&&m.state!=='dead') this.dealHit(m,now,{mag:true,mult:FX.judgement.mult,el:'holy',noMiss:1,src:'skill',num:'skill',proc:1});return;}
     const raw=(m.atk[0]+Math.random()*(m.atk[1]-m.atk[0]))*(o.mult||1)*(m.elite?this.hpX():1);      // an elite's hit grows with your health (x301), like a boss's
     let dmg=D.mag?Math.max(raw*.15,raw-this.mdef()*1.2-(this.ch.baseLevel||1)*.2):Math.max(raw*.15,raw-this.defence());
     if(o.arm){const A=o.arm;dmg*=Math.max(A.min,Math.min(A.max,1-(this.defence()+this.mdef()-A.at)*A.per));}      // an attack where armour decides who lives (Judgement Laser)
     if(M.dr) dmg*=1-Math.min(.6,M.dr);dmg=Math.max(1,Math.round(dmg));
-    {const rf=this.reflectRate(D.mag?'m':o.ranged?'r':'p')/100;if(rf>0){const back=Math.max(1,Math.round(raw*rf));this.dealHit(m,now,{fixed:back,noMiss:1,noCrit:1,noBoss:1,src:'skill',num:'skill'});}}   // melee, ranged or magic: its own reflect
+    {const rf=this.reflectRate(D.mag?'m':o.ranged?'r':'p')/100;if(rf>0){const back=Math.max(1,Math.round(raw*rf));this.dealHit(m,now,{fixed:back,noMiss:1,noCrit:1,noBoss:1,src:'skill',num:'skill',reflected:1});}}   // melee, ranged or magic: its own reflect (a reflected blow sets nothing off)
     if(this.barrier&&this.barrier.hp>0){const ab=Math.min(this.barrier.hp,dmg);this.barrier.hp-=ab;dmg-=ab;
       this.fx.push({x:this.p.x,y:this.p.y-70,text:`Shield ${ab}`,color:'#fff8d0',t0:now,italic:true});if(this.barrier.hp<=0) this.barrier=null;this.renderBuffs(now);if(dmg<=0) return;}
-    c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});
+    c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});this.divineGuard(now);
     if(!this.target&&!this.path&&!this.keys.size&&!this.casting&&!this.lootPending(now)) this.target=m;      // fight back when something bites you (AUTO finishes picking up first)
     if(c.hp<=0){c.hp=0;this.dead={until:now+2400};this.target=null;this.atk=null;this.path=null;this.casting=null;for(const o of this.mobs) if(!o.tgt||o.tgt==='me') o.hostile=false;
       AudioFX.sfx('death');this.log('sys',null,'You fall. The Waystone\'s light carries you home.');toast('Defeated · returning to Oakhaven Sanctuary');}
@@ -4466,6 +4635,8 @@ const TownScreen={
       <dt>HIT</dt><dd>${this.hitRate()}</dd><dt>FLEE</dt><dd>${this.flee()}</dd><dt>CRIT</dt><dd>${this.critRate().toFixed(1)}%</dd><dt>ASPD</dt><dd>${this.aspd()} <small>(${(1/this.swingCd()).toFixed(2)}/s)</small></dd>
       <dt>Cast time</dt><dd>${Math.round(this.castMul()*100)}%</dd><dt>Max HP</dt><dd>${this.maxHp()}</dd><dt>Max ${esc(this.resName())} (SP)</dt><dd>${this.maxRes()}</dd>
       <dt>Range</dt><dd>${LINES[ln].reach>40?`Ranged · ${this.reach()} px`:'Melee'}</dd><dt>Gear score</dt><dd>${this.gearScoreWorn()}</dd>
+      <dt>Crit damage</dt><dd>${Math.round(this.critMul()*100)}%</dd><dt title="Share of a target's magic resistance your spells ignore (staff, Divine sets)">Magic pierce</dt><dd>${Math.round(Math.min(.9,this.mods().pierce||0)*100)}%</dd>
+      <dt>Skill damage</dt><dd>+${Math.round((this.mods().skillPct||0)*100)}%</dd>
       <dt title="Chance to stop a melee or ranged blow dead (shield lines, Auto Guard)">Block</dt><dd>${this.blockRate()}%</dd>
       <dt title="Share of a blow sent back to the attacker (shield lines, Reflect Shield)">Reflect</dt><dd><small>melee</small> ${this.reflectRate('p')}% · <small>ranged</small> ${this.reflectRate('r')}% · <small>magic</small> ${this.reflectRate('m')}%</dd>
       <dt>Gold</dt><dd>${c.gold||0}</dd><dt>Healing Draughts</dt><dd>${c.items.potion||0}</dd><dt>Skill points</dt><dd>${c.skillPoints||0}</dd></dl>
@@ -5628,7 +5799,7 @@ const TownScreen={
     if(crit) this.nextCrit=false;
     let d;if(fixed) d=o.fixed;else if(o.mag){const [a,b]=this.matk();d=(a+Math.random()*(b-a))*(o.mult??1);}else d=this.atkPower()*(.9+Math.random()*.2)*(o.mult??1);
     if(crit) d*=this.critMul();d*=PK_SCALE*(PVP_TUNE.line[this.line()]||1);
-    {const df=Array.isArray(O.P.df)?O.P.df:[0,0],v=Math.max(0,+(o.mag?df[1]:df[0])||0);d*=1-Math.min(PVP_TUNE.cap,v/(v+PVP_TUNE.k+PVP_TUNE.kl*(this.ch.baseLevel||1)));}
+    {const df=Array.isArray(O.P.df)?O.P.df:[0,0],v=Math.max(0,+(o.mag?df[1]:df[0])||0)*(o.mag?1-Math.min(.9,this.mods().pierce||0):1);d*=1-Math.min(PVP_TUNE.cap,v/(v+PVP_TUNE.k+PVP_TUNE.kl*(this.ch.baseLevel||1)));}   // Magic Pierce: that share of their MDEF is ignored (build 15l)
     if(O.j!=='recruit') d*=CHAR_HP_X;      // other jobs have 301x HP, so hits on them count 301x: a duel lasts as long as before (Recruits are unchanged)
     const dmg=Math.max(1,Math.round(d)),sty=crit?'crit':o.num||(o.src==='basic'?'normal':'skill');
     this.numFx(O.x+(Math.random()-.5)*12,O.y-54,dmg,sty,now);if(o.src!=='dot'){this.impact(m,sty,now);AudioFX.sfx(crit?'crit':'hit');}O.hurtT=now;
@@ -5640,10 +5811,11 @@ const TownScreen={
       const o=this.others&&[...this.others.values()].find(x=>x.P&&x.P.id===from);if(!o) return;
       if(!du) this.pkFoes[from]=now+PK_GRACE;const M=this.mods(),raw=Math.max(1,Math.min(this.maxHp()*PVP_TUNE.hitCap,e[3]|0)),mag=(e[4]|0)&2;
       let dmg=raw;if(M.dr) dmg*=1-Math.min(.6,M.dr);dmg=Math.max(1,Math.round(dmg));      // the attacker already took my published defence off
+      if(!((e[4]|0)&4)){const rf=this.reflectRate(mag?'m':lineOf(o.P.j)==='Ranged'?'r':'p')/100*REFLECT.pvp;if(rf>0) this.partySend('pv',from,Math.max(1,Math.round(raw*rf)),4|(mag?2:0));}   // build 15l: reflect against players (a reflected blow is never reflected back)
       if(this.barrier&&this.barrier.hp>0){const ab=Math.min(this.barrier.hp,dmg);this.barrier.hp-=ab;dmg-=ab;if(this.barrier.hp<=0) this.barrier=null;this.renderBuffs(now);if(dmg<=0) return;}
-      c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});
+      c.hp-=dmg;this.lastHurt=now;this.hurtT=now;AudioFX.sfx('hurt');this.numFx(this.p.x+(Math.random()-.5)*8,this.p.y-62,dmg,'recv',now,{sign:'-'});if(!du) this.divineGuard(now);
       if(du){if(c.hp<=0){c.hp=1;this.duelOver('lost',now);}this.hudBars();return;}      // a duel never kills: the one who would fall loses
-      if(now>(this._pkWarn||0)){this._pkWarn=now+20000;this.log('sys',null,`${nm} is attacking you! You can fight back (tap them).`);toast(`${nm} is attacking you!`);}
+      if(!((e[4]|0)&4)&&now>(this._pkWarn||0)){this._pkWarn=now+20000;this.log('sys',null,`${nm} is attacking you! You can fight back (tap them).`);toast(`${nm} is attacking you!`);}
       if(c.hp<=0){c.hp=0;this.dead={until:now+2400};this.target=null;this.atk=null;this.path=null;this.casting=null;for(const m of this.mobs) if(!m.tgt||m.tgt==='me') m.hostile=false;
         c.pk.deaths=(c.pk.deaths|0)+1;AudioFX.sfx('death');this.partySend('pvk',from);this.log('sys',null,`You were defeated by ${nm}. The Waystone's light carries you home.`);toast(`Defeated by ${nm} · returning to Oakhaven Sanctuary`);this.save();}
       else if(!this.target&&!this.path&&!this.keys.size&&!this.casting&&!this.lootPending(now)) this.target=this.pvDummy(o);      // fight back
@@ -5783,7 +5955,7 @@ const TownScreen={
   vault(){return Store.getVault();},
   vaultUsed(){const v=this.vault();return v.bag.length+Object.keys(v.items).filter(k=>v.items[k]>0&&itemDef(k)).length;},
   vaultMove(dir,kind,id){const c=this.ch,v=this.vault(),full=()=>{toast(dir==='in'?'The vault is full':'Your bag is full');return true;},noRoom=()=>dir==='in'?this.vaultUsed()>=VAULT_SIZE:this.bagUsed()>=BAG_SIZE;
-    if(kind==='gear'){const from=dir==='in'?c.bag:v.bag,to=dir==='in'?v.bag:c.bag,i=from.findIndex(g=>g.uid===id);if(i<0) return;if(noRoom()&&full()) return;to.unshift(normGear(from.splice(i,1)[0]));}
+    if(kind==='gear'){const from=dir==='in'?c.bag:v.bag,to=dir==='in'?v.bag:c.bag,i=from.findIndex(g=>g.uid===id);if(i<0) return;if(noRoom()&&full()) return;to.unshift(dir==='in'?normGear(from.splice(i,1)[0]):tagGear(normGear(from.splice(i,1)[0]),c.job.classId));}
     else{const from=dir==='in'?c.items:v.items,to=dir==='in'?v.items:c.items,n=from[id]|0;if(n<=0||!itemDef(id)) return;if(!(to[id]>0)&&noRoom()&&full()) return;to[id]=(to[id]|0)+n;from[id]=0;}
     AudioFX.sfx('pick');this.invSel=null;Store.touchVault();this.save();this.renderVault();this.renderHotbar();},
   vaultGold(dir,n){const c=this.ch,v=this.vault(),have=dir==='in'?(c.gold||0):(v.gold||0);n=Math.min(have,n);if(n<=0){toast(dir==='in'?'You have no gold to deposit':'There is no gold in the vault');return;}
@@ -5813,7 +5985,7 @@ const TownScreen={
     if(need&&this.bagUsed()+need>BAG_SIZE){if(!quiet) toast(`Your bag needs ${need} free space${need>1?'s':''} for this letter`);return false;}
     const got=[];if(m.gold){c.gold=(c.gold||0)+m.gold;got.push(`${m.gold} gold`);}
     for(const [k,n] of Object.entries(m.items||{})){c.items[k]=(c.items[k]|0)+n;got.push(`${n} ${itemDef(k).name}`);}
-    for(const g0 of (m.gear||[]).filter(g0=>!(g0.base==='wings'&&(g0.wing|0)===GM_WING))){const g=m.gm&&g0.base==='wings'?craftWings(g0.wing|0,this.mailLvl(g0),g0.rar):craftGear(g0.base==='weapon'?mainWeaponOf(this.ch.job.classId):g0.base,this.mailLvl(g0),g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];normGear(g);}c.bag.unshift(g);got.push(gearName(g));}
+    for(const g0 of (m.gear||[]).filter(g0=>!(g0.base==='wings'&&(g0.wing|0)===GM_WING))){const g=m.gm&&g0.base==='wings'?craftWings(g0.wing|0,this.mailLvl(g0),g0.rar):craftGear(g0.base==='weapon'?mainWeaponOf(this.ch.job.classId):g0.base,this.mailLvl(g0),g0.rar);delete g.crafted;if(g.slot==='wings'){g.wing=g0.wing|0;g.name=GEAR_BASES.wings.names[g.wing];normGear(g);}c.bag.unshift(tagGear(g,c.job.classId));got.push(gearName(g));}
     if(m.max){this.gmMax();got.push(`Base Level ${MAX_BASE} and Job Level ${MAX_JOB}`);}
     m.claimed=true;m.read=true;AudioFX.sfx('coin');this.log('loot',null,`Mail · ${got.join(', ')}`);this.tracker();this.save();this.mailBadge();this.renderHotbar();return true;},
   /* "char" gear is forged at claim time, at the highest item level the character can wear right now (level + 3) */
@@ -5857,9 +6029,13 @@ const TownScreen={
       h+=`<div class="shtabs"><button class="btn" id="sh-sellmats">Sell all my monster materials</button></div>`;}
     else{$('#sh-title').textContent='Dorin’s Workshop · Crafting';$('#sh-sub').textContent=`wings, top-end gear, rings and amulets · you have ${c.gold||0} gold`;const tab=this.shopTab;
       h+=`<div class="shtabs">${['Wings','Weapons','Armour','Accessories','Arrows','Synthesis'].map(g=>`<button class="btn" data-tab="${g}" aria-pressed="${g===tab}">${g}</button>`).join('')}</div>`;
-      const kit=kitOf(c.job.classId);if(tab==='Synthesis') h+=this.synthHtml();else for(const r of RECIPES.filter(r=>r.group===tab&&(!r.base||kit.includes(r.base)))){const g=recipePreview(r,line),why=this.craftWhy(r,g),mats=Object.entries(r.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
+      // build 15l: every job's recipes are shown and can be crafted (equipping still follows each job's hands). Weapons: all jobs, or only yours
+      const kit=kitOf(c.job.classId),mine=this.craftShow==='mine';
+      if(tab==='Weapons') h+=`<div class="shtabs craftfor"><span>Show</span>${[['all','Every job'],['mine','For my job']].map(([k,n])=>`<button class="btn" data-cshow="${k}" aria-pressed="${(this.craftShow||'all')===k}">${n}</button>`).join('')}</div>`;
+      if(tab==='Synthesis') h+=this.synthHtml();else for(const r of RECIPES.filter(r=>r.group===tab&&(!mine||!r.base||kit.includes(r.base)))){const g=recipePreview(r,line),why=this.craftWhy(r,g),mats=Object.entries(r.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
           return `<span class="${have>=n?'ok':'no'}">${esc(d.name)} ${Math.min(have,n)}/${n}</span>${have<n?`<button class="lw-find" data-find="${id}" title="Where to get ${esc(d.name)}" aria-label="Where to get ${esc(d.name)}">⌕</button>`:''}`;}).join(' · ');
-        h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm" style="color:${RARITY[g.rar].color}">${esc(g.name)}</div><div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · ${this.gearLine(g)}<br>${this.reqLine(g,r.lvl)}<br>${mats} · <span class="${(c.gold||0)>=r.gold?'ok':'no'}">${r.gold} gold</span></div></div>`+
+        const xc=r.base&&!this.canUse(g,true)?`<br><span class="xcls">For ${esc(gearFor(r.base))} · you can craft it for them, but your ${esc(JOBS[c.job.classId].name)} can't hold it</span>`:'';
+        h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm" style="color:${RARITY[g.rar].color}">${esc(g.name)}</div><div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · ${this.gearLine(g)}<br>${this.reqLine(g,r.lvl)}${xc}<br>${mats} · <span class="${(c.gold||0)>=r.gold?'ok':'no'}">${r.gold} gold</span></div></div>`+
           `<div class="buy"><button class="btn${why?'':' primary'}" data-craft="${r.id}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Craft'}</button>${this.matqBtn('r:'+r.id,r.need,r.gold,(c.baseLevel||1)>=r.lvl)}</div></div>`;}
       if(tab!=='Synthesis') h+=`<p class="shfoot">You get exactly the piece shown; the next one Dorin makes will roll its own stats. Materials drop from monsters (Cloud Wisp and Gale Fur on Skyward Ridge, Rune Stone from Gargoyles, Brook Scale in the Echoing Canopy, Coral Shell and Sand Stinger in the Desolate Crags, Ember Shard, Magma Core and Cinder Scale in the Scorched Badlands). Iron Ingots and Arcane Dust come from smelting gear.</p>`;}
     $('#sh-body').innerHTML=h;
@@ -5872,6 +6048,8 @@ const TownScreen={
     $$('#sh-body [data-spick]').forEach(b=>b.onclick=()=>{const [u,id]=b.dataset.spick.split('|');this.synthPick=this.synthPick||{};this.synthPick[u]=id;AudioFX.sfx('ui');this.renderShop();});
     $$('#sh-body [data-find]').forEach(b=>b.onclick=()=>this.openLoc(b.dataset.find));
     $$('#sh-body [data-tab]').forEach(b=>b.onclick=()=>{this.shopTab=b.dataset.tab;this.renderShop();});
+    $$('#sh-body [data-cshow]').forEach(b=>b.onclick=()=>{this.craftShow=b.dataset.cshow;AudioFX.sfx('ui');this.renderShop();});
+    $$('#sh-body [data-scls]').forEach(b=>b.onchange=()=>{this.synthJob=this.synthJob||{};this.synthJob[b.dataset.scls]=b.value;AudioFX.sfx('ui');this.renderShop();});
     const sm=$('#sh-sellmats');if(sm) sm.onclick=()=>{toast(this.sellMats().pages[0]);this.renderShop();};},
   /* every check happens before anything is taken */
   buyWhy(g,price){const c=this.ch;if((g.slot==='weapon'||g.slot==='offhand')&&!this.canUse(g,true)) return 'Not for your job';if((c.baseLevel||1)<gearReq(g)) return `Needs Base Lv ${gearReq(g)}`;
@@ -5882,7 +6060,7 @@ const TownScreen={
   buyItem(id,n){const c=this.ch,d=CONSUMABLES[id];if(!d) return;const cost=d.price*n;if(d.lvl&&(c.baseLevel||1)<d.lvl){toast(`${d.name} needs Base Level ${d.lvl}`);return;}
     if((c.gold||0)<cost){toast(`${n} × ${d.name} cost ${cost} gold · you have ${c.gold||0}`);return;}
     c.gold-=cost;c.items[id]=(c.items[id]||0)+n;AudioFX.sfx('coin');this.log('loot',null,`Bought ${n} ${d.name}${n>1?'s':''} · -${cost} gold`);this.tracker();this.save();this.renderShop();this.renderHotbar();},
-  craftWhy(r,g){const c=this.ch;if((c.baseLevel||1)<r.lvl) return `Needs Base Lv ${r.lvl}`;if(r.weapon&&!this.canUse(g,true)) return 'Not for your job';
+  craftWhy(r,g){const c=this.ch;if((c.baseLevel||1)<r.lvl) return `Needs Base Lv ${r.lvl}`;      // any job may craft any job's piece (build 15l); who can hold it is checked when it is equipped
     for(const [id,n] of Object.entries(r.need)) if((c.items[id]||0)<n) return `Needs ${n} ${itemDef(id).name}`;if((c.gold||0)<r.gold) return 'Not enough gold';if(this.bagUsed()>=BAG_SIZE) return 'Bag full';return '';},
   craft(id){const c=this.ch,r=RECIPES.find(r=>r.id===id);if(!r) return;const line=this.line(),g=recipePreview(r,line),why=this.craftWhy(r,g);if(why){toast(why);return;}
     delete RECIPE_PV[recipeKey(r,line)];g.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -5921,6 +6099,10 @@ const TownScreen={
   synthItems(){return this.ch.bag.filter(canSynth).sort((a,b)=>b.rar-a.rar||b.lvl-a.lvl);},
   /* what a synthesis makes: the next rarity of the same piece, with a choice when an Epic accessory becomes a Legendary
      one or Epic wings become Legendary wings. -> {name, desc, opts:[[id,name,desc]], pick} */
+  /* build 15l: the job a Legendary or Divine piece is forged for: your pick, else the piece's own, else yours (when
+     you can hold it), else the first job that can. Any job's piece can be forged (cross-class) */
+  synthCls(g){const t=g.rar+1;if(t<LEGEND_STR.minRar) return null;const o=clsFor(g),p=(this.synthJob||{})[g.uid],job=this.ch.job.classId;
+    return {opts:o,pick:o.includes(p)?p:o.includes(g.cls)?g.cls:o.includes(job)?job:o.find(j=>lineOf(j)===lineOf(job))||o[0]};},
   synthTarget(g){const t=g.rar+1,p=(this.synthPick||{})[g.uid],W=GEAR_BASES.wings.names;let opts=null;
     if(t===4&&(g.slot==='ring'||g.slot==='neck')) opts=Object.keys(LEGEND_ACC).filter(id=>LEGEND_ACC[id].slot===g.slot).map(id=>[id,LEGEND_ACC[id].name,LEGEND_ACC[id].desc]);
     if(t===4&&g.slot==='wings') opts=[3,4,5,6].map(k=>[String(k),W[k],WING_DESC[k]]);
@@ -5932,16 +6114,20 @@ const TownScreen={
   synthMake(g){const t=g.rar+1,T=this.synthTarget(g);let n;
     if(g.slot==='wings'){const k=t===5?wingKindOf(g):t===4?+T.pick:t-1;n=craftWings(k,Math.max(g.lvl,WING_LVL[k]),t);}
     else{n=makeGear(g.base,g.lvl,t);if(g.slot==='ring'||g.slot==='neck') legendAcc(n,t===4?T.pick:g.uniq||n.uniq);}
+    const C=this.synthCls(g);if(C) n.cls=C.pick;legendStr(n);      // made for that job (a melee job's INT -> STR; a Divine piece joins that job's set)
     n.enh=g.enh||0;n.crafted=true;return n;},
+  synthClsHtml(g){const C=this.synthCls(g);if(!C) return '';const div=g.rar+1>=DIVINE_SET.rar,S=DIVINE_SETS[C.pick];
+    return `<br><label class="syncls">Made for <select data-scls="${g.uid}" aria-label="Job ${esc(g.name)} is forged for">${C.opts.map(j=>`<option value="${j}" ${j===C.pick?'selected':''}>${esc(JOBS[j].name)}</option>`).join('')}</select></label>`+
+      (div&&S?`<br><span class="xcls">Divine ${esc(JOBS[C.pick].name)} set piece · counts only for a ${esc(JOBS[C.pick].name)}'s set${C.pick===this.ch.job.classId?' (yours)':''}</span>`:isMeleeJob(C.pick)?'<br><span class="xcls">Made for melee: any INT line is forged as STR</span>':'');},
   synthHtml(){const c=this.ch,L=this.synthItems(),last=this.synthLast;
-    let h=`<p class="shnote">Dorin melts a piece down with materials and forges it <b>one rarity higher</b> (Common → Uncommon → Rare → Epic → Legendary → <span style="color:${RARITY[5].color}">Divine</span>), at the same item level and keeping its enhancement. It can fail: <b>your piece is never destroyed</b>, but a failed synthesis costs half of the materials and gold. Epic to Legendary succeeds 50% of the time, Legendary to Divine 30%. Legendary pieces only come from Synthesis (and rare drops): an Epic ring or amulet becomes the Legendary accessory you choose, and Drake Wings the Legendary wings you choose.</p>`;
+    let h=`<p class="shnote">Dorin melts a piece down with materials and forges it <b>one rarity higher</b> (Common → Uncommon → Rare → Epic → Legendary → <span style="color:${RARITY[5].color}">Divine</span>), at the same item level and keeping its enhancement. It can fail: <b>your piece is never destroyed</b>, but a failed synthesis costs half of the materials and gold. Epic to Legendary succeeds 50% of the time, Legendary to Divine 30%. Legendary pieces only come from Synthesis (and rare drops): an Epic ring or amulet becomes the Legendary accessory you choose, and Drake Wings the Legendary wings you choose. Legendary and Divine pieces are forged <b>for a job you choose</b>, yours or anyone's: a melee job's piece carries STR instead of INT, and a Divine piece joins that job's Divine set.</p>`;
     if(last) h+=`<div class="synres ${last.ok?'ok':'no'}" role="status">${last.ok?`Success! ${esc(last.name)}`:`Failed · ${esc(last.name)} is safe · lost ${esc(last.lost||'half of the materials')}`}</div>`;
     if(!L.length) h+=`<p class="shfoot">Nothing in your bag can be synthesized. Bring weapons, shields, arrows, armour, rings, amulets or wings below Divine (take worn gear off first).</p>`;
     for(const g of L){const k=synthCost(g),why=this.synthWhy(g,k),R2=RARITY[k.t],T=this.synthTarget(g),acc=!!T.opts;
       const mats=Object.entries(k.need).map(([id,n])=>{const have=c.items[id]||0,d=itemDef(id);
         return `<span class="${have>=n?'ok':'no'}">${esc(d.name)} ${Math.min(have,n)}/${n}</span>${have<n?`<button class="lw-find" data-find="${id}" title="Where to get ${esc(d.name)}" aria-label="Where to get ${esc(d.name)}">⌕</button>`:''}`;}).join(' · ');
       h+=`<div class="shrow"><div class="ic">${gearIcon(g)}</div><div><div class="nm"><span style="color:${RARITY[g.rar].color}">${esc(gearName(g))}</span> <span style="color:var(--muted)">→</span> <span style="color:${R2.color}">${esc(T.name)}${T.name.startsWith(R2.name)?'':` (${R2.name})`}</span></div>
-        <div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · item Lv ${g.lvl}${acc?`<br><span class="synpick">${T.opts.map(([id,nm,d])=>`<button class="btn" data-spick="${g.uid}|${id}" aria-pressed="${id===T.pick}" title="${esc(d)}">${esc(nm)}</button>`).join('')}</span>`:''}${T.desc?`<br>${esc(T.desc)}`:''}
+        <div class="st">${RARITY[g.rar].name} ${this.gearKind(g)} · item Lv ${g.lvl}${this.synthClsHtml(g)}${acc?`<br><span class="synpick">${T.opts.map(([id,nm,d])=>`<button class="btn" data-spick="${g.uid}|${id}" aria-pressed="${id===T.pick}" title="${esc(d)}">${esc(nm)}</button>`).join('')}</span>`:''}${T.desc?`<br>${esc(T.desc)}`:''}
         <br>${mats} · <span class="${(c.gold||0)>=k.gold?'ok':'no'}">${k.gold.toLocaleString()} gold</span></div></div>
         <div class="buy"><span class="price">${Math.round(k.rate*100)}% success</span><button class="btn${why?'':' primary'}" data-synth="${g.uid}" ${why?`disabled title="${esc(why)}"`:''}>${why?esc(why):'Synthesize'}</button>${this.matqBtn('s:'+g.uid,k.need,k.gold,true)}</div></div>`;}
     return h;},
@@ -5951,7 +6137,7 @@ const TownScreen={
     else{const lost=Object.entries(k.need).map(([id,n])=>[id,Math.ceil(n/2)]);for(const [id,n] of lost) c.items[id]-=n;c.gold-=Math.floor(k.gold/2);   // build 15b: the piece is kept; half of everything is lost
       AudioFX.sfx('miss');this.synthLast={ok:false,name:gearName(g),lost:lost.map(([id,n])=>`${n} ${itemDef(id).name}`).join(', ')+`, ${Math.floor(k.gold/2).toLocaleString()} gold`};
       this.log('loot',null,`Synthesis failed · ${gearName(g)} is safe · lost ${this.synthLast.lost}`);toast(`Synthesis failed · ${gearName(g)} is safe · half of the materials are gone`,3500);}
-    if(this.synthPick) delete this.synthPick[uid];this.matqDone('s:'+uid);this.tracker();this.save();this.renderShop();},
+    if(this.synthPick) delete this.synthPick[uid];if(this.synthJob) delete this.synthJob[uid];this.matqDone('s:'+uid);this.tracker();this.save();this.renderShop();},
   /* any drinkable from the bar or the bag */
   /* why a Town Scroll can't be read right now ('' = it can) */
   recallWhy(){if(this.mapId==='town') return 'You are already in Oakhaven';if(this.dead) return 'Not while you are down';if(this.travelling) return 'Already on your way';
@@ -6000,7 +6186,8 @@ const TownScreen={
     const H=holdOf(c.job.classId);if(H.rule&&H.off.includes('shield')&&!c.shieldGift){c.shieldGift=1;
       if(!(c.equip.offhand&&c.equip.offhand.base==='shield')&&!c.bag.some(g=>g.base==='shield')){const sh=makeGear('shield',c.baseLevel||1,0);
         if(!c.equip.offhand&&!isTwoHand(c.equip.weapon)) c.equip.offhand=sh;else c.bag.unshift(sh);this.log('sys',null,`A gift for your shield skills · ${sh.name}${c.equip.offhand===sh?'':' (in your bag)'}`);}}
-    this._gt=null;},
+    for(const g of [...Object.values(c.equip),...c.bag]) if(g) tagGear(g,c.job.classId);   // build 15l: old Legendary and Divine pieces take their owner's job (melee: INT -> STR)
+    this.dirtyMods();},
   /* the hands follow the job's rules (HOLD / HOLD_JOB) whatever the save holds: a piece a hand may not hold goes to the
      bag (even a full one: nothing is lost, the bag just takes no loot until there is room), and so does anything in the
      right hand next to a two-handed weapon. An empty left hand takes the best weapon from the bag that it may hold; for
@@ -6013,7 +6200,7 @@ const TownScreen={
     const put=(k,g)=>{if(!g) return;c.bag.splice(c.bag.indexOf(g),1);E[k]=g;moved.push('+'+g.name);};
     if(moved.length&&!E.weapon) put('weapon',best('weapon'));
     if(H.rule&&!E.offhand&&!isTwoHand(E.weapon)&&moved.length) put('offhand',best('offhand'));
-    if(moved.length){this._gt=null;const off=moved.filter(x=>x[0]!=='+'),on=moved.filter(x=>x[0]==='+').map(x=>x.slice(1));
+    if(moved.length){this.dirtyMods();const off=moved.filter(x=>x[0]!=='+'),on=moved.filter(x=>x[0]==='+').map(x=>x.slice(1));
       const why=H.rule||`${(JOBS[c.job.classId]||JOBS.recruit).name}s can't hold that`;
       this.log('sys',null,`${why}: ${off.length?`${off.join(', ')} went to your bag`:''}${off.length&&on.length?' · ':''}${on.length?`equipped ${on.join(', ')}`:''}`);
       if(!quiet) toast(why);}
@@ -6039,6 +6226,21 @@ const TownScreen={
       for(const s of GEAR_STATS){let v=gearVal(g,s);if(!v) continue;if(role&&MAIN_PCT.has(s)){t['w'+s]+=v;continue;}if(k==='offhand'&&g.slot==='weapon'&&(s==='atk'||s==='atkPct')) v=Math.round(v*OFF_ATK);t[s]+=v;}   // a second weapon adds 40% of its Attack
       for(const s in g.bonus||{}) t[s]=(t[s]||0)+g.bonus[s];}
     return this._gt=t;},
+  /* build 15l: the weapon bonus and the Divine set, as the equipment window shows them */
+  weaponBonusText(wk){const W=WEAPON_BONUS[wk];return Object.entries(W.mods).map(([k,v])=>k==='reflAll'?`Reflect Damage ${fxPct(v)} of every blow (melee, ranged, magic; ${fxPct(REFLECT.pvp)} of that against players)`
+      :k==='pierce'?`Magic Pierce ${fxPct(v)} (ignores that share of a target's magic resistance)`:k==='crit'?`Critical Rate +${v}%`:k==='critDmg'?`Critical Damage +${fxPct(v)}`:modText(k,v,this.ch.job.classId));},
+  /* the bonus a weapon gives when held as you would hold it now (for its details) */
+  weaponBonusOf(g){const E=this.ch.equip,o=isTwoHand(g)?null:(E.offhand&&E.offhand!==g&&this.canUse(E.offhand,true,'offhand')?E.offhand:null),wk=weaponKind(g,o),W=WEAPON_BONUS[wk];
+    return W.name?`${W.title} · ${W.name}: ${this.weaponBonusText(wk).join(', ')}`:`${W.title} · ${W.note||'none'}`;},
+  bonusPanel(){const c=this.ch,B=this.equipBonus(),W=WEAPON_BONUS[B.wk],job=c.job.classId,S=DIVINE_SETS[job],n=B.set.n;
+    const row=(on,t)=>`<div class="eb-r ${on?'on':''}"><b>${on?'[ACTIVE]':'[LOCKED]'}</b> ${t}</div>`;
+    let h=`<div class="eqbonus" id="eq-bonus"><div class="eb-h">Weapon bonus · ${esc(W.title.toUpperCase())}</div>`;
+    h+=W.name?this.weaponBonusText(B.wk).map(t=>row(true,esc(t))).join(''):`<div class="eb-r">${esc(W.note||'No special weapon bonus')}</div>`;
+    if(S){h+=`<div class="eb-h">DIVINE ${esc(JOBS[job].name.toUpperCase())} SET · ${n}/${DIVINE_SET.max} pieces equipped</div>`;
+      for(const t of DIVINE_SET.tiers) if(S.t[t]) h+=row(n>=t,`${t}-Piece · ${esc(S.t[t].n)}: ${esc(setTierText(job,t))}`);
+      if(B.set.other) h+=`<div class="eb-r worse">${B.set.other} worn Divine piece${B.set.other>1?'s belong':' belongs'} to another job's set and ${B.set.other>1?"don't":"doesn't"} count</div>`;
+      if(!n&&!B.set.other) h+=`<div class="eb-r">Divine pieces made for ${esc(JOBS[job].name)} (Synthesis at Dorin's) build this set.</div>`;}
+    return h+'</div>';},
   gearScoreWorn(){const E=this.ch.equip;return GEAR_SLOTS.reduce((a,[k])=>a+(E[k]?gearScore(E[k]):0),0);},
   bagUsed(){const c=this.ch;return c.bag.length+Object.keys(c.items).filter(k=>c.items[k]>0&&itemDef(k)).length;},
   isWeaker(g){if(!this.canUse(g,true)) return true;const cur=this.ch.equip[this.equipSlot(g)];return !!cur&&gearScore(g)<=gearScore(cur);},
@@ -6052,9 +6254,9 @@ const TownScreen={
     if(act==='smelt'){const y=this.smeltGear(g);this.log('loot',null,`Auto-smelted ${gearName(g)} · +${y.ingot} Iron Ingot${y.dust?` · +${y.dust} Arcane Dust`:''}`);fx(`Smelted · +${y.ingot} ingot`,'#cfd8e6');}
     else if(act==='sell'){const p=this.sellGear(g);this.log('loot',null,`Auto-sold ${gearName(g)} · +${p} gold`);fx(`Sold · +${p} gold`,'#f7d58e');}
     else if(this.bagUsed()>=BAG_SIZE){if(now>(this.fullMsgAt||0)){this.fullMsgAt=now+4000;toast('Bag full · sell or smelt some gear (I)');this.log('sys',null,`Bag full · ${gearName(g)} stays on the ground`);}return false;}
-    else {c.bag.unshift(g);this.log('loot',null,`Picked up ${R.name} ${gearName(g)}`);fx(gearName(g),R.color);if(g.rar>=2) AudioFX.sfx('quest');}
+    else {c.bag.unshift(tagGear(g,c.job.classId));this.log('loot',null,`Picked up ${R.name} ${gearName(g)}`);fx(gearName(g),R.color);if(g.rar>=2) AudioFX.sfx('quest');}
     if(this.win==='invwin') this.renderInv();return true;},
-  equipGear(uid,slot){const c=this.ch,i=c.bag.findIndex(g=>g.uid===uid);if(i<0) return;const g=c.bag[i],auto=!slot;slot=slot||this.equipSlot(g);
+  equipGear(uid,slot){const c=this.ch,i=c.bag.findIndex(g=>g.uid===uid);if(i<0) return;const g=tagGear(c.bag[i],c.job.classId),auto=!slot;slot=slot||this.equipSlot(g);
     if(g.slot==='wings'&&wingKindOf(g)===GM_WING&&!this.isGM()){toast('Only a GameMaster can wear the Flamebound Dragon Wings');return;}
     const hand=slot==='weapon'||slot==='offhand';if(!this.canUse(g,false,hand?slot:undefined)||(slot==='offhand'&&this.twoHanded())){toast(this.whyNot(g,hand?slot:undefined));return;}
     const old=c.equip[slot],off=slot==='weapon'&&isTwoHand(g)?c.equip.offhand:null;      // a two-handed weapon empties the right hand
@@ -6076,7 +6278,7 @@ const TownScreen={
   hoverDetail(src){const el=$('#iw-detail');if(!el) return;el.innerHTML=this.itemDetail(src||this.invSel||null);if(src) el.querySelectorAll('[data-act]').forEach(b=>b.disabled=true);else if(this.bindDetail) this.bindDetail();},
   unequip(slot){const c=this.ch,g=c.equip[slot];if(!g) return;if(this.bagUsed()>=BAG_SIZE){toast('Bag full');return;}
     c.equip[slot]=null;c.bag.unshift(g);this.invSel={uid:g.uid};this.gearChanged(`Took off ${gearName(g)}`);},
-  gearChanged(msg){const c=this.ch;this._gt=null;this.shieldOff(performance.now());c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());AudioFX.sfx('ui');
+  gearChanged(msg){const c=this.ch;this.dirtyMods();this.shieldOff(performance.now());c.hp=Math.min(c.hp,this.maxHp());this.res=Math.min(this.res||0,this.maxRes());AudioFX.sfx('ui');
     if(msg) this.log('sys',null,msg);this.hudBars();this.renderInv();this.renderChar();this.save();},
   enhance(g){const c=this.ch,k=enhCost(g);if((g.enh||0)>=ENH_MAX) return;
     if((c.items.ingot||0)<k.ingot||(c.items.dust||0)<k.dust||(c.gold||0)<k.gold){toast(`+${(g.enh||0)+1} needs ${k.ingot} Iron Ingots${k.dust?`, ${k.dust} Arcane Dust`:''} and ${k.gold} gold`);return;}
@@ -6104,7 +6306,10 @@ const TownScreen={
       g.slot==='weapon'&&H.off.includes(g.base)&&!isTwoHand(g)?`In your right hand it adds ${Math.round(OFF_ATK*100)}% of its Attack`:'',
       eq&&sel.eq==='offhand'&&g.slot==='weapon'?`Right hand: +${Math.round(gearVal(g,'atkPct')*OFF_ATK)}% Attack counts`:'',
       g.psn?'Each arrow that hits may poison the target for 4 s':'',g.stn?'Each arrow that hits may stun the target for 1.5 s (bosses and elites shrug it off for a while)':'',
-      g.uniq?`Legendary accessory: ${esc(LEGEND_ACC[g.uniq].desc)}`:''].filter(Boolean).map(t=>`<div class="hint2">${t}</div>`).join('');
+      g.uniq?`Legendary accessory: ${esc(LEGEND_ACC[g.uniq].desc)}`:'',
+      g.slot==='weapon'?`Weapon bonus: ${esc(this.weaponBonusOf(g))}`:'',
+      g.rar>=LEGEND_STR.minRar&&JOBS[g.cls]?`Made for ${esc(JOBS[g.cls].name)}${g.strc?' · melee: its INT line was forged as STR':''}`:'',
+      g.rar>=DIVINE_SET.rar&&JOBS[g.cls]?(g.cls===c.job.classId?`Divine ${esc(JOBS[g.cls].name)} set piece · ${this.equipBonus().set.n}/${DIVINE_SET.max} worn`:`<span class="worse">Divine ${esc(JOBS[g.cls].name)} set piece: counts only for a ${esc(JOBS[g.cls].name)} (not your ${esc(JOBS[c.job.classId].name)} set)</span>`):''].filter(Boolean).map(t=>`<div class="hint2">${t}</div>`).join('');
     const k=enhCost(g),y=gearSmelt(g),sc=gearScore(g),sd=cur?sc-gearScore(cur):0,max=(g.enh||0)>=ENH_MAX;
     return `<div class="nm" style="color:${R.color}">${esc(gearName(g))}</div>
       <div>${R.name} ${this.gearKind(g)} · item Lv ${g.lvl} · needs Base Lv ${gearReq(g)}${eq?` · worn (${this.slotName(sel.eq).toLowerCase()})`:''}</div>${why}${notes}
@@ -6162,6 +6367,7 @@ const TownScreen={
     $('#iw-body').innerHTML=`<div class="eqwrap"><div>
       <div class="doll"><div class="ecol">${['head','body','offhand','feet','wings'].map(eqHtml).join('')}</div><canvas id="doll-cv" aria-label="${esc(c.name)}"></canvas><div class="ecol">${['weapon','hands','ring','neck'].map(eqHtml).join('')}</div></div>
       ${holdOf(c.job.classId).rule?`<div class="eqrule">${esc(holdOf(c.job.classId).rule)}</div>`:''}
+      ${this.bonusPanel()}
       <dl class="eqstats"><dt>Attack</dt><dd>${this.attackPower()}</dd><dt>Defence</dt><dd>${this.defence()}</dd><dt>Magic def.</dt><dd>${this.mdef()}</dd><dt>Max HP</dt><dd>${this.maxHp()}</dd><dt>Gear score</dt><dd>${this.gearScoreWorn()}</dd><dt>Gold</dt><dd style="color:var(--gold)">${c.gold||0}</dd><dt>Ingots</dt><dd>${c.items.ingot||0}${c.items.dust?` · ${c.items.dust} dust`:''}</dd></dl>
       <div class="wfoot" style="justify-content:flex-start;gap:6px"><button class="btn" id="iw-sell" ${nSell?'':'disabled'}>Sell junk (${nSell})</button><button class="btn" id="iw-smelt" ${nSmelt?'':'disabled'}>Smelt junk (${nSmelt})</button><button class="btn" id="iw-rules" aria-expanded="${!!this.lootOpen}">Rules ${this.lootOpen?'▴':'▾'}</button></div>
       <div class="lootcfg${this.lootOpen?' open':''}"><div class="lt">Auto-sell &amp; auto-smelt</div>
@@ -6246,7 +6452,7 @@ const TownScreen={
     this.log('sys',null,`Trade · trading with ${T.n}`);AudioFX.sfx('quest');this.openWin('tradewin');this.tradeSend(now);},
   /* what is on the table, as small as it can be (one presence packet is at most 6000 characters) */
   tradeGear(){const T=this.trade,c=this.ch;return T.mine.w.map(u=>c.bag.find(g=>g.uid===u)||(T.esc&&T.esc.w.find(g=>g.uid===u))).filter(Boolean);},
-  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries([...GEAR_STATS,'uniq','pv'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
+  tradePack(){const T=this.trade;return JSON.stringify({g:T.mine.g,s:Object.entries(T.mine.s),w:this.tradeGear().map(g=>[g.base,g.lvl,g.rar,g.enh|0,g.name,g.atk|0,g.def|0,g.hp|0,g.bonus||{},g.wing|0,Object.fromEntries([...GEAR_STATS,'uniq','pv','cls'].filter(k=>g[k]).map(k=>[k,g[k]]))])});},
   tradeSend(now){const T=this.trade;if(!T||T.state!=='open') return;this.partySend('tof',T.id,T.tid,T.rev,this.tradePack());T.sentAt=now||performance.now();},
   /* what the other player says is on the table: only well-formed, in-range things are accepted */
   tradeParse(str){let o;try{o=JSON.parse(String(str).slice(0,4000));}catch(e){return null;}if(!o||typeof o!=='object') return null;
@@ -6259,7 +6465,7 @@ const TownScreen={
         if(x[5]&&B.slot!=='weapon') g.atk=clamp(x[5],0,9999);}
       if(x[8]&&typeof x[8]==='object') for(const k of STAT_KEYS) if(x[8][k]) g.bonus[k]=clamp(x[8][k],0,200);
       if(x[10]&&typeof x[10]==='object'){for(const k of ['patk','ratk','matk','mdef']) if(x[10][k]) g[k]=clamp(x[10][k],0,9999);for(const k of PCT_STATS) if(x[10][k]) g[k]=clamp(x[10][k],0,MAIN_PCT.has(k)?2000:100);
-        if(x[10].pv) g.pv=1;
+        if(x[10].pv) g.pv=1;if(JOBS[String(x[10].cls||'')]&&g.rar>=LEGEND_STR.minRar) g.cls=String(x[10].cls);   // build 15l: the job it was made for
         const u=String(x[10].uniq||'');if(LEGEND_ACC[u]&&LEGEND_ACC[u].slot===B.slot){g.uniq=u;g.name=(g.rar>=5?'Divine ':'')+LEGEND_ACC[u].name;}}
       if(B.slot==='wings'){g.wing=clamp(x[9],0,GEAR_BASES.wings.names.length-1);if(g.wing===GM_WING) continue;}out.w.push(normGear(g));}
     if(out.s.length+out.w.length>TRADE.slots) return null;return out;},
@@ -6323,7 +6529,7 @@ const TownScreen={
   /* both locked and both know it: hand over what they put on the table */
   tradeCommit(now){const T=this.trade,c=this.ch;if(!T||!T.lock||T.commit) return;const O=T.theirs,E=T.esc;
     c.gold=(c.gold|0)+O.g;for(const [id,n] of O.s) c.items[id]=(c.items[id]|0)+n;
-    for(const g0 of O.w){const g={...g0,bonus:{...g0.bonus},uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8)};c.bag.unshift(g);}
+    for(const g0 of O.w){const g={...g0,bonus:{...g0.bonus},uid:Date.now().toString(36)+Math.random().toString(36).slice(2,8)};c.bag.unshift(tagGear(g,c.job.classId));}
     T.esc=null;c.escrow=null;T.commit=true;T.done=true;T.doneAt=now;T.hbAt=0;
     const got=[...(O.g?[`${O.g} gold`]:[]),...O.s.map(([id,n])=>`${n} ${itemDef(id).name}`),...O.w.map(g=>gearName(g))],gave=[...(E.g?[`${E.g} gold`]:[]),...Object.entries(E.s).map(([id,n])=>`${n} ${itemDef(id).name}`),...E.w.map(g=>gearName(g))];
     AudioFX.sfx('quest');toast(`Trade complete with ${T.n}`);this.log('sys',null,`Trade · with ${T.n}: you gave ${gave.join(', ')||'nothing'}; you got ${got.join(', ')||'nothing'}`);
@@ -6780,9 +6986,10 @@ const TownScreen={
     const x=cv.getContext('2d'),[MW,MH]=this.meta.size,T=Sprites[this.mapId];x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
     x.drawImage(T.canvas,0,0,MW,MH,0,0,W,W);x.save();x.scale(dpr,dpr);this.drawMapDots(x,{x:0,y:0,w:MW,h:MH},W/dpr,W/dpr,now,true);x.restore();},
   /* ---------- Ascension: the first job ---------- */
-  ascend(id,key='ascension'){const c=this.ch,n=advanceJob(c,id);c.job=n.job;c.quests[key]='done';this._gt=null;if(c.autoStats) setTimeout(()=>this.recStats(true),0);
+  ascend(id,key='ascension'){const c=this.ch,old=c.job.classId,n=advanceJob(c,id);c.job=n.job;c.quests[key]='done';this.dirtyMods();if(c.autoStats) setTimeout(()=>this.recStats(true),0);
     const w0=c.equip&&c.equip.weapon;if(id==='arbiter'&&w0&&(w0.base==='wand'||w0.base==='scepter')){reforgeGear(w0,'hammer');this.log('sys',null,`Your weapon was reforged into ${w0.name}: Arbiters fight with hammers`);}
     for(const g of c.bag) if(id==='arbiter'&&g.base==='scepter') reforgeGear(g,'hammer');
+    for(const g of [...Object.values(c.equip||{}),...c.bag]) if(g&&g.cls===old&&clsFor(g).includes(id)) legendStr(Object.assign(g,{cls:id}));   // build 15l: your Divine pieces join your new job's set
     this.fixHands(true);   // the new job's hands: what it may not hold goes to the bag, the best it may hold comes out
     const w=c.equip&&c.equip.weapon;if(!w||!this.canUse(w,true,'weapon')){if(w){c.bag.unshift(w);c.equip.weapon=null;}c.equip.weapon=makeGear(mainWeaponOf(id),c.baseLevel||1,0);
       this.log('sys',null,`Ascension gift · ${c.equip.weapon.name}${w?` (your ${w.name} went to your bag)`:''}`);}
@@ -7469,7 +7676,7 @@ const FS={on(){return !!(document.fullscreenElement||document.webkitFullscreenEl
     document.addEventListener('fullscreenchange',()=>this.sync());document.addEventListener('webkitfullscreenchange',()=>this.sync());this.sync();}};
 /* this build; the same text is in version.txt on the hosted links. Players publish it, so an older open page
    learns that a newer one is out (and version.txt is checked now and then) and offers a reload */
-const BUILD='2026-11-15k';
+const BUILD='2026-11-15l';
 const Updates={shown:false,
   newer(b){return typeof b==='string'&&/^\d{4}-\d\d-\d\d[a-z]?$/.test(b)&&b>BUILD;},
   /* never refreshes by itself: Refresh Now saves first; Later hides it for 10 minutes */
