@@ -249,11 +249,11 @@ const FAC={
 FK.forEach(k=>{const F=FAC[k];F.x=C.x+Math.cos(ANG[k])*1600;F.y=C.y+Math.sin(ANG[k])*1600;F.glow=hexA(F.col,.35);});
 const TERM={},GATE={};FK.forEach(k=>{TERM[k]={x:FAC[k].x+95,y:FAC[k].y-30};GATE[k]={x:C.x+Math.cos(ANG[k])*760,y:C.y+Math.sin(ANG[k])*760};});
 const CLS={
- ferros:{hp:115,hpL:19,fp:70,fpL:6,atk:12,atkL:3.1,def:5,defL:1.3,range:240,rate:.55,spd:178,proj:'bolt',
+ ferros:{hp:115,hpL:19,fp:70,fpL:6,atk:11.5,atkL:2.85,def:5,defL:1.3,range:240,rate:.55,spd:178,proj:'bolt',
   skills:[{id:'grenade',name:'Arc Grenade',cd:6,fp:14,tip:'Explodes on your target'},{id:'drone',name:'Sentry Drone',cd:18,fp:22,tip:'A drone fights beside you'},{id:'mech',name:'Call Mech',cd:60,fp:35,tip:'Pilot a battle mech for 20s'}]},
- aether:{hp:95,hpL:15,fp:110,fpL:10,atk:14,atkL:3.5,def:3,defL:1,range:270,rate:.7,spd:172,proj:'orb',
+ aether:{hp:108,hpL:18,fp:110,fpL:10,atk:15,atkL:3.85,def:3.5,defL:1.2,range:270,rate:.7,spd:172,proj:'orb',
   skills:[{id:'nova',name:'Flame Nova',cd:7,fp:18,tip:'Burns everything around you'},{id:'mend',name:'Mend',cd:14,fp:24,tip:'Heals you and nearby allies'},{id:'star',name:'Starfall',cd:28,fp:40,tip:'Meteors crash on your target'}]},
- chrome:{hp:145,hpL:23,fp:45,fpL:4,atk:13,atkL:3.3,def:7,defL:1.7,range:200,rate:.8,spd:162,proj:'shell',
+ chrome:{hp:145,hpL:23,fp:60,fpL:5,atk:16.5,atkL:4.05,def:7,defL:1.7,range:210,rate:.74,spd:162,proj:'shell',
   skills:[{id:'rockets',name:'Rocket Barrage',cd:6,fp:12,tip:'Five rockets into one target'},{id:'wall',name:'Iron Wall',cd:20,fp:14,tip:'Take 60% less damage for 6s'},{id:'siege',name:'Siege Mode',cd:45,fp:28,tip:'Root in place: huge range and damage'}]}
 };
 const W_ATK=[0,8,20,38,62,95],A_DEF=[0,5,12,22,35,52],A_HP=[0,30,80,150,250,380];
@@ -261,7 +261,12 @@ const TIER_LV=[1,5,10,15,20,25],TIER_CR=[0,250,1000,3000,7500,16000],TIER_IRON=[
 const WNAME={ferros:'Carbine',aether:'Staff',chrome:'Launcher'},ANAME={ferros:'Rig',aether:'Vestment',chrome:'Plating'};
 const TNAME=['Field','Mk I','Mk II','Mk III','Mk IV','Mk V'];
 const GLYPH_OK=[100,90,75,60,45,30,20];
-const xpNeed=l=>Math.round(50*Math.pow(l,1.5)+30), MAXLV=30;
+const xpNeed=l=>Math.round(80*Math.pow(l,1.7)+40), MAXLV=30;
+/* level-difference rule shared by players and bots: harder targets pay more, much weaker ones pay little */
+const xpMod=(att,vic)=>{const d=vic-att;return d>=0?1+Math.min(.5,d*.1):d>=-2?1:d>=-4?.75:d>=-6?.45:.2;};
+const mobXp=(att,m)=>m.boss?4000:(12+m.lvl*8)*xpMod(att,m.lvl);
+const pvpXp=(att,v)=>(25+v.lvl*9)*xpMod(att,v.lvl);
+const tierFor=l=>{let t=0;for(let i=1;i<6;i++)if(TIER_LV[i]<=l)t=i;return t;};
 const MOBS={
  mite:{name:'Dune Mite',lv:[1,4],r:12,hpM:1,atkM:.9,spd:70,h:18},
  hog:{name:'Spinehog',lv:[4,8],r:16,hpM:1.15,atkM:1,spd:80,h:28},
@@ -271,6 +276,7 @@ const MOBS={
  warden:{name:'Hollow Warden',lv:[26,26],r:44,spd:58,aggro:170,h:100,boss:1}
 };
 const BAND_MOB=l=>l<4?'mite':l<8?'hog':l<12?'volt':l<17?'hound':'behe';
+const ZONES=[['mite',330,600,33],['hog',600,820,27],['volt',820,1020,21],['hound',1020,1200,18],['behe',1200,1750,15]];
 const NAMES={ferros:['Rivet','Tink','Cogsworth','Pip','Brassa','Gimble','Nix','Sprocket','Fenwick','Boltie','Ratchet','Dorrin'],
  aether:['Seraph','Ilyen','Mirae','Oriel','Vesper','Thalia','Caelum','Lysa','Noctis','Avaline','Sorrel','Ione'],
  chrome:['KX-9','Vrax','Ironjaw','T-77','Magnus','Rhexx','Unit-404','Gorr','Kessel','Axion','Null-3','Brakk']};
@@ -296,6 +302,7 @@ const effRate=u=>u.rate*(u.buffs.siege>0?.75:1)*(u.buffs.mech>0?1.15:1);
 const effRange=u=>u.range+(u.buffs.siege>0?150:0)+(u.buffs.mech>0?20:0);
 const nearEnemyBase=(f,x,y,r)=>FK.some(k=>k!==f&&Math.hypot(x-FAC[k].x,y-FAC[k].y)<r);
 const nearAnyBase=(x,y,r)=>FK.some(k=>Math.hypot(x-FAC[k].x,y-FAC[k].y)<r);
+const baseDist=(x,y)=>Math.min(...FK.map(k=>Math.hypot(x-FAC[k].x,y-FAC[k].y)));
 const inOwnSafe=u=>FAC[u.f]&&dist(u,FAC[u.f])<BASE_R+30;
 function canHit(a,b){
  if(!b||b===a||b.dead||b.kind==='tower')return false;
@@ -313,13 +320,11 @@ function initWorld(){
   const b=FAC[k],ca=Math.atan2(C.y-b.y,C.x-b.x);
   [-.75,.75].forEach(o=>{const t=mk({kind:'tower',f:k,x:b.x+Math.cos(ca+o)*200,y:b.y+Math.sin(ca+o)*200,r:16,name:'Guard Tower'});t.cd.a=rand(0,1);towers.push(t);ents.push(t);});});
  const addMob=(type,x,y,band)=>{const m=mk({kind:'mob',f:'mob',type,home:{x,y},x,y,band,think:rand(0,1),wt:rand(0,3)});setMobLevel(m);mobs.push(m);ents.push(m);};
- const bands=[['behe',470,650,12],['hound',650,900,16],['volt',900,1150,18],['hog',1150,1420,22],['mite',1700,2200,10]];
- for(const [type,r0,r1,n] of bands){let made=0,tries=0;
-  while(made<n&&tries<3000){tries++;const a=rand(0,Math.PI*2),r=rand(r0,r1),x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r;
-   if(x<70||y<70||x>WW-70||y>WH-70||nearAnyBase(x,y,type==='mite'?BASE_R+100:type==='hog'?BASE_R+420:BASE_R+100))continue;
-   addMob(type,x,y,1-(r-r0)/(r1-r0));made++;}}
- FK.forEach(k=>{const b=FAC[k];let made=0,tries=0;while(made<11&&tries<2000){tries++;const a=rand(0,Math.PI*2),r=rand(BASE_R+110,BASE_R+400),x=b.x+Math.cos(a)*r,y=b.y+Math.sin(a)*r;
-  if(x<70||y<70||x>WW-70||y>WH-70)continue;addMob('mite',x,y,(r-BASE_R-110)/290);made++;}});
+ /* danger grows with distance from the nearest nation: rings of mites, spinehogs, voltwings and hounds around each base,
+    behemoths in the wilds between nations and around the Rift */
+ for(const [type,d0,d1,n] of ZONES){let made=0,tries=0;
+  while(made<n&&tries<20000){tries++;const x=rand(70,WW-70),y=rand(70,WH-70),D=baseDist(x,y);
+   if(D<d0||D>d1||Math.hypot(x-C.x,y-C.y)<RIFT_R+50)continue;addMob(type,x,y,(D-d0)/(d1-d0));made++;}}
  const boss=mk({kind:'mob',f:'mob',type:'warden',boss:true,home:{x:C.x,y:C.y+10},x:C.x,y:C.y+10,band:1,think:0,wt:0});setMobLevel(boss);mobs.push(boss);ents.push(boss);
  let tries=0;while(nodes.filter(n=>n.kind==='iron').length<26&&tries<4000){tries++;
   const a=rand(0,Math.PI*2),r=rand(700,1950),x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r;
@@ -330,16 +335,23 @@ function initWorld(){
   if(i>=3){const a=ANG[k]+rand(-.6,.6),r=rand(600,1100);u.x=C.x+Math.cos(a)*r;u.y=C.y+Math.sin(a)*r;}ais.push(u);ents.push(u);}});
 }
 function aiName(k){const used=new Set(ais.map(a=>a.name));if(P)used.add(P.name);const pool=NAMES[k].filter(n=>!used.has(n));return pool.length?pick(pool):pick(NAMES[k])+'-'+ri(2,99);}
-function levelAI(u){const pl=P?P.lvl:ri(4,14);
- u.lvl=u.role==='hunt'?clamp(pl+ri(-2,3),1,MAXLV):clamp(Math.max(12+ri(0,6),pl+ri(-1,4)),1,MAXLV);
- const tier=l=>{let t=0;for(let i=1;i<6;i++)if(TIER_LV[i]<=l)t=i;return t;};
- u.wT=clamp(tier(u.lvl)-ri(0,1),0,5);u.aT=clamp(tier(u.lvl)-ri(0,1),0,5);u.wP=ri(0,3);u.aP=ri(0,3);facStats(u);u.hp=u.maxHp;u.fp=u.maxFp;}
+/* bots: start near the player, then earn XP from the same sources with the same rules */
+const botTarget=u=>P?clamp(P.lvl+(u.role==='hunt'?0:3),1,MAXLV):null;
+function levelAI(u){const pl=P?P.lvl:ri(4,12);
+ u.lvl=clamp(u.role==='hunt'?pl+ri(-1,2):pl+ri(2,5),1,MAXLV);u.xp=Math.floor(xpNeed(u.lvl)*Math.random()*.6);
+ u.gearLag=ri(0,1);u.wP=ri(0,3);u.aP=ri(0,3);aiGear(u);facStats(u);u.hp=u.maxHp;u.fp=u.maxFp;}
+function aiGear(u){const t=tierFor(u.lvl);u.wT=clamp(t-(u.gearLag||0),0,5);u.aT=clamp(t-(u.gearLag||0),0,5);}
+function botGainXp(u,x){if(!u||u.kind!=='ai'||u.lvl>=MAXLV||!(x>0))return;const tg=botTarget(u);
+ const m=tg==null?1:clamp(1+(tg-u.lvl)*.6,.1,5);u.xp+=Math.round(x*m);
+ while(u.lvl<MAXLV&&u.xp>=xpNeed(u.lvl)){u.xp-=xpNeed(u.lvl);u.lvl++;aiGear(u);facStats(u);u.hp=u.maxHp;u.fp=u.maxFp;
+  if(P&&!u.dead&&dist(u,P)<650){if(!addVfx('fx_levelup',u.x,u.y,{r:30,follow:u}))ring(u.x,u.y,40,'#ffd34d',.6,3);ftext(u.x,u.y-topOf(u)-14,'LEVEL '+u.lvl,'#ffd34d');}}
+ if(u.lvl>=MAXLV)u.xp=0;}
 function placeAtBase(u,gate){const b=gate?GATE[u.f]:FAC[u.f];u.x=b.x+rand(-40,40);u.y=b.y+rand(-20,40);u.dead=false;u.hp=u.maxHp;u.fp=u.maxFp;u.buffs={};u.shield=0;u.tgt=null;u.goal=null;u.mode='roam';u.lastAtk=null;u.deathT=null;u.atkT=0;u.castT=0;u.hurtT=0;}
 
 /* ---------- save ---------- */
 const SKEY='riftfall.save.v1',SF=['name','f','lvl','xp','credits','iron','lumen','shards','hpPot','fpPot','wT','wP','aT','aP','wp','kills','pk','deaths','wins','bounty','tut'];
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');return s&&s.p&&FAC[s.p.f]?s:null;}catch(e){return null;}}
-function save(){if(!P)return;try{const p={};SF.forEach(k=>p[k]=P[k]);localStorage.setItem(SKEY,JSON.stringify({p,dom:siege.dom}));}catch(e){}}
+function save(){if(!P)return;try{const p={};SF.forEach(k=>p[k]=P[k]);localStorage.setItem(SKEY,JSON.stringify({p,dom:siege.dom,bots:ais.map(a=>[a.name,a.lvl,a.xp|0,a.gearLag|0])}));}catch(e){}}
 function wipeSave(){try{localStorage.removeItem(SKEY);}catch(e){}}
 
 /* ---------- audio ---------- */
@@ -423,7 +435,7 @@ function dealDamage(src,tgt,amt,o={}){
  const byP=src===P,onP=tgt===P;
  if(tgt.shield>0){const a=Math.min(tgt.shield,d);tgt.shield-=a;d-=a;if(d<=0){if(byP||onP)ftext(tgt.x,tgt.y-topOf(tgt),'absorbed','#a8d6ff');return 0;}}
  tgt.hp-=d;tgt.flash=.12;tgt.hitT=4;tgt.lastAtk=src;if((tgt.kind==='ai'||tgt.kind==='player')&&d>tgt.maxHp*.03)tgt.hurtT=.25;
- if(byP)tgt.tagP=true;
+ if(byP)tgt.tagP=true;else if(tgt.kind==='mob'&&src.kind==='ai')(tgt.hitBy||(tgt.hitBy=new Set())).add(src);
  if(tgt.kind==='mob'&&!tgt.returning)tgt.aggro=src;
  if(onP){P.combatT=5;if(P.mining)cancelMine();if(P.recall)cancelRecall('Recall interrupted');if(d>P.maxHp*.12)shake=Math.min(8,shake+3);sfx('hurt');}
  if(byP||onP)ftext(tgt.x,tgt.y-topOf(tgt),cr?d+'!':String(d),onP?'#ff6b6b':cr?'#ffd34d':'#ffffff',cr);
@@ -436,12 +448,13 @@ function kill(t,src){
   if(FK.filter(k=>cores[k].hp>0).length<=1)endSiege();return;}
  t.dead=true;if(t.kind==='ai'||t.kind==='player')t.deathT=0;sparks(t.x,t.y-14,t.kind==='mob'?'#e8d3a8':FAC[t.f].col,12,170);
  if(t.kind==='mob'){t.respawnT=t.boss?180:rand(14,22);t.aggro=null;if(t.tagP&&P&&!P.dead)rewardMob(t);t.tagP=false;
+  if(t.hitBy){for(const u of t.hitBy)if(!u.dead&&dist(u,t)<800)botGainXp(u,mobXp(u.lvl,t));t.hitBy=null;}
   if(t.boss)addLog(`The Hollow Warden has fallen${src.name?' to '+src.name:''}!`,'#7ef9ff');}
- else if(t.kind==='ai'){t.respawnT=siege.on?7:12;
-  if(src===P){pvpReward(t);}else if(P&&dist(t,P)<700&&src.name)addLog(`${src.name} defeated ${t.name}`,FAC[src.f]?.lite||'#ccc');}
- else if(t.kind==='player')playerDied(src);}
+ else if(t.kind==='ai'){t.respawnT=siege.on?7:12;t.xp=Math.max(0,(t.xp||0)-Math.floor(xpNeed(t.lvl)*.02));
+  if(src===P){pvpReward(t);}else{if(src.kind==='ai')botGainXp(src,pvpXp(src.lvl,t));if(P&&dist(t,P)<700&&src.name)addLog(`${src.name} defeated ${t.name}`,FAC[src.f]?.lite||'#ccc');}}
+ else if(t.kind==='player'){if(src.kind==='ai')botGainXp(src,pvpXp(src.lvl,t));playerDied(src);}}
 function rewardMob(m){
- let xp=12+m.lvl*8;const diff=P.lvl-m.lvl;if(diff>5)xp*=.25;else if(diff>3)xp*=.6;if(m.boss)xp=4000;
+ let xp=mobXp(P.lvl,m);
  if(siege.dom===P.f)xp*=1.15;gainXp(xp);
  const cr=m.boss?1500:Math.round(m.lvl*rand(3,6)+2);P.credits+=cr;P.kills++;
  ftext(m.x,m.y-topOf(m)-16,'+'+cr+' cr','#ffd34d');
@@ -450,8 +463,9 @@ function rewardMob(m){
  else if(roll<.08){P.shards++;addLog('Found a glyph shard','#e6a8ff');}
  else if(roll<.15){P.hpPot++;addLog('Found a repair tonic','#ff9aa4');}
  else if(roll<.25){const n=ri(1,2);P.iron+=n;addLog(`Salvaged ${n} iron ore`,'#c7d6e2');}
+ else if(roll<.3&&m.lvl>=12){P.lumen++;addLog('Found a lumen crystal','#5ad7ff');}
  bountyProg('kill',m.type);if(P.tut===1){P.tut=2;showHint();}}
-function pvpReward(t){let xp=25+t.lvl*9;if(P.lvl-t.lvl>5)xp*=.3;gainXp(xp);const cr=t.lvl*10;P.credits+=cr;const wp=2+Math.floor(t.lvl/6);P.wp+=wp;P.pk++;if(siege.on)siege.pKills++;
+function pvpReward(t){gainXp(pvpXp(P.lvl,t));const cr=t.lvl*10;P.credits+=cr;const wp=2+Math.floor(t.lvl/6);P.wp+=wp;P.pk++;if(siege.on)siege.pKills++;
  addLog(`You defeated ${t.name} (${FAC[t.f].short}): +${wp} war points`,FAC[P.f].lite);bountyProg('pvp');sfx('coin');}
 function gainXp(x){if(P.lvl>=MAXLV)return;P.xp+=Math.round(x);
  while(P.lvl<MAXLV&&P.xp>=xpNeed(P.lvl)){P.xp-=xpNeed(P.lvl);P.lvl++;facStats(P);P.hp=P.maxHp;P.fp=P.maxFp;
@@ -480,6 +494,7 @@ function endSiege(){if(!siege.on)return;siege.on=false;siege.t=PEACE;siege.warne
   if(best===P.f){P.wins++;const cr=100+P.lvl*30;P.credits+=cr;gainXp(xpNeed(P.lvl)*(took?.3:.08));banner('Victory',`${FAC[best].name} holds the Rift. +${cr} cr, lumen mining unlocked`,FAC[best].lite);}
   else banner('The Rift is lost',`${FAC[best].name} holds the Rift until the next siege`,FAC[best].lite);
   sfx('horn');save();}
+ for(const u of ais)if(u.f===best&&(u.role!=='hunt'||u.lvl>=12))botGainXp(u,xpNeed(u.lvl)*.3);
  addLog(`${FAC[best].name} now controls the Rift.`,FAC[best].lite);}
 function updSiege(dt){siege.t-=dt;
  if(!siege.on){if(siege.t<=30&&siege.warned<1){siege.warned=1;addLog('Heartcore shields drop in 30 seconds.','#ffb0a0');if(P&&P.tut===4)showHint();}
@@ -519,7 +534,7 @@ function updPlayer(dt){
 function autoTarget(){let best=null,bs=1e9;for(const e of ents){if(!canHit(P,e)||e.boss)continue;if(e.kind==='mob'&&e.lvl>P.lvl+4)continue;if(e.kind==='core')continue;const d=dist(P,e);if(d>(e.kind==='mob'?420:300))continue;const s=e.kind==='mob'?d:d*.6;if(s<bs){bs=s;best=e;}}return best;}
 function autoFar(){let best=null,bd=780;for(const m of mobs){if(m.dead||m.boss||m.returning||m.lvl>P.lvl+2||nearEnemyBase(P.f,m.x,m.y,BASE_R+380))continue;const d=dist(P,m);if(d<bd){bd=d;best=m;}}return best;}
 function pickTarget(maxD=440){let best=null,bs=1e9;for(const e of ents){if(!canHit(P,e))continue;const d=dist(P,e);if(d>maxD)continue;let s=d;if(e.kind==='ai')s*=.7;if(e.boss)s*=1.6;if(e.kind==='core')s*=1.2;if(s<bs){bs=s;best=e;}}return best;}
-function playerBasic(tg){let k=CLS[P.f].proj,o={kind:k};
+function playerBasic(tg){let k=CLS[P.f].proj,o={kind:k};if(P.f==='chrome')o.splash=26;
  if(P.buffs.mech>0)o={kind:'cannon',splash:60,col:'#a8d6ff'};else if(P.buffs.siege>0)o={kind:'cannon',splash:55,col:'#ff8a5a'};
  shoot(P,tg,effAtk(P),o);P.cd.a=effRate(P);P.combatT=5;P.atkT=P.buffs.mech>0?.43:P.buffs.siege>0&&P.f==='chrome'?.43:P.f==='aether'?.4:.375;sfx(o.kind==='orb'?'orb':o.kind==='bolt'?'shot':'shell');}
 function attackPress(){if(!P||P.dead)return;let t=P.target;if(!t||!canHit(P,t)||dist(P,t)>520)t=pickTarget();if(!t){toast('No enemy nearby');return;}P.target=t;P.engage=true;if(P.mining)cancelMine();}
@@ -549,7 +564,7 @@ function useSkill(i){if(!P||P.dead)return;const sk=CLS[P.f].skills[i];if(P.cd['s
  if(P.tut===2){P.tut=P.lvl>=3?3:2.5;showHint();}}
 function updDrone(dt){const d=P.drone;if(!d)return;d.t-=dt;if(d.t<=0||P.dead){P.drone=null;return;}d.ang+=dt*2.2;d.x=P.x+Math.cos(d.ang)*36;d.y=P.y-34+Math.sin(d.ang)*14;d.cd-=dt;
  if(d.cd<=0){let t=P.target&&canHit(P,P.target)&&dist(d,P.target)<300?P.target:null;if(!t){let bd=280;for(const e of ents)if(canHit(P,e)&&e.kind!=='core'){const q=dist(d,e);if(q<bd){bd=q;t=e;}}}
-  if(t){shoot(P,t,effAtk(P)*.55,{kind:'bolt',ox:d.x,oy:d.y,col:'#bff6ff'});d.cd=.6;}}}
+  if(t){shoot(P,t,effAtk(P)*.45,{kind:'bolt',ox:d.x,oy:d.y,col:'#bff6ff'});d.cd=.65;}}}
 
 /* ---------- mining & interact ---------- */
 function findInteract(){if(!P||P.dead)return null;if(dist(P,TERM[P.f])<130)return{type:'term'};let best=null,bd=85;for(const n of nodes){const d=dist(P,n);if(d<bd&&n.ch>0){bd=d;best=n;}}return best?{type:'mine',node:best}:null;}
@@ -564,9 +579,10 @@ function cancelRecall(msg){P.recall=null;if(msg)toast(msg);}
 function interact(){if(!P||P.dead)return;const it=findInteract();if(!it)return;if(it.type==='term')openPanel('terminal');else if(P.mining)cancelMine();else startMine(it.node);}
 
 /* ---------- AI ---------- */
-function roamGoal(u){const l=u.lvl;let r0,r1;if(l<4){r0=1400;r1=1900;}else if(l<8){r0=1150;r1=1400;}else if(l<12){r0=900;r1=1150;}else if(l<17){r0=650;r1=900;}else{r0=470;r1=720;}
- const spread=u.role==='hunt'&&l<12?.95:Math.PI;
- for(let i=0;i<12;i++){const a=ANG[u.f]+rand(-spread,spread),r=rand(r0,r1),x=C.x+Math.cos(a)*r,y=C.y+Math.sin(a)*r;if(x<60||y<60||x>WW-60||y>WH-60||nearEnemyBase(u.f,x,y,BASE_R+400))continue;return{x,y};}
+function roamGoal(u){const l=u.lvl,z=ZONES[l<4?0:l<8?1:l<12?2:l<17?3:4],b=FAC[u.f],toC=Math.atan2(C.y-b.y,C.x-b.x);
+ const spread=u.role==='hunt'?1.2:Math.PI;
+ for(let i=0;i<16;i++){const a=toC+rand(-spread,spread),r=rand(z[1],Math.min(z[2],1500)),x=b.x+Math.cos(a)*r,y=b.y+Math.sin(a)*r;
+  if(x<60||y<60||x>WW-60||y>WH-60||nearEnemyBase(u.f,x,y,BASE_R+400)||Math.hypot(x-C.x,y-C.y)<RIFT_R)continue;return{x,y};}
  return{x:FAC[u.f].x+rand(-250,250),y:FAC[u.f].y+rand(-250,250)};}
 function aiDecide(u){const base=siege.on&&u.role!=='hunt'?GATE[u.f]:FAC[u.f],safeR=base===FAC[u.f]?BASE_R:80;
  if(u.mode==='retreat'){if(u.hp>=u.maxHp*.95)u.mode='roam';else{u.tgt=null;if(!u.goal)u.goal={x:base.x+rand(-60,60),y:base.y+rand(-40,60)};return;}}
@@ -592,7 +608,7 @@ function aiSkill(u,t){u.cd.s=rand(7,10);u.castT=.55;castFx(u);
   else if(dist(u,t)<160){aoe(u,u,150,u.atk*2);if(!addVfx('fx_nova',u.x,u.y,{r:150}))ring(u.x,u.y,150,'#ff9a4a',.45,5);}else shoot(u,t,u.atk*1.8,{kind:'orb'});}
  else{for(let j=0;j<5;j++)after(j*.1,()=>{if(!u.dead&&canHit(u,t))shoot(u,t,u.atk*.75,{kind:'rocket',oy:u.y-36});});}}
 function updAI(u,dt){
- if(u.dead){u.respawnT-=dt;if(u.respawnT<=0){levelAI(u);placeAtBase(u,siege.on&&u.role!=='hunt');}return;}
+ if(u.dead){u.respawnT-=dt;if(u.respawnT<=0){facStats(u);placeAtBase(u,siege.on&&u.role!=='hunt');}return;}
  if(dist(u,FAC[u.f])<BASE_R||(siege.on&&dist(u,GATE[u.f])<90))u.hp=Math.min(u.maxHp,u.hp+u.maxHp*.12*dt);
  u.think-=dt;if(u.think<=0){u.think=rand(.25,.5);aiDecide(u);}
  const t=u.tgt;
@@ -600,14 +616,14 @@ function updAI(u,dt){
   if(t.kind!=='core'&&t.kind!=='mob'&&nearEnemyBase(u.f,t.x,t.y,BASE_R+330)){u.tgt=null;return;}
   const d=dist(u,t),rng=u.range+t.r;
   if(d>rng*.92)moveUnit(u,t.x,t.y,u.spd*dt);
-  else{u.facing=Math.atan2(t.y-u.y,t.x-u.x);if(!(u.cd.a>0)){shoot(u,t,u.atk,{kind:CLS[u.f].proj});u.cd.a=u.rate*rand(1,1.2);u.atkT=.4;}
+  else{u.facing=Math.atan2(t.y-u.y,t.x-u.x);if(!(u.cd.a>0)){shoot(u,t,u.atk,{kind:CLS[u.f].proj,splash:u.f==='chrome'?26:0});u.cd.a=u.rate*rand(1,1.2);u.atkT=.4;}
    if(!(u.cd.s>0))aiSkill(u,t);}
  }else{u.tgt=null;if(u.goal){moveUnit(u,u.goal.x,u.goal.y,u.spd*dt);if(dist(u,u.goal)<24)u.goal=null;}}
  for(const o of ais){if(o===u||o.dead||o.f!==u.f)continue;const dx=u.x-o.x,dy=u.y-o.y,d=dx*dx+dy*dy;if(d<484&&d>.01){const q=Math.sqrt(d),k=(22-q)*.5/q;u.x+=dx*k;u.y+=dy*k;}}}
 
 /* ---------- mobs & towers ---------- */
 function updMob(m,dt){
- if(m.dead){m.respawnT-=dt;if(m.respawnT<=0&&!(m.boss&&siege.on)){m.dead=false;m.x=m.home.x;m.y=m.home.y;setMobLevel(m);m.aggro=null;m.returning=false;m.tagP=false;}return;}
+ if(m.dead){m.respawnT-=dt;if(m.respawnT<=0&&!(m.boss&&siege.on)){m.dead=false;m.x=m.home.x;m.y=m.home.y;setMobLevel(m);m.aggro=null;m.returning=false;m.tagP=false;m.hitBy=null;}return;}
  const t=MOBS[m.type],dh=dist(m,m.home);
  if(m.returning){moveUnit(m,m.home.x,m.home.y,m.spd*1.6*dt);m.hp=Math.min(m.maxHp,m.hp+m.maxHp*.35*dt);if(dh<20)m.returning=false;return;}
  let tg=m.aggro&&!m.aggro.dead&&m.aggro.kind!=='tower'?m.aggro:null;
@@ -631,7 +647,7 @@ function updProjs(dt){for(let i=projs.length-1;i>=0;i--){const p=projs[i];p.life
   if(d<=s+6){hitProj(p,t);projs.splice(i,1);continue;}p.vx=dx/d*p.spd;p.vy=dy/d*p.spd;}
  p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.kind==='rocket'&&Math.random()<.5)addFx({t:'s',x:p.x,y:p.y,vx:0,vy:-10,life:.4,max:.4,s:4});
  if(p.life<=0)projs.splice(i,1);}}
-function hitProj(p,t){if(p.splash){aoe(p.owner,{x:t.x,y:t.y},p.splash,p.dmg);if((!P||dist(P,t)<800)&&!addVfx('fx_explosion',t.x,t.y,{r:p.splash*1.15}))boom(t.x,t.y,p.splash,p.col);}else{dealDamage(p.owner,t,p.dmg);if((!P||dist(P,t)<800)&&!addVfx('fx_hit',t.x,t.y-16,{scale:p.kind==='rocket'?1:.7})){sparks(t.x,t.y-16,p.col,4,90);if(p.kind==='rocket')flashFx(t.x,t.y-16,18,p.col,.15);}}
+function hitProj(p,t){if(p.splash){aoe(p.owner,{x:t.x,y:t.y},p.splash,p.dmg);if((!P||dist(P,t)<800)&&!(p.splash<40?addVfx('fx_hit',t.x,t.y-14,{scale:1}):addVfx('fx_explosion',t.x,t.y,{r:p.splash*1.15})))boom(t.x,t.y,p.splash,p.col);}else{dealDamage(p.owner,t,p.dmg);if((!P||dist(P,t)<800)&&!addVfx('fx_hit',t.x,t.y-16,{scale:p.kind==='rocket'?1:.7})){sparks(t.x,t.y-16,p.col,4,90);if(p.kind==='rocket')flashFx(t.x,t.y-16,18,p.col,.15);}}
  if(p.owner===P)sfx('hit');}
 function update(dt){gameT+=dt;updSiege(dt);
  for(const e of ents){for(const k in e.cd)if(e.cd[k]>0)e.cd[k]-=dt;for(const k in e.buffs)if(e.buffs[k]>0)e.buffs[k]-=dt;if(e.flash>0)e.flash-=dt;if(e.hitT>0)e.hitT-=dt;if(e.movT>0)e.movT-=dt;if(e.lunge>0)e.lunge-=dt;if(e.atkT>0)e.atkT-=dt;if(e.castT>0)e.castT-=dt;if(e.hurtT>0)e.hurtT-=dt;if(e.dead&&e.deathT!=null&&e.deathT<9)e.deathT+=dt;}
@@ -827,7 +843,8 @@ const mmc=$('mm'),mctx=mmc.getContext('2d');let mmT=0;
 function mmResize(){const r=mmc.getBoundingClientRect();mmc.width=Math.max(60,r.width*DPR|0);mmc.height=mmc.width;}
 function drawMM(){const W=mmc.width,s=W/4600,m=mctx,cx=W/2,cy=W/2;const X=x=>cx+(x-C.x)*s,Y=y=>cy+(y-C.y)*s;
  m.clearRect(0,0,W,W);m.save();m.beginPath();m.arc(cx,cy,W/2,0,6.3);m.clip();m.fillStyle='#0c1418';m.fillRect(0,0,W,W);
- [[1900,'#2f2a22'],[1380,'#2e2c24'],[1150,'#262a26'],[850,'#1f2a2a'],[RIFT_R,'#1a1830']].forEach(([r,c])=>{m.fillStyle=c;m.beginPath();m.arc(cx,cy,r*s,0,6.3);m.fill();});
+ m.fillStyle='#1c2222';m.fillRect(0,0,W,W);for(const [r,c] of [[1020,'#262a24'],[820,'#2b2c25'],[600,'#312e26']])FK.forEach(k=>{m.fillStyle=c;m.beginPath();m.arc(X(FAC[k].x),Y(FAC[k].y),r*s,0,6.3);m.fill();});
+ m.fillStyle='#1a1830';m.beginPath();m.arc(cx,cy,RIFT_R*s,0,6.3);m.fill();
  m.strokeStyle=siege.on?'rgba(255,95,80,.8)':'rgba(95,243,255,.6)';m.lineWidth=W/90;m.beginPath();m.arc(cx,cy,RIFT_R*s,0,6.3);m.stroke();
  FK.forEach(k=>{const b=FAC[k];m.fillStyle=hexA(b.col,.4);m.beginPath();m.arc(X(b.x),Y(b.y),BASE_R*s*1.25,0,6.3);m.fill();if(siege.on){m.strokeStyle=b.col;m.lineWidth=W/80;m.beginPath();m.arc(X(GATE[k].x),Y(GATE[k].y),W/40,0,6.3);m.stroke();}m.fillStyle=b.col;const c=cores[k];m.fillRect(X(c.x)-W/60,Y(c.y)-W/60,W/30,W/30);});
  const d=W/110;for(const e of mobs)if(!e.dead){m.fillStyle=e.boss?'#7ef9ff':'rgba(200,190,170,.45)';m.fillRect(X(e.x)-d*.5,Y(e.y)-d*.5,e.boss?d*2.5:d,e.boss?d*2.5:d);}
@@ -873,7 +890,7 @@ function updHud(dt){if(!P)return;
 const HINTS=()=>[isTouch?'Drag anywhere on the left half of the screen to move.':'Move with WASD or the arrow keys.',
  isTouch?'Tap the red ATTACK button: it locks onto the nearest monster. Tap a monster to choose it.':'Press Space to attack the nearest monster, or click one to choose it.',
  isTouch?'Skills spend force (blue bar). Try one of the three skill buttons.':'Skills spend force (blue bar). Press 1, 2 or 3.',
- 'Keep hunting. Monsters get tougher toward the glowing Rift at the centre.',
+ 'Keep hunting. Monsters get tougher the farther you travel from your base.',
  'Grey rock clusters are iron ore. Stand next to one and press MINE. Spend ore on gear at your base terminal.',
  'Heartcore siege soon: when the shields drop, push into the Rift and break the enemy Heartcores.'];
 let hintTO=null;
@@ -912,20 +929,20 @@ function renderPanel(){if(!panelMode||!P)return;
   const req=[[`Lv ${TIER_LV[n]}`,P.lvl>=TIER_LV[n]],[`${fmt(TIER_CR[n])} cr`,cr>=TIER_CR[n]],[`${TIER_IRON[n]} iron`,P.iron>=TIER_IRON[n]]];if(TIER_LUM[n])req.push([`${TIER_LUM[n]} lumen`,P.lumen>=TIER_LUM[n]]);
   const ok=req.every(r=>r[1]);const gain=s==='w'?`+${W_ATK[n]-W_ATK[cur]} attack`:`+${A_DEF[n]-A_DEF[cur]} defence, +${A_HP[n]-A_HP[cur]} health`;
   h+=row(`${nm} → ${TNAME[n]} ${s==='w'?WNAME[P.f]:ANAME[P.f]}`,`${gain} · needs ${req.map(r=>`<span class="${r[1]?'ok':'no'}">${r[0]}</span>`).join(', ')}`,btn('tier:'+s,'Forge',ok));});
-  h+=`<p class="note">Glyph inscriptions carry over to the new tier. Lumen comes only from the Rift, and only the nation that won the last siege may mine it.</p>`;}
+  h+=`<p class="note">Glyph inscriptions carry over to the new tier. Lumen is mined in the Rift by the nation that won the last siege; anyone can also find it on level 12+ monsters or buy it in the war store.</p>`;}
  else if(panelTab==='forge'){['w','a'].forEach(s=>{const p=s==='w'?P.wP:P.aP;if(p>=7){h+=row(gearName(s),'Fully inscribed (+7)',btn('x','Maxed',false));return;}
   const sh=p+1,c=80*(p+1)*(p+1),ok=P.shards>=sh&&cr>=c;const risk=p>=3?' · <span class="no">35% chance to shatter to +0 on failure</span>':'';
   h+=row(`${gearName(s)} → +${p+1}`,`${GLYPH_OK[p]}% success · ${sh} glyph shard${sh>1?'s':''}, ${fmt(c)} cr${risk}`,btn('glyph:'+s,'Inscribe',ok,p>=3?'warn':''));});
   h+=`<p class="note">Each + adds 8% attack (weapon) or 7% defence and 6% health (armour). You have ${P.shards} glyph shards. Shards drop from monsters, bounties and the war store.</p>`;}
  else if(panelTab==='war'){h+=`<p class="note" style="margin:0 0 6px">War points: <b style="color:#ffd34d">${P.wp}</b>. Earned by fighting in sieges and defeating enemy soldiers.</p>`;
-  h+=row('Glyph shard','For inscribing gear',btn('war:shard','6 WP',P.wp>=6));h+=row('Tonic crate','5 repair tonics',btn('war:hp','8 WP',P.wp>=8));h+=row('Cell crate','5 force cells',btn('war:fp','8 WP',P.wp>=8));h+=row('Iron shipment','20 iron ore',btn('war:iron','10 WP',P.wp>=10));}
+  h+=row('Glyph shard','For inscribing gear',btn('war:shard','6 WP',P.wp>=6));h+=row('Tonic crate','5 repair tonics',btn('war:hp','8 WP',P.wp>=8));h+=row('Cell crate','5 force cells',btn('war:fp','8 WP',P.wp>=8));h+=row('Iron shipment','20 iron ore',btn('war:iron','10 WP',P.wp>=10));h+=row('Lumen cache','3 lumen crystals',btn('war:lumen','12 WP',P.wp>=12));}
  else if(panelTab==='stats'){if(panelMode==='menu')h+=row('Recall to base','3 second channel. Moving or taking damage cancels it.',btn('recall','Recall',!P.dead&&dist(P,FAC[P.f])>BASE_R));
   const kv=[['Name',esc(P.name)],['Nation',FAC[P.f].name],['Level',`${P.lvl}${P.lvl<MAXLV?` (${P.xp} / ${xpNeed(P.lvl)} XP)`:' (max)'}`],['Health',P.maxHp],['Force',P.maxFp],['Attack',Math.round(P.atk)],['Defence',Math.round(P.def)],['Range',P.range],['Weapon',gearName('w')],['Armour',gearName('a')],['Credits',fmt(P.credits)],['War points',P.wp],['Monsters defeated',P.kills],['Enemy soldiers defeated',P.pk],['Siege victories',P.wins],['Times defeated',P.deaths]];
   h+=`<div class="kv" style="margin-top:8px">${kv.map(([k,v])=>`<span>${k}</span><span>${v}</span>`).join('')}</div>`;
   if(P.bounty)h+=`<p class="note">Current bounty: ${esc(P.bounty.txt)} (${P.bounty.have}/${P.bounty.n}). Reward ${P.bounty.cr} cr, ${P.bounty.sh} shard${P.bounty.sh>1?'s':''} and XP.</p>`;}
  else if(panelTab==='help'){h+=`<div class="help"><p><b>The war.</b> Ferros, Aether and Chrome each hold a base on the rim of the map. The Rift mine sits at the centre, guarded by each nation's Heartcore.</p>
   <p><b>Sieges.</b> Every few minutes the Heartcore shields drop for two minutes. Break enemy Heartcores and defend your own. The nation with the healthiest Heartcore wins and holds the Rift: +15% XP, a tougher Heartcore next time, and the only right to mine lumen.</p>
-  <p><b>Hunting.</b> Monsters get stronger the closer you get to the Rift. Red names are dangerous for your level. Bounties at the top right pay credits, shards and XP.</p>
+  <p><b>Hunting.</b> Monsters get stronger the farther you go from your base, toward the Rift or the wilds between nations. Red names are dangerous for your level. Bounties at the top right pay credits, shards and XP.</p>
   <p><b>Gear.</b> At your base terminal, forge new weapon and armour tiers with credits and ore, then inscribe glyphs for extra power. High glyphs can shatter.</p>
   <p><b>Controls.</b> ${isTouch?'Left side: drag to move. Red button: attack. Three skill buttons around it. Flasks: tonic and force cell. Yellow button: mine or use the terminal. AUTO hunts nearby monsters for you.':'WASD move · Space attack · 1 2 3 skills · Q tonic · E force cell · F mine / terminal · Tab next target · R auto-hunt · M menu.'}</p>
   <p><b>Your base</b> heals you quickly, and its guard towers shoot any enemy who comes close.</p><p><a href="sprites.html" style="color:#5ff3ff">Open the sprite library</a> to see every character animation and skill effect.</p></div>`;}
@@ -943,7 +960,7 @@ function doAct(a){const [k,x,y]=a.split(':');const keepHp=()=>{const r=P.hp/P.ma
   if(Math.random()*100<GLYPH_OK[p]){if(x==='w')P.wP++;else P.aP++;pm(`Success! ${gearName(x)}`,'ok');sfx('lvl');}
   else if(p>=3&&Math.random()<.35){if(x==='w')P.wP=0;else P.aP=0;pm('The glyph shattered. Back to +0.','bad');sfx('fail');shake=6;}
   else{pm('The inscription failed. Materials lost.','bad');sfx('fail');}keepHp();}
- else if(k==='war'){const cost={shard:6,hp:8,fp:8,iron:10}[x];if(P.wp<cost)return pm('Not enough war points','bad');P.wp-=cost;if(x==='shard')P.shards++;else if(x==='hp')P.hpPot+=5;else if(x==='fp')P.fpPot+=5;else P.iron+=20;pm('Delivered','ok');sfx('coin');}
+ else if(k==='war'){const cost={shard:6,hp:8,fp:8,iron:10,lumen:12}[x];if(P.wp<cost)return pm('Not enough war points','bad');P.wp-=cost;if(x==='shard')P.shards++;else if(x==='hp')P.hpPot+=5;else if(x==='fp')P.fpPot+=5;else if(x==='lumen')P.lumen+=3;else P.iron+=20;pm('Delivered','ok');sfx('coin');}
  else if(k==='recall'){if(P.dead)return;P.recall={t:0,dur:3};P.engage=false;P.mining=null;closePanel();return;}
  else if(k==='snd'){muted=!muted;try{localStorage.setItem('riftfall.mute',muted?'1':'0');}catch(e){}if(!muted)ensureAudio();updSnd();}
  else if(k==='erase'){if(!eraseArm){eraseArm=true;renderPanel();return;}wipeSave();location.reload();return;}
@@ -989,7 +1006,7 @@ function buildTitle(){const s=loadSave();
  descF();ui.keysTxt.textContent=isTouch?'Best played in landscape.':'WASD move · Space attack · 1 2 3 skills · F mine · M menu';
  if(s){ui.tCont.classList.remove('hidden');ui.tNew.classList.add('hidden');
   ui.tCont.innerHTML=`<div class="contc"><button class="primary" id="cont">Continue as ${esc(s.p.name)}</button><small style="color:var(--dim)">Lv ${s.p.lvl} ${FAC[s.p.f].name}</small><button class="linkb" id="newc">New character</button></div>`;
-  $('cont').addEventListener('click',()=>startGame(s.p,s.dom));
+  $('cont').addEventListener('click',()=>startGame(s.p,s.dom,s.bots));
   $('newc').addEventListener('click',()=>{ui.tCont.classList.add('hidden');ui.tNew.classList.remove('hidden');ui.keysTxt.textContent=`Deploying a new character replaces ${s.p.name} (Lv ${s.p.lvl}).`;});}}
 function updLoadTxt(){if(!ui.keysTxt||ui.title.classList.contains('hidden'))return;ui.keysTxt.textContent=assetsReady?(isTouch?'Best played in landscape.':'WASD move · Space attack · 1 2 3 skills · F mine · M menu'):`Loading sprites ${assetsLoaded}/${assetsTotal}…`;}
 function descF(){const F=FAC[selF];ui.fDesc.style.setProperty('--c',F.col);ui.fDesc.innerHTML=`<div>${F.blurb}</div><div class="chips">${CLS[selF].skills.map(s=>`<span>${s.name}</span>`).join('')}</div>`;}
@@ -1000,10 +1017,12 @@ function drawPreviews(t){if(ui.title.classList.contains('hidden'))return;for(con
  const ch=ATLAS.characters[p.f],A=ch&&ch.anims.walk,im=A&&IMG[A.file];if(im){const f=Math.floor(t*9)%A.frames,fw=ch.frame[0],fh=ch.frame[1];c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(84,142,26,9,0,0,7);c.fill();c.drawImage(im,f*fw+24,1*fh+28,fw-48,fh-48,0,6,168,168);continue;}
  c.setTransform(2.6,0,0,2.6,84,140);const u={id:p.f.length,f:p.f,kind:'ai',r:14,walk:t*7,movT:1,facing:Math.sin(t*.7)*.3,buffs:{},flash:0,shield:0};
  if(p.f==='ferros'&&Math.sin(t*.5)>.6)u.buffs.mech=1;drawBody(u,t);}ctx=mainCtx;}
-function startGame(data,dom){ensureAudio();P=mk(Object.assign({kind:'player',r:14,auto:false},data));if(P.tut==null)P.tut=0;facStats(P);P.hp=P.maxHp;P.fp=P.maxFp;
+function startGame(data,dom,bots){ensureAudio();P=mk(Object.assign({kind:'player',r:14,auto:false},data));if(P.tut==null)P.tut=0;facStats(P);P.hp=P.maxHp;P.fp=P.maxFp;
  placeAtBase(P);ents=ents.filter(e=>e.kind!=='player');ents.push(P);if(!P.bounty)newBounty();
  siege.dom=dom&&FAC[dom]?dom:siege.dom;siege.on=false;siege.t=100;siege.warned=0;FK.forEach(k=>cores[k].hp=cores[k].maxHp);
- ais.forEach(a=>{if(a.name.toLowerCase()===P.name.toLowerCase())a.name=aiName(a.f);levelAI(a);if(a.role==='hunt')placeAtBase(a);});
+ ais.forEach((a,i)=>{const b=Array.isArray(bots)&&bots.length===ais.length?bots[i]:null;
+  if(b&&b[1]>=1){a.name=String(b[0]).slice(0,16);a.lvl=clamp(b[1]|0,1,MAXLV);a.xp=b[2]|0;a.gearLag=b[3]|0;a.wP=ri(0,3);a.aP=ri(0,3);aiGear(a);facStats(a);a.hp=a.maxHp;a.fp=a.maxFp;}else levelAI(a);
+  if(a.name.toLowerCase()===P.name.toLowerCase())a.name=aiName(a.f);if(a.role==='hunt')placeAtBase(a);});
  ui.title.classList.add('hidden');ui.hud.classList.remove('hidden');ui.pFac.style.setProperty('--c',FAC[P.f].col);ui.pName.textContent=P.name;buildSkillBtns();playing=true;camX=P.x;camY=P.y;
  save();addLog(`Welcome, ${P.name} of the ${FAC[P.f].name}.`,FAC[P.f].lite);if(P.tut<5)setTimeout(showHint,900);updSnd();}
 
@@ -1016,7 +1035,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
  try{update(dt);if(P){updHud(dt);mmT-=dt;if(mmT<=0){mmT=.2;drawMM();}saveT+=dt;if(saveT>8){saveT=0;save();}}render(dt);drawPreviews(now/1000);}catch(err){console.error(err);}
  requestAnimationFrame(frame);}
 resize();mkGrads();initWorld();buildTitle();loadAssets();updLoadTxt();requestAnimationFrame(frame);
-window.RF={get P(){return P;},get siege(){return siege;},get ais(){return ais;},get cores(){return cores;},get mobs(){return mobs;},step(sec,h=1/30){for(let t=0;t<sec;t+=h)update(h);},recalc(){facStats(P);P.hp=P.maxHp;P.fp=P.maxFp;},startSiege,endSiege,startGame,attackPress,useSkill,interact,openPanel};
+window.RF={get P(){return P;},get siege(){return siege;},get ais(){return ais;},get cores(){return cores;},get mobs(){return mobs;},step(sec,h=1/30){for(let t=0;t<sec;t+=h)update(h);},recalc(){facStats(P);P.hp=P.maxHp;P.fp=P.maxFp;},startSiege,endSiege,startGame,attackPress,useSkill,interact,openPanel,doAct,xpNeed,get gameT(){return gameT;}};
 })();
 </script>
 </body>
