@@ -1,1 +1,1 @@
-build: 2026-11-27b (Flapping wings and sharper characters)
+build: 2026-11-27c (Crisper world, travel pace, low-memory mode)
