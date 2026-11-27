@@ -1,1 +1,1 @@
-build: 2026-11-27a (Bigger maps, livelier combat, monster attack patterns)
+build: 2026-11-27b (Flapping wings and sharper characters)
