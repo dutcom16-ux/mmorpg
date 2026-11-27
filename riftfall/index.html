@@ -254,7 +254,7 @@ const CLS={
  aether:{hp:95,hpL:15,fp:110,fpL:10,atk:14,atkL:3.5,def:3,defL:1,range:270,rate:.7,spd:172,proj:'orb',
   skills:[{id:'nova',name:'Flame Nova',cd:7,fp:18,tip:'Burns everything around you'},{id:'mend',name:'Mend',cd:14,fp:24,tip:'Heals you and nearby allies'},{id:'star',name:'Starfall',cd:28,fp:40,tip:'Meteors crash on your target'}]},
  chrome:{hp:145,hpL:23,fp:45,fpL:4,atk:13,atkL:3.3,def:7,defL:1.7,range:200,rate:.8,spd:162,proj:'shell',
-  skills:[{id:'rockets',name:'Rocket Barrage',cd:6,fp:12,tip:'Rockets hit up to 5 enemies'},{id:'wall',name:'Iron Wall',cd:20,fp:14,tip:'Take 60% less damage for 6s'},{id:'siege',name:'Siege Mode',cd:45,fp:28,tip:'Root in place: huge range and damage'}]}
+  skills:[{id:'rockets',name:'Rocket Barrage',cd:6,fp:12,tip:'Five rockets into one target'},{id:'wall',name:'Iron Wall',cd:20,fp:14,tip:'Take 60% less damage for 6s'},{id:'siege',name:'Siege Mode',cd:45,fp:28,tip:'Root in place: huge range and damage'}]}
 };
 const W_ATK=[0,8,20,38,62,95],A_DEF=[0,5,12,22,35,52],A_HP=[0,30,80,150,250,380];
 const TIER_LV=[1,5,10,15,20,25],TIER_CR=[0,250,1000,3000,7500,16000],TIER_IRON=[0,8,20,40,70,110],TIER_LUM=[0,0,0,5,15,30];
@@ -505,8 +505,8 @@ function useSkill(i){if(!P||P.dead)return;const sk=CLS[P.f].skills[i];if(P.cd['s
   case'mend':P.hp=Math.min(P.maxHp,P.hp+P.maxHp*.12);P.buffs.mend=5;healFx(P);for(const a of ais)if(a.f===P.f&&!a.dead&&dist(a,P)<260){a.hp=Math.min(a.maxHp,a.hp+a.maxHp*.25);healFx(a);}sfx('heal');break;
   case'star':{if(!t)t=pickTarget(380);if(t&&dist(P,t)>400){toast('Out of range');return;}const pt=t?{x:t.x,y:t.y}:ahead(200);const a=effAtk(P)*1.8;ring(pt.x,pt.y,140,'#ffe27a',1.2,2);
    [.25,.6,.95].forEach(d=>after(d,()=>{const x=pt.x+rand(-40,40),y=pt.y+rand(-30,30);addFx({t:'m',x,y,life:.3,max:.3});after(.3,()=>{aoe(P,{x,y},120,a);boom(x,y,120,'#ffe27a');sfx('boom');shake=Math.min(8,shake+2);});}));break;}
-  case'rockets':{const l=ents.filter(e=>canHit(P,e)&&dist(P,e)<330).sort((a,b)=>dist(P,a)-dist(P,b)).slice(0,5);if(!l.length){toast('No enemy in range');return;}
-   l.forEach((e,j)=>after(j*.08,()=>{shoot(P,e,effAtk(P)*1.3,{kind:'rocket',splash:40,oy:P.y-36});sfx('shell');}));break;}
+  case'rockets':{if(!t)t=pickTarget(330);if(!t){toast('No enemy in range');return;}if(dist(P,t)>350){toast('Out of range');return;}const tg=t,a=effAtk(P)*.75;
+   for(let j=0;j<5;j++)after(j*.08,()=>{if(canHit(P,tg)){shoot(P,tg,a,{kind:'rocket',oy:P.y-36});sfx('shell');}});break;}
   case'wall':P.buffs.wall=6;ring(P.x,P.y,40,'#ffb0a8',.6,4);break;
   case'siege':P.buffs.siege=12;boom(P.x,P.y,50,'#ff8a5a');ftext(P.x,P.y-70,'SIEGE MODE','#ffb0a8',true);break;}
  P.fp-=sk.fp;P.cd['s'+i]=sk.cd;P.combatT=5;if(t){P.target=t;P.engage=true;}
@@ -554,7 +554,7 @@ function aiSkill(u,t){u.cd.s=rand(7,10);
  else if(u.f==='aether'){const hurt=ais.concat(P&&!P.dead?[P]:[]).find(a=>a.f===u.f&&!a.dead&&a.hp<a.maxHp*.6&&dist(a,u)<260);
   if(hurt){hurt.hp=Math.min(hurt.maxHp,hurt.hp+hurt.maxHp*.25);healFx(hurt);if(hurt===P)addLog(`${u.name} healed you`,FAC.aether.lite);}
   else if(dist(u,t)<160){aoe(u,u,150,u.atk*2);ring(u.x,u.y,150,'#ff9a4a',.45,5);}else shoot(u,t,u.atk*1.8,{kind:'orb'});}
- else{ents.filter(e=>canHit(u,e)&&dist(u,e)<320).slice(0,3).forEach((e,j)=>after(j*.1,()=>{if(!u.dead)shoot(u,e,u.atk*1.2,{kind:'rocket',splash:35,oy:u.y-36});}));}}
+ else{for(let j=0;j<5;j++)after(j*.1,()=>{if(!u.dead&&canHit(u,t))shoot(u,t,u.atk*.75,{kind:'rocket',oy:u.y-36});});}}
 function updAI(u,dt){
  if(u.dead){u.respawnT-=dt;if(u.respawnT<=0){levelAI(u);placeAtBase(u,siege.on&&u.role!=='hunt');}return;}
  if(dist(u,FAC[u.f])<BASE_R||(siege.on&&dist(u,GATE[u.f])<90))u.hp=Math.min(u.maxHp,u.hp+u.maxHp*.12*dt);
@@ -595,7 +595,7 @@ function updProjs(dt){for(let i=projs.length-1;i>=0;i--){const p=projs[i];p.life
   if(d<=s+6){hitProj(p,t);projs.splice(i,1);continue;}p.vx=dx/d*p.spd;p.vy=dy/d*p.spd;}
  p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.kind==='rocket'&&Math.random()<.5)addFx({t:'s',x:p.x,y:p.y,vx:0,vy:-10,life:.4,max:.4,s:4});
  if(p.life<=0)projs.splice(i,1);}}
-function hitProj(p,t){if(p.splash){aoe(p.owner,{x:t.x,y:t.y},p.splash,p.dmg);if(!P||dist(P,t)<800){boom(t.x,t.y,p.splash,p.col);}}else{dealDamage(p.owner,t,p.dmg);if(!P||dist(P,t)<800)sparks(t.x,t.y-16,p.col,4,90);}
+function hitProj(p,t){if(p.splash){aoe(p.owner,{x:t.x,y:t.y},p.splash,p.dmg);if(!P||dist(P,t)<800){boom(t.x,t.y,p.splash,p.col);}}else{dealDamage(p.owner,t,p.dmg);if(!P||dist(P,t)<800){sparks(t.x,t.y-16,p.col,4,90);if(p.kind==='rocket')flashFx(t.x,t.y-16,18,p.col,.15);}}
  if(p.owner===P)sfx('hit');}
 function update(dt){gameT+=dt;updSiege(dt);
  for(const e of ents){for(const k in e.cd)if(e.cd[k]>0)e.cd[k]-=dt;for(const k in e.buffs)if(e.buffs[k]>0)e.buffs[k]-=dt;if(e.flash>0)e.flash-=dt;if(e.hitT>0)e.hitT-=dt;if(e.movT>0)e.movT-=dt;if(e.lunge>0)e.lunge-=dt;}
