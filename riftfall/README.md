@@ -31,6 +31,15 @@ The Rift mine sits at the centre of the map, guarded by each nation's Heartcore.
 | Tap the target frame to switch targets | Tab |
 | Menu button | M |
 
+## Sprites and effects
+
+All characters and skill effects are sprite sheets in `assets/` (WebP for the game, indexed by `assets/atlas.json`). Open `sprites.html` to browse them.
+
+- **Characters:** Ferros, Aether, Chrome and the Ferros battle mech. Each has idle, walk, attack, cast, hurt and death animations; Chrome also has siege deploy, siege idle and siege fire. Every animation comes in 8 directions.
+- **Sheet layout:** columns are frames and rows are directions, in the order E, SE, S, SW, W, NW, N, NE. Frames are 160×160 px (the mech is 208×208) at 2 px per world unit, anchored at the feet.
+- **Effects:** projectiles, hit sparks, explosion, arc blast, drone, mech drop, flame nova, mend, meteor and impact, iron wall, siege anchor, level up, and a cast circle for each nation.
+- **Re-generating:** the art comes from `tools/spritegen/`: a 2.5D rig per character plus the effect painters. Open `tools/spritegen/gen.html` in Chrome and call `SpriteGen.renderBoth(job)` for each item in `SpriteGen.jobs()` (the export script does exactly this), then run `python3 tools/inject_atlas.py`.
+
 ## Deploy
 
 It's a static site: Vercel serves `index.html` from the repository root with no build settings.

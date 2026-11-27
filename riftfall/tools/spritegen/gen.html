@@ -1,0 +1,18 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Riftfall sprite generator</title></head>
+<body style="background:#20262c;margin:0">
+<script src="core.js"></script><script src="chars.js"></script><script src="vfx.js"></script><script src="render.js"></script>
+<script>
+window.preview = function(rig, list, bg){
+  const R = RIGS[rig], cols = 8, rows = list.length, s = 1;
+  const c = document.createElement('canvas'); c.width = R.fw*cols; c.height = R.fh*rows; const x = c.getContext('2d');
+  x.fillStyle = bg||'#5a5040'; x.fillRect(0,0,c.width,c.height);
+  list.forEach(([anim,f],r)=>{ for(let d=0;d<8;d++){ const fr = SpriteGen.frame(rig,anim,f,d); x.fillStyle='rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(d*R.fw+R.ox, r*R.fh+R.oy, 16, 6, 0,0,7); x.fill(); x.drawImage(fr, d*R.fw, r*R.fh);} });
+  return c.toDataURL('image/png');
+};
+window.fxPreview = function(names){
+  const cells=[]; let W=0,H=0; for(const n of names){const fx=FXDEF[n]; W=Math.max(W,fx.fw*fx.frames); H+=fx.fh;}
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#3a3a32'; x.fillRect(0,0,W,H);
+  let y=0; for(const n of names){const fx=FXDEF[n]; const sh=document.createElement('canvas'); const img=SpriteGen.render({kind:'fx',name:n}); cells.push(img); y+=fx.fh;}
+  return cells;
+};
+</script></body></html>

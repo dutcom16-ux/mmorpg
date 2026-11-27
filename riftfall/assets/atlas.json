@@ -1,0 +1,629 @@
+{
+ "version": 1,
+ "generator": "Riftfall spritegen",
+ "directions": [
+  "E",
+  "SE",
+  "S",
+  "SW",
+  "W",
+  "NW",
+  "N",
+  "NE"
+ ],
+ "directionNote": "Rows are facing directions in this order; facing angle = row * 45 degrees with y pointing down (0 = east, 2 = south).",
+ "characters": {
+  "ferros": {
+   "frame": [
+    160,
+    160
+   ],
+   "anchor": [
+    80,
+    116
+   ],
+   "pxPerUnit": 2,
+   "anims": {
+    "idle": {
+     "file": "ferros_idle.webp",
+     "frames": 6,
+     "fps": 7,
+     "loop": true
+    },
+    "walk": {
+     "file": "ferros_walk.webp",
+     "frames": 8,
+     "fps": 12,
+     "loop": true
+    },
+    "attack": {
+     "file": "ferros_attack.webp",
+     "frames": 6,
+     "fps": 16,
+     "loop": false
+    },
+    "cast": {
+     "file": "ferros_cast.webp",
+     "frames": 6,
+     "fps": 12,
+     "loop": false
+    },
+    "hurt": {
+     "file": "ferros_hurt.webp",
+     "frames": 3,
+     "fps": 12,
+     "loop": false
+    },
+    "death": {
+     "file": "ferros_death.webp",
+     "frames": 6,
+     "fps": 9,
+     "loop": false
+    }
+   }
+  },
+  "aether": {
+   "frame": [
+    160,
+    160
+   ],
+   "anchor": [
+    80,
+    116
+   ],
+   "pxPerUnit": 2,
+   "anims": {
+    "idle": {
+     "file": "aether_idle.webp",
+     "frames": 6,
+     "fps": 7,
+     "loop": true
+    },
+    "walk": {
+     "file": "aether_walk.webp",
+     "frames": 8,
+     "fps": 10,
+     "loop": true
+    },
+    "attack": {
+     "file": "aether_attack.webp",
+     "frames": 6,
+     "fps": 15,
+     "loop": false
+    },
+    "cast": {
+     "file": "aether_cast.webp",
+     "frames": 6,
+     "fps": 11,
+     "loop": false
+    },
+    "hurt": {
+     "file": "aether_hurt.webp",
+     "frames": 3,
+     "fps": 12,
+     "loop": false
+    },
+    "death": {
+     "file": "aether_death.webp",
+     "frames": 6,
+     "fps": 8,
+     "loop": false
+    }
+   }
+  },
+  "chrome": {
+   "frame": [
+    160,
+    160
+   ],
+   "anchor": [
+    80,
+    116
+   ],
+   "pxPerUnit": 2,
+   "anims": {
+    "idle": {
+     "file": "chrome_idle.webp",
+     "frames": 6,
+     "fps": 7,
+     "loop": true
+    },
+    "walk": {
+     "file": "chrome_walk.webp",
+     "frames": 8,
+     "fps": 11,
+     "loop": true
+    },
+    "attack": {
+     "file": "chrome_attack.webp",
+     "frames": 6,
+     "fps": 15,
+     "loop": false
+    },
+    "cast": {
+     "file": "chrome_cast.webp",
+     "frames": 6,
+     "fps": 11,
+     "loop": false
+    },
+    "hurt": {
+     "file": "chrome_hurt.webp",
+     "frames": 3,
+     "fps": 12,
+     "loop": false
+    },
+    "death": {
+     "file": "chrome_death.webp",
+     "frames": 6,
+     "fps": 9,
+     "loop": false
+    },
+    "siege_deploy": {
+     "file": "chrome_siege_deploy.webp",
+     "frames": 6,
+     "fps": 12,
+     "loop": false
+    },
+    "siege_idle": {
+     "file": "chrome_siege_idle.webp",
+     "frames": 4,
+     "fps": 6,
+     "loop": true
+    },
+    "siege_fire": {
+     "file": "chrome_siege_fire.webp",
+     "frames": 6,
+     "fps": 14,
+     "loop": false
+    }
+   }
+  },
+  "mech": {
+   "frame": [
+    208,
+    208
+   ],
+   "anchor": [
+    104,
+    176
+   ],
+   "pxPerUnit": 2,
+   "anims": {
+    "idle": {
+     "file": "mech_idle.webp",
+     "frames": 6,
+     "fps": 6,
+     "loop": true
+    },
+    "walk": {
+     "file": "mech_walk.webp",
+     "frames": 8,
+     "fps": 9,
+     "loop": true
+    },
+    "attack": {
+     "file": "mech_attack.webp",
+     "frames": 6,
+     "fps": 14,
+     "loop": false
+    },
+    "hurt": {
+     "file": "mech_hurt.webp",
+     "frames": 3,
+     "fps": 12,
+     "loop": false
+    }
+   }
+  }
+ },
+ "effects": {
+  "proj_bolt": {
+   "file": "proj_bolt.webp",
+   "frame": [
+    64,
+    32
+   ],
+   "frames": 4,
+   "fps": 20,
+   "loop": true,
+   "anchor": [
+    46,
+    16
+   ],
+   "radiusPx": null,
+   "world": [
+    32,
+    16
+   ],
+   "blend": "lighter",
+   "rotate": true
+  },
+  "proj_orb": {
+   "file": "proj_orb.webp",
+   "frame": [
+    48,
+    48
+   ],
+   "frames": 6,
+   "fps": 14,
+   "loop": true,
+   "anchor": [
+    24,
+    24
+   ],
+   "radiusPx": null,
+   "world": [
+    26,
+    26
+   ],
+   "blend": "lighter",
+   "rotate": false
+  },
+  "proj_shell": {
+   "file": "proj_shell.webp",
+   "frame": [
+    40,
+    40
+   ],
+   "frames": 4,
+   "fps": 16,
+   "loop": true,
+   "anchor": [
+    27,
+    20
+   ],
+   "radiusPx": null,
+   "world": [
+    22,
+    22
+   ],
+   "blend": "lighter",
+   "rotate": true
+  },
+  "proj_rocket": {
+   "file": "proj_rocket.webp",
+   "frame": [
+    80,
+    32
+   ],
+   "frames": 4,
+   "fps": 18,
+   "loop": true,
+   "anchor": [
+    58,
+    16
+   ],
+   "radiusPx": null,
+   "world": [
+    40,
+    16
+   ],
+   "blend": "source-over",
+   "rotate": true
+  },
+  "proj_cannon": {
+   "file": "proj_cannon.webp",
+   "frame": [
+    64,
+    64
+   ],
+   "frames": 4,
+   "fps": 16,
+   "loop": true,
+   "anchor": [
+    32,
+    32
+   ],
+   "radiusPx": null,
+   "world": [
+    34,
+    34
+   ],
+   "blend": "lighter",
+   "rotate": false
+  },
+  "proj_zap": {
+   "file": "proj_zap.webp",
+   "frame": [
+    48,
+    48
+   ],
+   "frames": 4,
+   "fps": 20,
+   "loop": true,
+   "anchor": [
+    24,
+    24
+   ],
+   "radiusPx": null,
+   "world": [
+    24,
+    24
+   ],
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_hit": {
+   "file": "fx_hit.webp",
+   "frame": [
+    96,
+    96
+   ],
+   "frames": 6,
+   "fps": 26,
+   "loop": false,
+   "anchor": [
+    48,
+    48
+   ],
+   "radiusPx": null,
+   "world": [
+    52,
+    52
+   ],
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_explosion": {
+   "file": "fx_explosion.webp",
+   "frame": [
+    256,
+    256
+   ],
+   "frames": 9,
+   "fps": 20,
+   "loop": false,
+   "anchor": [
+    128,
+    150
+   ],
+   "radiusPx": 118,
+   "world": null,
+   "blend": "source-over",
+   "rotate": false
+  },
+  "fx_arc_blast": {
+   "file": "fx_arc_blast.webp",
+   "frame": [
+    256,
+    256
+   ],
+   "frames": 8,
+   "fps": 20,
+   "loop": false,
+   "anchor": [
+    128,
+    150
+   ],
+   "radiusPx": 112,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_drone": {
+   "file": "fx_drone.webp",
+   "frame": [
+    64,
+    64
+   ],
+   "frames": 6,
+   "fps": 18,
+   "loop": true,
+   "anchor": [
+    32,
+    36
+   ],
+   "radiusPx": null,
+   "world": [
+    32,
+    32
+   ],
+   "blend": "source-over",
+   "rotate": false
+  },
+  "fx_mech_summon": {
+   "file": "fx_mech_summon.webp",
+   "frame": [
+    256,
+    320
+   ],
+   "frames": 10,
+   "fps": 18,
+   "loop": false,
+   "anchor": [
+    128,
+    276
+   ],
+   "radiusPx": 90,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_nova": {
+   "file": "fx_nova.webp",
+   "frame": [
+    384,
+    384
+   ],
+   "frames": 9,
+   "fps": 18,
+   "loop": false,
+   "anchor": [
+    192,
+    200
+   ],
+   "radiusPx": 175,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_mend": {
+   "file": "fx_mend.webp",
+   "frame": [
+    192,
+    192
+   ],
+   "frames": 10,
+   "fps": 14,
+   "loop": false,
+   "anchor": [
+    96,
+    120
+   ],
+   "radiusPx": 70,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_meteor": {
+   "file": "fx_meteor.webp",
+   "frame": [
+    96,
+    192
+   ],
+   "frames": 6,
+   "fps": 16,
+   "loop": true,
+   "anchor": [
+    48,
+    150
+   ],
+   "radiusPx": null,
+   "world": [
+    60,
+    120
+   ],
+   "blend": "source-over",
+   "rotate": false
+  },
+  "fx_meteor_impact": {
+   "file": "fx_meteor_impact.webp",
+   "frame": [
+    320,
+    320
+   ],
+   "frames": 9,
+   "fps": 18,
+   "loop": false,
+   "anchor": [
+    160,
+    190
+   ],
+   "radiusPx": 130,
+   "world": null,
+   "blend": "source-over",
+   "rotate": false
+  },
+  "fx_wall": {
+   "file": "fx_wall.webp",
+   "frame": [
+    160,
+    192
+   ],
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "anchor": [
+    80,
+    150
+   ],
+   "radiusPx": null,
+   "world": [
+    80,
+    96
+   ],
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_siege": {
+   "file": "fx_siege.webp",
+   "frame": [
+    192,
+    192
+   ],
+   "frames": 8,
+   "fps": 14,
+   "loop": false,
+   "anchor": [
+    96,
+    112
+   ],
+   "radiusPx": 70,
+   "world": null,
+   "blend": "source-over",
+   "rotate": false
+  },
+  "fx_levelup": {
+   "file": "fx_levelup.webp",
+   "frame": [
+    256,
+    320
+   ],
+   "frames": 12,
+   "fps": 16,
+   "loop": false,
+   "anchor": [
+    128,
+    280
+   ],
+   "radiusPx": 60,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_cast_ferros": {
+   "file": "fx_cast_ferros.webp",
+   "frame": [
+    160,
+    96
+   ],
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "anchor": [
+    80,
+    48
+   ],
+   "radiusPx": 70,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_cast_aether": {
+   "file": "fx_cast_aether.webp",
+   "frame": [
+    160,
+    96
+   ],
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "anchor": [
+    80,
+    48
+   ],
+   "radiusPx": 70,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  },
+  "fx_cast_chrome": {
+   "file": "fx_cast_chrome.webp",
+   "frame": [
+    160,
+    96
+   ],
+   "frames": 8,
+   "fps": 12,
+   "loop": true,
+   "anchor": [
+    80,
+    48
+   ],
+   "radiusPx": 70,
+   "world": null,
+   "blend": "lighter",
+   "rotate": false
+  }
+ }
+}

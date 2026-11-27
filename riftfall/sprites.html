@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Riftfall Sprite Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Oxanium:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a studio asset sheet, the kind an art lead hands to engineering
+   IDEA: a turntable bench: one character on a pad, eight views around it, effects in a tray
+   PICTURE: the live stage canvas, the eight-direction strip and the effect grid
+   COLOUR and TYPE: the game's slate HUD over a dusty ochre ground; Oxanium + Chakra Petch
+   LAYOUT: stage + controls first, direction strip, effect grid, sheet format notes */
+:root{color-scheme:dark;--bg:#0d1418;--panel:#131d22;--edge:rgba(150,215,230,.2);--ink:#e8f1f4;--dim:#93a9b1;--cy:#5ff3ff;--fer:#3d8bff;--aet:#c35cff;--chr:#ff4a3d}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.5 'Chakra Petch',system-ui,sans-serif;overflow-x:clip}
+a{color:var(--cy)}
+.band{padding:clamp(18px,3vw,40px) max(4vw,14px)}
+.wrap{max-width:1240px;margin:0 auto}
+header.band{padding-bottom:8px}
+h1{font:800 clamp(30px,5vw,46px)/1.05 Oxanium,sans-serif;margin:0;letter-spacing:.02em}
+h2{font:800 22px/1.2 Oxanium,sans-serif;margin:0 0 12px}
+.sub{color:var(--dim);margin:6px 0 0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid rgba(95,243,255,.45);background:rgba(95,243,255,.1);color:var(--ink);font:600 15px 'Chakra Petch',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.on{background:rgba(95,243,255,.22);border-color:var(--cy)}
+.btn:focus-visible,.chip:focus-visible,.dir:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.bench{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+.stage{position:relative;border-radius:14px;border:1px solid var(--edge);overflow:hidden;aspect-ratio:4/3;background:#5a4e3c}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.ctl{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px}
+.lbl{font-size:13px;color:var(--dim);margin:12px 0 6px}
+.lbl:first-child{margin-top:0}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--edge);background:rgba(255,255,255,.03);color:var(--ink);font:600 14px 'Chakra Petch',sans-serif;cursor:pointer}
+.chip.on{border-color:var(--c,var(--cy));background:color-mix(in srgb,var(--c,var(--cy)) 20%,transparent)}
+input[type=range]{width:100%;accent-color:var(--cy);height:44px}
+.meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px;margin-top:12px}
+.meta span:nth-child(odd){color:var(--dim)}
+.meta span:nth-child(even){font-family:Oxanium,sans-serif;overflow-wrap:anywhere}
+.dirs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-top:14px}
+.dir{position:relative;aspect-ratio:1;border-radius:10px;border:1px solid var(--edge);background:#4f4535;cursor:pointer;padding:0;overflow:hidden}
+.dir canvas{position:absolute;inset:0;width:100%;height:100%}
+.dir b{position:absolute;left:6px;top:4px;font:800 12px Oxanium,sans-serif;color:#fff;text-shadow:0 1px 2px #000}
+.dir.on{border-color:var(--cy);box-shadow:0 0 0 1px var(--cy) inset}
+.fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.fx{background:var(--panel);border:1px solid var(--edge);border-radius:12px;overflow:hidden}
+.fx .cv{position:relative;aspect-ratio:1;background:radial-gradient(circle at 50% 60%,#3a3428,#1d1a15)}
+.fx canvas{position:absolute;inset:0;width:100%;height:100%}
+.fx div.t{padding:8px 10px 10px;font-size:14px}
+.fx div.t b{display:block;font-family:Oxanium,sans-serif}
+.fx small{color:var(--dim);font-size:13px}
+.notes{color:#cfe0e5;max-width:70ch}
+.notes code{background:rgba(255,255,255,.07);padding:1px 5px;border-radius:5px;font-size:14px}
+.load{color:var(--dim);font-size:14px}
+@media(max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}.dirs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.stage{transition:none}}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap top">
+ <div><h1>Riftfall sprite library</h1><p class="sub">Four characters, every animation in 8 directions, plus 20 skill and combat effects. <span id="ld" class="load"></span></p></div>
+ <a class="btn" href="./">Play the game</a>
+</div></header>
+
+<section class="band" style="padding-top:8px"><div class="wrap">
+ <div class="bench">
+  <div>
+   <div class="stage" id="stageWrap"><canvas id="stage"></canvas></div>
+   <div class="dirs" id="dirs"></div>
+  </div>
+  <div class="ctl">
+   <div class="lbl">Character</div><div class="row" id="chars"></div>
+   <div class="lbl">Animation</div><div class="row" id="anims"></div>
+   <div class="lbl">Speed <span id="spdv">1×</span></div><input type="range" id="spd" min="0.1" max="2" step="0.05" value="1" aria-label="Playback speed">
+   <div class="row" style="margin-top:4px"><button class="btn" id="play">Pause</button><button class="btn" id="step">Next frame</button><button class="btn" id="bg">Ground: dust</button></div>
+   <div class="meta" id="meta"></div>
+  </div>
+ </div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+ <h2>Skill and combat effects</h2>
+ <div class="fxgrid" id="fxgrid"></div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap notes">
+ <h2>Sheet format</h2>
+ <p>Each character animation is one sheet: <b>columns are frames</b>, <b>rows are facing directions</b> in the order <code>E, SE, S, SW, W, NW, N, NE</code> (row × 45°, with y pointing down). Character frames are 160×160 px (the mech is 208×208) at 2 px per world unit. The anchor point is where the feet touch the ground.</p>
+ <p>Effect sheets are a single row of frames. <code>atlas.json</code> lists every file with its frame size, frame count, fps, loop flag, anchor and blend mode (<code>lighter</code> for energy effects, normal for smoke and debris).</p>
+ <p>All art is generated from one 2.5D rig per character, so every direction matches. To change a design and re-export everything, edit <code>tools/spritegen</code>.</p>
+</div></section>
+
+<script>
+{
+const ATLAS=/*ATLAS*/{"version":1,"generator":"Riftfall spritegen","directions":["E","SE","S","SW","W","NW","N","NE"],"directionNote":"Rows are facing directions in this order; facing angle = row * 45 degrees with y pointing down (0 = east, 2 = south).","characters":{"ferros":{"frame":[160,160],"anchor":[80,116],"pxPerUnit":2,"anims":{"idle":{"file":"ferros_idle.webp","frames":6,"fps":7,"loop":true},"walk":{"file":"ferros_walk.webp","frames":8,"fps":12,"loop":true},"attack":{"file":"ferros_attack.webp","frames":6,"fps":16,"loop":false},"cast":{"file":"ferros_cast.webp","frames":6,"fps":12,"loop":false},"hurt":{"file":"ferros_hurt.webp","frames":3,"fps":12,"loop":false},"death":{"file":"ferros_death.webp","frames":6,"fps":9,"loop":false}}},"aether":{"frame":[160,160],"anchor":[80,116],"pxPerUnit":2,"anims":{"idle":{"file":"aether_idle.webp","frames":6,"fps":7,"loop":true},"walk":{"file":"aether_walk.webp","frames":8,"fps":10,"loop":true},"attack":{"file":"aether_attack.webp","frames":6,"fps":15,"loop":false},"cast":{"file":"aether_cast.webp","frames":6,"fps":11,"loop":false},"hurt":{"file":"aether_hurt.webp","frames":3,"fps":12,"loop":false},"death":{"file":"aether_death.webp","frames":6,"fps":8,"loop":false}}},"chrome":{"frame":[160,160],"anchor":[80,116],"pxPerUnit":2,"anims":{"idle":{"file":"chrome_idle.webp","frames":6,"fps":7,"loop":true},"walk":{"file":"chrome_walk.webp","frames":8,"fps":11,"loop":true},"attack":{"file":"chrome_attack.webp","frames":6,"fps":15,"loop":false},"cast":{"file":"chrome_cast.webp","frames":6,"fps":11,"loop":false},"hurt":{"file":"chrome_hurt.webp","frames":3,"fps":12,"loop":false},"death":{"file":"chrome_death.webp","frames":6,"fps":9,"loop":false},"siege_deploy":{"file":"chrome_siege_deploy.webp","frames":6,"fps":12,"loop":false},"siege_idle":{"file":"chrome_siege_idle.webp","frames":4,"fps":6,"loop":true},"siege_fire":{"file":"chrome_siege_fire.webp","frames":6,"fps":14,"loop":false}}},"mech":{"frame":[208,208],"anchor":[104,176],"pxPerUnit":2,"anims":{"idle":{"file":"mech_idle.webp","frames":6,"fps":6,"loop":true},"walk":{"file":"mech_walk.webp","frames":8,"fps":9,"loop":true},"attack":{"file":"mech_attack.webp","frames":6,"fps":14,"loop":false},"hurt":{"file":"mech_hurt.webp","frames":3,"fps":12,"loop":false}}}},"effects":{"proj_bolt":{"file":"proj_bolt.webp","frame":[64,32],"frames":4,"fps":20,"loop":true,"anchor":[46,16],"radiusPx":null,"world":[32,16],"blend":"lighter","rotate":true},"proj_orb":{"file":"proj_orb.webp","frame":[48,48],"frames":6,"fps":14,"loop":true,"anchor":[24,24],"radiusPx":null,"world":[26,26],"blend":"lighter","rotate":false},"proj_shell":{"file":"proj_shell.webp","frame":[40,40],"frames":4,"fps":16,"loop":true,"anchor":[27,20],"radiusPx":null,"world":[22,22],"blend":"lighter","rotate":true},"proj_rocket":{"file":"proj_rocket.webp","frame":[80,32],"frames":4,"fps":18,"loop":true,"anchor":[58,16],"radiusPx":null,"world":[40,16],"blend":"source-over","rotate":true},"proj_cannon":{"file":"proj_cannon.webp","frame":[64,64],"frames":4,"fps":16,"loop":true,"anchor":[32,32],"radiusPx":null,"world":[34,34],"blend":"lighter","rotate":false},"proj_zap":{"file":"proj_zap.webp","frame":[48,48],"frames":4,"fps":20,"loop":true,"anchor":[24,24],"radiusPx":null,"world":[24,24],"blend":"lighter","rotate":false},"fx_hit":{"file":"fx_hit.webp","frame":[96,96],"frames":6,"fps":26,"loop":false,"anchor":[48,48],"radiusPx":null,"world":[52,52],"blend":"lighter","rotate":false},"fx_explosion":{"file":"fx_explosion.webp","frame":[256,256],"frames":9,"fps":20,"loop":false,"anchor":[128,150],"radiusPx":118,"world":null,"blend":"source-over","rotate":false},"fx_arc_blast":{"file":"fx_arc_blast.webp","frame":[256,256],"frames":8,"fps":20,"loop":false,"anchor":[128,150],"radiusPx":112,"world":null,"blend":"lighter","rotate":false},"fx_drone":{"file":"fx_drone.webp","frame":[64,64],"frames":6,"fps":18,"loop":true,"anchor":[32,36],"radiusPx":null,"world":[32,32],"blend":"source-over","rotate":false},"fx_mech_summon":{"file":"fx_mech_summon.webp","frame":[256,320],"frames":10,"fps":18,"loop":false,"anchor":[128,276],"radiusPx":90,"world":null,"blend":"lighter","rotate":false},"fx_nova":{"file":"fx_nova.webp","frame":[384,384],"frames":9,"fps":18,"loop":false,"anchor":[192,200],"radiusPx":175,"world":null,"blend":"lighter","rotate":false},"fx_mend":{"file":"fx_mend.webp","frame":[192,192],"frames":10,"fps":14,"loop":false,"anchor":[96,120],"radiusPx":70,"world":null,"blend":"lighter","rotate":false},"fx_meteor":{"file":"fx_meteor.webp","frame":[96,192],"frames":6,"fps":16,"loop":true,"anchor":[48,150],"radiusPx":null,"world":[60,120],"blend":"source-over","rotate":false},"fx_meteor_impact":{"file":"fx_meteor_impact.webp","frame":[320,320],"frames":9,"fps":18,"loop":false,"anchor":[160,190],"radiusPx":130,"world":null,"blend":"source-over","rotate":false},"fx_wall":{"file":"fx_wall.webp","frame":[160,192],"frames":8,"fps":12,"loop":true,"anchor":[80,150],"radiusPx":null,"world":[80,96],"blend":"lighter","rotate":false},"fx_siege":{"file":"fx_siege.webp","frame":[192,192],"frames":8,"fps":14,"loop":false,"anchor":[96,112],"radiusPx":70,"world":null,"blend":"source-over","rotate":false},"fx_levelup":{"file":"fx_levelup.webp","frame":[256,320],"frames":12,"fps":16,"loop":false,"anchor":[128,280],"radiusPx":60,"world":null,"blend":"lighter","rotate":false},"fx_cast_ferros":{"file":"fx_cast_ferros.webp","frame":[160,96],"frames":8,"fps":12,"loop":true,"anchor":[80,48],"radiusPx":70,"world":null,"blend":"lighter","rotate":false},"fx_cast_aether":{"file":"fx_cast_aether.webp","frame":[160,96],"frames":8,"fps":12,"loop":true,"anchor":[80,48],"radiusPx":70,"world":null,"blend":"lighter","rotate":false},"fx_cast_chrome":{"file":"fx_cast_chrome.webp","frame":[160,96],"frames":8,"fps":12,"loop":true,"anchor":[80,48],"radiusPx":70,"world":null,"blend":"lighter","rotate":false}}}/*END*/;
+const NAMES={ferros:'Ferros',aether:'Aether',chrome:'Chrome',mech:'Battle mech'},COL={ferros:'#3d8bff',aether:'#c35cff',chrome:'#ff4a3d',mech:'#3d8bff'};
+const ANAME={idle:'Idle',walk:'Walk',attack:'Attack',cast:'Cast',hurt:'Hurt',death:'Death',siege_deploy:'Siege deploy',siege_idle:'Siege idle',siege_fire:'Siege fire'};
+const FXNAME={proj_bolt:'Carbine bolt',proj_orb:'Force orb',proj_shell:'Cannon shell',proj_rocket:'Rocket',proj_cannon:'Plasma cannon',proj_zap:'Voltwing zap',fx_hit:'Hit spark',fx_explosion:'Explosion',fx_arc_blast:'Arc Grenade blast',fx_drone:'Sentry Drone',fx_mech_summon:'Call Mech drop',fx_nova:'Flame Nova',fx_mend:'Mend',fx_meteor:'Starfall meteor',fx_meteor_impact:'Starfall impact',fx_wall:'Iron Wall',fx_siege:'Siege Mode anchor',fx_levelup:'Level up',fx_cast_ferros:'Ferros cast circle',fx_cast_aether:'Aether cast circle',fx_cast_chrome:'Chrome cast circle'};
+const DIRN=['E','SE','S','SW','W','NW','N','NE'];
+const IMG={};let st={ch:'ferros',an:'walk',dir:2,t:0,play:true,spd:1,bg:0,stepF:null};
+const BGS=[['dust','#5a4e3c','#43392b'],['dark','#1b2328','#12181c'],['light','#c9cfd4','#aeb6bc']];
+const $=id=>document.getElementById(id);
+function load(){const files=new Set();for(const c of Object.values(ATLAS.characters))for(const a of Object.values(c.anims))files.add(a.file);for(const e of Object.values(ATLAS.effects))files.add(e.file);
+ let n=0;const tot=files.size;for(const f of files){const im=new Image();im.onload=im.onerror=()=>{if(im.naturalWidth)IMG[f]=im;n++;$('ld').textContent=n<tot?`Loading ${n}/${tot}…`:'';};im.src='assets/'+f;}}
+function chips(){
+ $('chars').innerHTML=Object.keys(ATLAS.characters).map(k=>`<button class="chip${k===st.ch?' on':''}" style="--c:${COL[k]}" data-ch="${k}">${NAMES[k]}</button>`).join('');
+ const ch=ATLAS.characters[st.ch];if(!ch.anims[st.an])st.an='idle';
+ $('anims').innerHTML=Object.keys(ch.anims).map(a=>`<button class="chip${a===st.an?' on':''}" style="--c:${COL[st.ch]}" data-an="${a}">${ANAME[a]||a}</button>`).join('');
+ const A=ch.anims[st.an];
+ $('meta').innerHTML=[['Sheet',`<a href="assets/${A.file}" target="_blank" rel="noopener">${A.file}</a>`],['Frames',`${A.frames} × 8 directions`],['Speed',`${A.fps} fps${A.loop?', loops':', plays once'}`],['Frame size',`${ch.frame[0]}×${ch.frame[1]} px`],['Anchor (feet)',`${ch.anchor[0]}, ${ch.anchor[1]}`],['Facing',DIRN[st.dir]]].map(([k,v])=>`<span>${k}</span><span>${v}</span>`).join('');
+ [...$('dirs').children].forEach((b,i)=>b.classList.toggle('on',i===st.dir));}
+$('chars').addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(b){st.ch=b.dataset.ch;st.t=0;chips();}});
+$('anims').addEventListener('click',e=>{const b=e.target.closest('[data-an]');if(b){st.an=b.dataset.an;st.t=0;chips();}});
+$('dirs').innerHTML=DIRN.map((d,i)=>`<button class="dir" data-d="${i}" aria-label="Face ${d}"><canvas width="160" height="160"></canvas><b>${d}</b></button>`).join('');
+$('dirs').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b){st.dir=+b.dataset.d;chips();}});
+$('spd').addEventListener('input',e=>{st.spd=+e.target.value;$('spdv').textContent=st.spd.toFixed(2).replace(/\.?0+$/,'')+'×';});
+$('play').addEventListener('click',()=>{st.play=!st.play;$('play').textContent=st.play?'Pause':'Play';});
+$('step').addEventListener('click',()=>{const A=ATLAS.characters[st.ch].anims[st.an];st.play=false;$('play').textContent='Play';st.t+=1/A.fps;});
+$('bg').addEventListener('click',()=>{st.bg=(st.bg+1)%BGS.length;$('bg').textContent='Ground: '+BGS[st.bg][0];$('stageWrap').style.background=BGS[st.bg][1];[...$('dirs').children].forEach(b=>b.style.background=BGS[st.bg][2]);});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){st.dir=(st.dir+1)%8;chips();}if(e.key==='ArrowLeft'){st.dir=(st.dir+7)%8;chips();}});
+function frameOf(A,t){const n=Math.floor(t*A.fps);return A.loop?n%A.frames:Math.min(A.frames-1,n%(A.frames+Math.round(A.fps*.6)));}
+const stage=$('stage'),sx=stage.getContext('2d');
+function fit(){const r=stage.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);stage.width=r.width*d|0;stage.height=r.height*d|0;}
+const ro=new ResizeObserver(fit);ro.observe(stage);
+function drawChar(ctx,W,H,ch,A,f,dir,scale){const im=IMG[A.file];const fw=ch.frame[0],fh=ch.frame[1];const s=scale,x=W/2-ch.anchor[0]*s,y=H*.78-ch.anchor[1]*s;
+ ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(W/2,H*.78,ch.frame[0]*.16*s,ch.frame[0]*.06*s,0,0,7);ctx.fill();
+ if(im)ctx.drawImage(im,f*fw,dir*fh,fw,fh,x,y,fw*s,fh*s);}
+const fxCards=Object.keys(ATLAS.effects).map(k=>{const E=ATLAS.effects[k];return {k,E};});
+$('fxgrid').innerHTML=fxCards.map(({k,E})=>`<div class="fx"><div class="cv"><canvas width="240" height="240"></canvas></div><div class="t"><b>${FXNAME[k]||k}</b><small>${E.frames} frames · ${E.fps} fps · ${E.frame[0]}×${E.frame[1]} · ${E.blend==='lighter'?'additive':'normal'}</small></div></div>`).join('');
+const fxCv=[...$('fxgrid').querySelectorAll('canvas')];
+let last=performance.now();
+function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(st.play)st.t+=dt*st.spd;
+ const ch=ATLAS.characters[st.ch],A=ch.anims[st.an],f=frameOf(A,st.t),W=stage.width,H=stage.height;
+ sx.clearRect(0,0,W,H);const pad=sx.createRadialGradient(W/2,H*.78,0,W/2,H*.78,W*.35);pad.addColorStop(0,'rgba(255,255,255,.08)');pad.addColorStop(1,'rgba(255,255,255,0)');sx.fillStyle=pad;sx.fillRect(0,0,W,H);
+ sx.imageSmoothingQuality='high';drawChar(sx,W,H,ch,A,f,st.dir,Math.min(W/ch.frame[0],H/ch.frame[1])*1.15);
+ [...$('dirs').children].forEach((b,i)=>{const c=b.firstChild,x=c.getContext('2d');x.clearRect(0,0,160,160);drawChar(x,160,160,ch,A,f,i,160/ch.frame[0]*1.25);});
+ fxCv.forEach((c,i)=>{const {E}=fxCards[i],im=IMG[E.file],x=c.getContext('2d');x.clearRect(0,0,240,240);if(!im)return;
+  const n=Math.floor(st.t*E.fps),fr=E.loop?n%E.frames:Math.min(E.frames-1,n%(E.frames+3));const s=Math.min(200/E.frame[0],200/E.frame[1]);
+  const big=E.frame[0]<=80?3:1,ss=Math.min(s,big*s);x.save();x.globalCompositeOperation=E.blend==='lighter'?'lighter':'source-over';
+  x.drawImage(im,fr*E.frame[0],0,E.frame[0],E.frame[1],120-E.frame[0]*ss/2,120-E.frame[1]*ss/2,E.frame[0]*ss,E.frame[1]*ss);x.restore();});
+ requestAnimationFrame(loop);}
+if(ATLAS){load();chips();requestAnimationFrame(loop);}
+}
+</script>
+</body>
+</html>
