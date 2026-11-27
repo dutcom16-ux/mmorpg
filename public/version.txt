@@ -1,1 +1,1 @@
-build: 2026-11-15m (Monsters keep clear of portals)
+build: 2026-11-27a (Bigger maps, livelier combat, monster attack patterns)
