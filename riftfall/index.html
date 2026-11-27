@@ -7,6 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Riftfall: Three Nations</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%230b1114%22/%3E%3Cpath d=%22M16 3l7 13-7 13-7-13z%22 fill=%22%235ff3ff%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Oxanium:wght@600;800&display=swap" rel="stylesheet">
@@ -472,7 +473,7 @@ function updPlayer(dt){
   if(P.mining)cancelMine();if(P.recall)cancelRecall('Recall cancelled');if(P.tut===0&&P.moved>160){P.tut=1;showHint();}}
  const t=P.target;if(t&&(t.dead||!canHit(P,t)||dist(P,t)>800)){P.target=null;P.engage=false;}
  if(P.auto&&!P.mining&&!P.recall){if(P.lastAtk&&canHit(P,P.lastAtk)&&dist(P,P.lastAtk)<350&&(!P.target||P.target.kind==='mob'&&P.lastAtk.kind!=='mob')){P.target=P.lastAtk;P.engage=true;}
-  if(!P.engage){const n=autoTarget();if(n){P.target=n;P.engage=true;}}
+  if(!P.engage){const n=autoTarget()||autoFar();if(n){P.target=n;P.engage=true;}}
   if(P.hp<P.maxHp*.35)usePot('hp',true);}
  if(P.engage&&P.target){const tg=P.target,d=dist(P,tg),rng=effRange(P)+tg.r;
   if(d>rng){if(!manual&&canMove&&!P.mining)moveUnit(P,tg.x,tg.y,spd*dt);}
@@ -480,6 +481,7 @@ function updPlayer(dt){
  if(P.mining){const mn=P.mining;mn.t+=dt;if(mn.t>=mn.dur)finishMine();}
  if(P.recall){P.recall.t+=dt;if(P.recall.t>=P.recall.dur){P.recall=null;const b=FAC[P.f];P.x=b.x+rand(-30,30);P.y=b.y+rand(0,40);ring(P.x,P.y,50,FAC[P.f].col,.6,3);addLog('Recalled to base',FAC[P.f].lite);}}}
 function autoTarget(){let best=null,bs=1e9;for(const e of ents){if(!canHit(P,e)||e.boss)continue;if(e.kind==='mob'&&e.lvl>P.lvl+4)continue;if(e.kind==='core')continue;const d=dist(P,e);if(d>(e.kind==='mob'?420:300))continue;const s=e.kind==='mob'?d:d*.6;if(s<bs){bs=s;best=e;}}return best;}
+function autoFar(){let best=null,bd=780;for(const m of mobs){if(m.dead||m.boss||m.returning||m.lvl>P.lvl+2||nearEnemyBase(P.f,m.x,m.y,BASE_R+380))continue;const d=dist(P,m);if(d<bd){bd=d;best=m;}}return best;}
 function pickTarget(maxD=440){let best=null,bs=1e9;for(const e of ents){if(!canHit(P,e))continue;const d=dist(P,e);if(d>maxD)continue;let s=d;if(e.kind==='ai')s*=.7;if(e.boss)s*=1.6;if(e.kind==='core')s*=1.2;if(s<bs){bs=s;best=e;}}return best;}
 function playerBasic(tg){let k=CLS[P.f].proj,o={kind:k};
  if(P.buffs.mech>0)o={kind:'cannon',splash:60,col:'#a8d6ff'};else if(P.buffs.siege>0)o={kind:'cannon',splash:55,col:'#ff8a5a'};
