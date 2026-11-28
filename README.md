@@ -1,215 +1,202 @@
 # Chipfall: Veyra Rift
 
-An idle MMORPG for Android and the browser, inspired by three-faction rivalry and chip wars. All factions, characters, items, places and artwork are original.
+A three-faction isometric MMORPG for Android and the browser. Every faction, character, item, place and piece of artwork is original.
 
 Three banners fight over the mining world of Veyra:
 
-- **Aurex Concord** (amber): hardlight engineers. Base: Halcyon Spire.
-- **Vessari Covenant** (violet): a psionic crystal choir. Base: Choir Hollow.
-- **Kreth Ironhold** (cyan): cybernetic miner clans. Base: Anvil Deep.
+- **Aurex Concord** (amber), based at Halcyon Spire.
+- **Vessari Covenant** (violet), based at Choir Hollow.
+- **Kreth Ironhold** (cyan), based at Anvil Deep.
 
-Each faction can play three roles:
+Each faction fields three roles: Assault, Guardian and Engineer.
 
-| Role | Ability |
-|------|---------|
-| Assault | Overcharge Strike: the next hit deals 3× damage. |
-| Guardian | Bulwark: allies and your home chip take −50% damage. |
-| Engineer | Nanite Surge: heals the squad 30%. |
+**What you do**
 
-The core loop is a short cycle:
-
-1. Send your pilot hunting or mining while you're away.
-2. Come back, claim the rewards and sell ore to another player.
-3. Run a daily dungeon for a weapon and equip it.
-4. Join your faction's Chip War.
+- **Explore the world.** Walk one shared isometric map with other players and labelled NPC pilots. Tap monsters to fight them and loot what they drop, and mine ore crystals by hand. Party up with up to four pilots of your own faction, and chat on the World, Faction and Party channels.
+- **Earn while away.** Your pilot keeps hunting, mining or training while you're offline, capped at 8 hours.
+- **Run daily dungeons.** Four solo dungeons reset at 6:00 AM Asia/Manila.
+- **Trade.** Use the cross-faction marketplace or trade directly with another pilot.
+- **Fight Chip Wars on the map.** Your faction defends its own Command Chip and attacks the enemy chips. Rankings are kept for current-war, weekly and all-time.
 
 ---
 
 ## Architecture
 
 ```
- Android app (Capacitor WebView) ─┐                      ┌─ SQLite (data/chipfall.db)
-                                  ├─ Socket.IO (ws) ──► Node.js game server ─┤
- Browser (same React build) ──────┘                      └─ server clock + test-clock offset
+ Browser / Android (Capacitor) ──WebSocket /ws──►  Cloudflare Worker ──► Durable Object "veyra" (GameDO)
+                                                   (serves client/dist)     • whole game in one place
+                                                                            • built-in SQLite storage
+                                                                            • 10 Hz world loop while players are online
+                                                                            • alarms for scheduled wars when nobody is
 ```
 
-- **`server/`**: the authoritative Node.js + TypeScript server. It runs Socket.IO and SQLite through Node's built-in `node:sqlite`, so there's no native module to compile. Every timer, combat tick, trade, reward and ranking is computed here. Clients only send intents.
-  - `idle.ts` computes offline rewards from server timestamps, capped at 8 h per absence. Claims are idempotent through a claim id.
-  - `dungeons.ts` replays a deterministic simulation from (seed, stats, ability ticks), so a run survives lock screens, device switches and restarts. The victory, the reward and the daily clear are written in one transaction, keyed by (pilot, dungeon, day).
-  - `market.ts` and `trades.ts` handle escrowed listings, single-transaction settlement and versioned direct trades.
-  - `war/engine.ts` is the Chip War simulation. Its state is JSON, with the RNG inside, and is snapshotted every tick. `war/manager.ts` handles scheduling, resolution and rewards (exactly once).
-  - `rankings.ts` builds the current-war, weekly and all-time boards. Only human pilots are stored there.
-- **`shared/`** holds the content and formulas used by both sides: factions, roles, items, dungeons, MVP formula and the Asia/Manila reset math.
-- **`client/`** is the React + TypeScript + Vite UI. It's portrait-first, with bottom navigation (Home, Inventory, Market, War) and original SVG art.
-- **Capacitor** wraps `client/dist` into an Android app. The server address is set on the login screen.
+- **`server/src/game.ts`** is the authoritative game core. It doesn't depend on any particular transport or database. It answers RPCs, pushes events and runs the war and dungeon loops.
+  - Storage is pluggable. `db-do.ts` uses Durable Object SQLite on Cloudflare. `db-node.ts` uses `node:sqlite` locally. Every reward, trade and claim is a single SQLite transaction.
+  - `server/src/world/world.ts` is the open world: movement with A* pathfinding, monster AI, combat, loot, parties, chat, mining, and war fighters placed on the map. It sends 5 snapshots per second to each player, covering what's within 22 tiles.
+  - Idle rewards, dungeons, the market and trades, the Chip War engine and rankings work the same as before.
+- **Hosts:**
+  - `server/src/worker.ts` runs on Cloudflare Workers.
+  - `server/src/node.ts` is a local Node server (WebSocket via `ws`), used for LAN and phone testing and for the automated tests.
+- **`shared/`** holds the content, the map generator (deterministic, so clients build the same map with no download) and the protocol.
+- **`client/`** is React, TypeScript and Vite. The world is drawn on a canvas (`client/src/world/render.ts`) with a heads-up display (HUD) layered on top. Capacitor wraps it as an Android app.
+
+**Wire protocol:** one JSON message per WebSocket frame.
+
+- Client to server: `{t:'auth',token}`, `{t:'rpc',id,m,p}`, `{t:'ping'}`.
+- Server to client: `{t:'hello'}`, `{t:'res',id,ok,data|error}`, `{t:'ev',e,d}`.
 
 ---
 
 ## Requirements
 
-- **Node.js 22.13 or newer** (Node 22 LTS or Node 24). `node:sqlite` needs 22.13+.
-- For the APK: **Android Studio** (it bundles JDK 21) with an Android SDK (API 35) installed, plus `adb` on your PATH (Android Studio → SDK Manager → SDK Tools → Platform-Tools).
+- **Node.js 22.13 or newer.**
+- **For Cloudflare:** a Cloudflare account. The free Workers plan is enough.
+- **For the APK:** Android Studio (it bundles JDK 21) and an Android SDK (API 35), plus `adb`.
 
-## 1. Start the server and play in two browser sessions
+## 1. Play locally in two browser sessions
 
 ```bash
 npm install
-npm run db:reset        # creates data/chipfall.db with seed data and test accounts
-npm run build:web       # builds the client into client/dist (the server serves it)
-npm run server          # http://localhost:3000
+npm run db:reset      # local SQLite database with seed data
+npm run build:web
+npm run server        # http://localhost:3000
 ```
 
-Open **http://localhost:3000** in two independent sessions, for example a normal window plus a private/incognito window, or two browser profiles. Sign in with different test accounts:
+Open http://localhost:3000 in two independent sessions, for example a normal window and a private window, and sign in with two different accounts:
 
-| Username | Password | Pilot | Faction / role |
+| Username | Password | Pilot | Faction and role |
 |---|---|---|---|
 | `aurex_pilot` | `chipfall` | Solenne | Aurex Concord, Assault, level 6 |
 | `kreth_pilot` | `chipfall` | Tarrok | Kreth Ironhold, Guardian, level 6 |
 | `vessari_pilot` | `chipfall` | Ilsevel | Vessari Covenant, Engineer, level 6 |
 
-All three are developer accounts, so they can see the test-war and test-clock controls. New accounts made with **New pilot** start at level 1 and are not developers.
+All three are developer accounts, so they can launch test wars and use the test clock. **New pilot** creates an ordinary level-1 account. To have two players see each other walking around, use two pilots of the **same faction**. They start at the same base.
 
-**Hot reload while developing:** run `npm run server` in one terminal and `npm run dev:web` in another, then open http://localhost:5173. The Vite page connects to the game server on port 3000.
+**Hot reload:** run `npm run server` in one terminal and `npm run dev:web` in another, then open http://localhost:5173.
 
-Server options, given as arguments after `--` or as environment variables:
+## 2. Run it on Cloudflare (always on, free tier)
+
+**Test the Cloudflare build locally:**
 
 ```bash
-npm run server -- --port=3000 --db=data/chipfall.db
-# PowerShell:  $env:WAR_INTERVAL_MIN=30; npm run server
-# bash:        WAR_INTERVAL_MIN=30 npm run server
+npm run dev:cf        # wrangler dev → http://localhost:8787 (real Workers runtime, local Durable Object)
 ```
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `WAR_INTERVAL_MIN` | 60 | Minutes between scheduled wars (aligned to the clock). |
-| `WAR_DURATION_MIN` | 15 | Scheduled war length. |
-| `TEST_WAR_SEC` | 120 | Length of the developer test war. |
-| `WAR_TARGET_PER_FACTION` | 6 | Combatants per faction, after NPC backfill. |
-| `SCHEDULED_WARS` | 1 | Set to `0` to turn off scheduled wars. |
-| `DEV_TOOLS` | 1 | Set to `0` to hide the test war and test clock on a public server. |
+**Put it online with Git, like the existing MMORPG ONLINE project:**
 
-## 2. Build a debug APK (client packaged inside)
+1. In the Cloudflare dashboard, open **Workers & Pages → Create → Import a repository** and pick **dutcom16-ux/mmorpg**.
+2. Name the project **chipfall**. This must match `"name"` in `wrangler.jsonc`.
+3. Set the production branch to **`chipfall`**. That branch holds this game; `main` keeps your other game.
+4. Keep the deploy command `npx wrangler deploy`. Wrangler builds the web client itself, through `build.command` in `wrangler.jsonc`.
+5. Deploy. You get `https://chipfall.<your-subdomain>.workers.dev`. Every push to the `chipfall` branch redeploys.
+
+**Or deploy from your computer:** run `npx wrangler login`, then `npm run deploy`.
+
+Settings live in `wrangler.jsonc` under `vars`:
+
+- `DEV_TOOLS`
+- `SCHEDULED_WARS`
+- `WAR_INTERVAL_MIN`
+- `WAR_DURATION_MIN`
+- `TEST_WAR_SEC`
+- `WAR_TARGET_PER_FACTION`
+
+**Set `DEV_TOOLS` to `"0"` before inviting the public.** The test account passwords are in this README.
+
+**What fits the free plan:**
+
+- The whole world runs in one Durable Object.
+- Snapshots go from server to client, and those messages are free.
+- Players only send a message when they tap.
+- With nobody online, the server sleeps and wakes about once an hour for scheduled wars.
+
+## 3. Android APK
 
 ```bash
-npm run android:add     # first time only: builds the web client, creates android/, enables HTTP to your dev server
-npm run apk:debug       # rebuilds the client, syncs it into android/, runs Gradle
-```
-
-The APK is written to **`dist-apk/chipfall-debug.apk`**. Gradle's own copy is at `android/app/build/outputs/apk/debug/app-debug.apk`.
-
-If you'd rather use Android Studio: run `npm run android:sync`, then `npm run android:open`, then *Build → Build App Bundle(s)/APK(s) → Build APK(s)*.
-
-The web assets are bundled inside the APK, so only the game server needs to be reachable.
-
-## 3. Install the APK and point it at your server
-
-```bash
-adb devices                                   # your emulator or phone should be listed
+npm run android:add   # first time only
+npm run apk:debug     # → dist-apk/chipfall-debug.apk
 adb install -r dist-apk/chipfall-debug.apk
 ```
 
-Open **Chipfall** and tap **Change server** on the sign-in screen:
+Open the app and tap **Change server** on the sign-in screen. Enter one of these addresses:
 
-- **Android emulator:** use `http://10.0.2.2:3000`. This is the default inside the app, and `10.0.2.2` is the emulator's alias for your computer.
-- **Physical phone on the same Wi-Fi:** use `http://<your computer's Wi-Fi IP>:3000`, for example `http://192.168.1.23:3000`. The server prints this address at startup ("Phone on same Wi-Fi: …"). You can also find it with `ipconfig` on Windows or `ip addr` / `ifconfig` on macOS/Linux.
-  - Allow port 3000 through your computer's firewall. On Windows, in an admin PowerShell:
-    `New-NetFirewallRule -DisplayName "Chipfall 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow`
-  - Check from the phone's browser that `http://<IP>:3000/health` returns `{"ok":true,…}`.
+- **Cloudflare:** `https://chipfall.<your-subdomain>.workers.dev`
+- **Android emulator with the local server:** `http://10.0.2.2:3000`
+- **Phone on the same Wi-Fi:** `http://<your PC's Wi-Fi IP>:3000`. The server prints this address when it starts. You may need to allow port 3000 through your firewall. On Windows, run this in an admin PowerShell:
+  `New-NetFirewallRule -DisplayName "Chipfall 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow`
 
-The address is saved on the device. To bake a default into the build instead, set `VITE_SERVER_URL` when building:
+To build an APK with a default address already set, use `VITE_SERVER_URL=https://… npm run apk:debug`. In PowerShell: `$env:VITE_SERVER_URL="https://…"; npm run apk:debug`.
 
-```bash
-# bash
-VITE_SERVER_URL=http://192.168.1.23:3000 npm run apk:debug
-# PowerShell
-$env:VITE_SERVER_URL="http://192.168.1.23:3000"; npm run apk:debug
-```
+## 4. Test war and dungeon reset
 
-Android and browser players share everything (characters, marketplace, dungeon progress, wars, rankings) because they all talk to the same server and database. You can sign in to the same account on the phone and in a browser at the same time.
-
-## 4. Start a short test war and simulate the dungeon reset
-
-**Test war (developer accounts):**
-
-1. Both players open **War** and tap **Queue for the next war**. Queued players are counted before NPC backfill.
-2. One of them launches the war: **Home → Developer tools → Launch 2-minute test war**, or **War → Launch 2-minute test war (developer)**.
-3. Players who didn't queue can still join mid-war from the War tab. This is the late-entrant case: one NPC on that faction stands down at its next safe moment.
-4. To finish early: **Home → Developer tools → End current war**. The war resolves on the next tick using the time-expiry rules.
-
-**Dungeon reset with the test clock:** the server keeps an offset on top of real time and saves it in the database. Every timer uses it: idle rewards, dungeon days, war schedule.
-
-1. **Home → Developer tools → Jump to 5:59 AM Manila.** The server clock moves to 05:59 Asia/Manila on the morning of the next reset.
-2. Open **Dungeons** and start one. It is assigned to the day it started.
-3. Tap **+1 hour**. The run finishes after 06:00. Its reward counts as the previous day's clear, and all four dungeons show as available for the new day.
-4. Tap **Real time** to remove the offset.
+- **Test war:** in both sessions, go to **War → Queue for the next war**. Then open the World tab, tap your pilot frame in the top left, and tap **Launch 2-minute test war**. Anyone who didn't queue can tap **Join war** on the war banner.
+  - Tap an enemy base to march on it.
+  - Tap your own base to defend it.
+  - Tap an ally to follow them.
+  - Tap an enemy to focus your attacks on them.
+- **Dungeon reset:** tap the pilot frame to open the developer tools, then tap **Jump to 5:59 AM Manila**. Start a dungeon, then tap **+1 hour**. The run counts toward the previous day, and all four dungeons reopen for the new day. Tap **Real time** when you're done.
 
 ---
+
+## How to play
+
+| Action | How |
+|---|---|
+| Walk | Tap the ground. Pilots path around rocks and rift chasms. |
+| Fight | Tap a monster. You walk into range and attack automatically. Your role ability is the round button in the bottom right. |
+| Mine | Tap a glowing ore crystal. Mining takes 3 seconds; the crystal regrows in 45 seconds. |
+| Dungeons | Use the big **Dungeons** button, or walk into the portal at your base. |
+| Market | Use the Market tab, or the terminal at your base. |
+| Party / trade | Tap another pilot. |
+| Chat | Tap the chat box in the bottom left. |
+| Pilot details | Tap the pilot frame in the top left. It also shows idle rewards, developer tools and the war schedule. |
+
+- **Monsters by zone.** Monsters get stronger toward the plaza in the centre:
+  - Rift Skitters (level 1–3) near the bases.
+  - Glass Stalkers (level 3–6) further out.
+  - Ironback Crawlers (level 6–9) in the outer reaches.
+  - Prism Wraiths (level 9–12) around the central plaza.
+  - The elite **Rift Colossus** (level 14) guards the plaza itself and respawns every 3 minutes.
+- **Base safety.** Monsters never enter a base's safe ring.
+- **Abilities in the world:**
+  - Overcharge Strike: the next hit deals 3× damage.
+  - Bulwark: allies nearby take −50% damage for 5 s, and monsters nearby switch their attacks to you.
+  - Nanite Surge: heals allies nearby for 30%.
+  - Engineers also heal the most hurt ally each time they attack.
+- **Parties.** Members within 20 tiles split EXP and Gold, with +15% for each extra member. Item drops rotate between members.
+- **Knocked out.** Your pilot reactivates at your base after 6 seconds. You lose nothing.
+- **Chip Wars on the map.** Fighters walk the roads between bases and battle at the base they are attacking. The war rules are unchanged: first chip destroyed wins, same-tick ties go to chip damage, and if time runs out the most objective damage wins. The War tab still has orders, rankings and recaps.
+
+The dungeon, marketplace, idle, war and ranking rules are documented in [docs/RULES.md](docs/RULES.md).
 
 ## Automated tests
 
 ```bash
-npm test             # end-to-end acceptance suite (section 9): real server process + socket.io-client
-npm run test:engine  # Chip War rule tests: tie-breaks, kill credit, assists, MVP falloff, safe NPC retirement
+npm test               # acceptance + world + war-engine tests (Node host, real WebSockets)
+npm run test:world     # open world only
+TEST_URL=http://127.0.0.1:8787 node --import tsx --test server/test/acceptance.test.ts   # against `npm run dev:cf`
 npm run typecheck
-npm run balance      # dungeon win-rate table per role/level
 ```
 
-`npm test` starts the server on a random port with a temporary database. It covers:
-
-- **Trading:** buying and selling, a race for the last item, and a direct trade edited after one confirmation.
-- **First upgrade:** reachable within five minutes.
-- **Dungeons:** all four dungeons, equipping drops, spending dungeon gold, reconnecting after victory, and defeat then retry.
-- **Daily reset:** crossing 6:00 AM Manila, including a run that straddles the reset.
-- **Wars:** NPC backfill, a late entrant with safe bot retirement, one NPC kill plus one human kill, and an order that keeps running while disconnected.
-- **Results:** identical results and rankings on both clients, war rewards paid once, and bonus-zone access.
-- **Crash recovery:** a hard-kill restart in the middle of a claim, a war and a dungeon, with the interrupted claim retried exactly once.
-
-See **[docs/TESTING.md](docs/TESTING.md)** for the manual checklist, including the physical Android steps.
-
----
-
-## Game rules reference
-
-- **Idle:** Hunting gives EXP, Gold Coins, Alloy Scrap and occasional gear. Mining gives ore and materials. Training raises a combat skill (+3% ATK/HP per level). Rewards come from server timestamps, are capped at 8 hours per absence, and a **While you were away** summary appears on return. The first upgrade (+0→+1) costs 60 Gold + 3 Alloy Scrap, which is reachable after about two minutes of hunting.
-- **Dungeons:** there is one rewarded clear per dungeon per day. A defeat doesn't use it.
-  - Training Grounds is available immediately.
-  - Foundry and Vault unlock at level 2. Gold Mine unlocks at level 3.
-  - Each daily period starts at **06:00 Asia/Manila**, and a run belongs to the period in which it started.
-  - Only one active run is allowed per pilot. Dungeon kills never count toward Chip War stats.
-- **Market:** a 5% fee, paid by the seller, with a minimum of 1 Gold. Listed items are held in escrow until they sell or you cancel. Every purchase settles in a single SQLite transaction. Direct trades have no fee, and any edit clears both approvals.
-- **Chip Wars:**
-  - Bases are 10 s apart, and respawns take 8 s. Humans and NPCs use the same rules.
-  - The first faction to destroy an enemy chip wins.
-  - If chips fall on the same tick, the tie goes to total chip damage dealt during the war. If that's also equal, the war is a draw.
-  - If time runs out, the faction with the most chip damage wins. A tie at the top is a draw.
-  - The winners get two hours in **Victor's Lode**: double ore, plus Prism Crystal.
-- **Rankings:** Most Kills counts enemy *human* kills in Chip Wars. NPC kills, deaths, assists, best streak, healing (actual HP restored), defense and chip damage are tracked separately. Every board has current-war, weekly (from Monday 06:00 Manila) and all-time views, with a faction filter and your own rank. Top Killer is left unawarded if nobody defeated a human.
-- **War MVP formula** (also shown in the app):
-  ```
-  MVP = 10 × K* + 3 × NPC kills + 4 × assists + damage ÷ 100 + chip damage ÷ 40 + healing ÷ 80 + defense ÷ 80
-  K* = human kills, where repeat kills of the same opponent in one war count 1, ½, ¼, then 0.1 each.
-  Defense = damage dealt to enemies at your own base + damage your Bulwark prevents.
-  ```
-- **NPC pilots** are named `NPC Callsign-NN`, carry an NPC badge, and are left out of every human leaderboard and award. Each faction is backfilled to 6 combatants, counting only the humans in that battle. NPCs retire at a respawn or after 3 s out of combat, never mid-duel. If more than 6 humans join, all of them play.
+When `TEST_URL` is set, the tests run against an external server instead of starting their own. The crash/restart test is skipped in that mode, because it needs a local process to kill. Before each test file, use a fresh `wrangler dev --persist-to <new dir>`, since the tests expect freshly seeded accounts.
 
 ## Project layout
 
 ```
-server/src/        index.ts (HTTP + Socket.IO + RPC), db.ts, clock.ts, characters.ts, idle.ts, dungeons.ts,
-                   market.ts, trades.ts, rankings.ts, worldBots.ts, seed.ts, war/engine.ts, war/manager.ts
-server/test/       acceptance.test.ts, engine.test.ts, harness.ts
-shared/            content.ts, dungeonSim.ts, time.ts, protocol.ts, rng.ts
-client/            index.html, vite.config.ts, src/ (App, screens/, art/, net.ts, ui.tsx, styles.css)
-scripts/           android-setup.mjs, build-apk.mjs, balance.ts
-capacitor.config.json
+server/src/   game.ts (core), world/world.ts, worker.ts (Cloudflare), node.ts (local), db*.ts, characters.ts, idle.ts,
+              dungeons.ts, market.ts, trades.ts, rankings.ts, war/engine.ts, war/manager.ts, seed.ts, worldBots.ts
+server/test/  acceptance.test.ts, world.test.ts, engine.test.ts, harness.ts
+shared/       content.ts, map.ts, dungeonSim.ts, protocol.ts, time.ts, rng.ts
+client/src/   App.tsx, net.ts, world/render.ts, screens/ (World, Dungeons, Inventory, Market, War, Login, Home = pilot sheet)
+wrangler.jsonc, capacitor.config.json, scripts/
 ```
 
 ## Troubleshooting
 
-- **`No such built-in module: node:sqlite`**: upgrade Node to 22.13+ or 24. The `ExperimentalWarning: SQLite…` message is harmless.
-- **The app says it can't reach the server:**
-  - Check the address: the emulator uses `10.0.2.2`, a phone uses your PC's Wi-Fi IP.
-  - Check that the server is running and that the firewall allows port 3000.
-  - Check that the phone is on the same network, not mobile data.
-  - The APK allows plain HTTP to your dev server because `scripts/android-setup.mjs` sets `usesCleartextTraffic`. If you recreate `android/`, run `npm run android:add` again.
-- **Reset everything:** stop the server, then run `npm run db:reset`.
+- **`No such built-in module: node:sqlite`:** use Node 22.13 or newer. This only affects the local server.
+- **The app can't connect:**
+  - Check the server address and the firewall.
+  - A Cloudflare deploy URL must be `https://`.
+  - On Android, cleartext HTTP is only enabled so you can reach a local dev server.
+- **Reset local data:** `npm run db:reset`.
+- **Reset the Cloudflare data:** change the Durable Object name `'veyra'` in `server/src/worker.ts` to a new name, then redeploy. The old data is left behind, unused.

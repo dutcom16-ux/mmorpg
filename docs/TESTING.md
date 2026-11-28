@@ -1,6 +1,16 @@
 # Acceptance testing
 
-`npm test` automates every check below against a real server process, using the same Socket.IO transport as the apps. This page explains how to repeat the checks by hand, including the parts that need a real phone.
+## Open world (manual check)
+
+1. Sign in as `aurex_pilot` in one session. In a second session, create a new **Aurex** pilot so both start at Halcyon Spire.
+2. **Shared view:** tap the ground in one session. The other session sees that pilot walk there.
+3. **Fight:** tap a Rift Skitter. Your pilot walks into range and auto-attacks, and a loot toast appears when it dies.
+4. **Party:** tap the other pilot and choose **Invite to party**, then accept in the other session. Kill a monster near each other. Both get a "(party share)" toast with the same EXP and Gold.
+5. **Chat:** messages on World reach everyone. Faction and Party messages stay private.
+6. **Mining:** tap a glowing ore crystal. After 3 seconds the ore lands in your Inventory, and the crystal goes dark.
+7. **Chip War on the map:** launch a test war and tap **Join war**. Your pilot rallies at the base. Tap an enemy base and your pilot marches there along the road.
+
+`npm test` automates every check below against a real server process, using the same WebSocket protocol as the apps. This page explains how to repeat the checks by hand, including the parts that need a real phone.
 
 **Setup for every scenario:**
 
@@ -11,7 +21,7 @@
 
 ## Trading
 
-1. **A:** Home → *Mining*. Then Developer tools → *+1 hour*, then *Claim rewards*. Inventory → Ore now shows Lumen Ore.
+1. **A:** tap the pilot frame (top left of the World tab). Choose *Mining*, then under Developer tools tap *+1 hour*, then *Claim rewards*. Inventory → Ore now shows Lumen Ore.
 2. **A:** Market → *Sell* → Lumen Ore, quantity 10, unit price 5 → *List item*. Inventory drops by 10, because the ore is held in escrow.
 3. **B:** Market → search "lumen" → tap Solenne's listing → quantity 4. Before you confirm, the sheet shows: You pay 20, Fee 1, Seller receives 19. Tap *Buy for 20 Gold*.
 4. **Check:**
@@ -28,7 +38,7 @@
 
 ## Dungeons
 
-1. **A:** Home → *Dungeons*. Each card shows its recommended level, duration, drops and clear status. The Gold Mine card shows its payout (550 at level 6).
+1. **A:** World → *Dungeons*. Each card shows its recommended level, duration, drops and clear status. The Gold Mine card shows its payout (550 at level 6).
 2. Clear **Training Grounds** and tap the ability button at least once. Then clear **Weapon Foundry**, **Armored Vault** and **Gold Mine**. *+1 hour* finishes a run instantly.
 3. On the Foundry and Vault results, compare the drop, then tap *Equip*. Inventory shows the new weapon and armor.
 4. Spend the Gold Mine coins on a market listing.
@@ -40,7 +50,7 @@
 
 ## Morning reset (test clock)
 
-1. Developer tools → *Jump to 5:59 AM Manila*. All four of A's cards still say *Cleared today*.
+1. Pilot frame → Developer tools → *Jump to 5:59 AM Manila*. All four of A's cards still say *Cleared today*.
 2. With a pilot that hasn't cleared it, enter Training Grounds and tap *+1 hour*. The result says "Counted as the ⟨previous day⟩ daily clear", and Training Grounds is available again for the new day.
 3. A's four dungeons are all available again. Equipment and gold are unchanged.
 4. Tap *Real time* when you're done.
@@ -69,3 +79,5 @@
    - Tap *Claim rewards*. The request can't reach the server, and the claim id is saved on the device.
    - Turn off airplane mode. The app retries the same claim id on reconnect, so the balance increases only once.
    - The automated test also hard-kills the server in the middle of a claim and verifies the same thing.
+
+**Developer tools:** tap the pilot frame in the top left of the World tab. They include the test war, the test clock, +1 hour and +8 hours.
