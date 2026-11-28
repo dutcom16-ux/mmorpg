@@ -1,0 +1,9 @@
+node_modules/
+data/
+client/dist/
+android/
+dist-apk/
+*.db
+*.db-wal
+*.db-shm
+docs/screenshots/

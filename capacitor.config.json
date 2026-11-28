@@ -1,0 +1,12 @@
+{
+  "appId": "com.chipfall.veyra",
+  "appName": "Chipfall",
+  "webDir": "client/dist",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

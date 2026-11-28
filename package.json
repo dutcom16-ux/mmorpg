@@ -1,0 +1,43 @@
+{
+  "name": "chipfall",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chipfall: Veyra Rift — a three-faction idle MMORPG for Android and the browser.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "db:reset": "tsx server/src/scripts/reset-db.ts",
+    "server": "tsx server/src/index.ts",
+    "server:watch": "tsx watch server/src/index.ts",
+    "dev:web": "vite --config client/vite.config.ts",
+    "build:web": "vite build --config client/vite.config.ts",
+    "test": "node --import tsx --test server/test/acceptance.test.ts",
+    "test:engine": "node --import tsx --test server/test/engine.test.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json",
+    "balance": "tsx scripts/balance.ts",
+    "android:add": "npm run build:web && cap add android && node scripts/android-setup.mjs",
+    "android:sync": "npm run build:web && cap sync android && node scripts/android-setup.mjs",
+    "apk:debug": "npm run android:sync && node scripts/build-apk.mjs",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.0",
+    "@capacitor/core": "^7.4.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.5.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.3.0"
+  }
+}
