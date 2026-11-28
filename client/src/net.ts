@@ -119,7 +119,9 @@ export function connect(url = state.serverUrl) {
   }
   set({ serverUrl: url, conn: 'connecting', checkedAuth: false });
   const token = LS.get('cf.token');
-  const s = io(url, { transports: ['websocket'], auth: token ? { token } : {}, reconnectionDelay: 800, reconnectionDelayMax: 4000 });
+  // Default transports: start with HTTP long-polling and upgrade to WebSocket when the network allows it.
+  // Some proxies and hosting sandboxes block WebSocket upgrades; polling keeps the game working there.
+  const s = io(url, { auth: token ? { token } : {}, reconnectionDelay: 800, reconnectionDelayMax: 4000 });
   socket = s;
   s.on('connect', () => set({ conn: 'online' }));
   s.on('disconnect', () => set({ conn: 'offline' }));
