@@ -82,6 +82,12 @@ export class GameDO {
     const onClose = () => {
       if (closed) return;
       closed = true;
+      // Complete the closing handshake so clients are not left waiting for our close frame.
+      try {
+        server.close(1000, 'closing');
+      } catch {
+        /* already closed */
+      }
       closeConn(conn);
       if (connCount() === 0) this.idle();
     };
