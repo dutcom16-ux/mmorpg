@@ -4,7 +4,7 @@ import type { ItemView } from '../../shared/protocol';
 import { FactionEmblem, NavIcon } from './art/Art';
 import { claimIdle, dismissWarResult, signOut, toast, useStore } from './net';
 import { Dungeons } from './screens/Dungeons';
-import { Home } from './screens/Home';
+import { WorldScreen } from './screens/World';
 import { Inventory } from './screens/Inventory';
 import { Login } from './screens/Login';
 import { Market } from './screens/Market';
@@ -60,6 +60,8 @@ function Game() {
   const [tab, setTab] = useState<Tab>('home');
   const [dungeonsOpen, setDungeonsOpen] = useState(false);
   const [sellPreset, setSellPreset] = useState<ItemView | null>(null);
+  const [marketTab, setMarketTab] = useState<'browse' | 'trades'>('browse');
+  const [marketKey, setMarketKey] = useState(0);
   const [summaryKey, setSummaryKey] = useState<number | null>(null);
   const c = p.character;
 
@@ -75,6 +77,7 @@ function Game() {
   }, [c.faction]);
 
   const go = (t: Tab) => {
+    if (t !== 'market') setMarketTab('browse');
     setTab(t);
     setDungeonsOpen(false);
     window.scrollTo(0, 0);
@@ -103,7 +106,15 @@ function Game() {
         {dungeonsOpen ? (
           <Dungeons onClose={() => setDungeonsOpen(false)} />
         ) : tab === 'home' ? (
-          <Home openDungeons={() => setDungeonsOpen(true)} goWar={() => go('war')} />
+          <WorldScreen
+            openDungeons={() => setDungeonsOpen(true)}
+            goWar={() => go('war')}
+            openTrades={() => {
+              setMarketTab('trades');
+              setMarketKey((k) => k + 1);
+              go('market');
+            }}
+          />
         ) : tab === 'inventory' ? (
           <Inventory
             sell={(item) => {
@@ -112,7 +123,7 @@ function Game() {
             }}
           />
         ) : tab === 'market' ? (
-          <Market preset={sellPreset} clearPreset={() => setSellPreset(null)} />
+          <Market key={marketKey} preset={sellPreset} clearPreset={() => setSellPreset(null)} initial={marketTab} />
         ) : (
           <War />
         )}
@@ -121,7 +132,7 @@ function Game() {
       <nav className="bottom-nav" aria-label="Main">
         {(
           [
-            ['home', 'Home', 'home'],
+            ['home', 'World', 'home'],
             ['inventory', 'Inventory', 'bag'],
             ['market', 'Market', 'market'],
             ['war', 'War', 'war'],

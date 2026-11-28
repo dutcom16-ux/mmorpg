@@ -7,8 +7,8 @@ import { Gold, ItemName, Panel, Sheet, Stepper } from '../ui';
 
 type Tab = 'browse' | 'sell' | 'mine' | 'history' | 'trades';
 
-export function Market({ preset, clearPreset }: { preset: ItemView | null; clearPreset: () => void }) {
-  const [tab, setTab] = useState<Tab>(preset ? 'sell' : 'browse');
+export function Market({ preset, clearPreset, initial }: { preset: ItemView | null; clearPreset: () => void; initial?: Tab }) {
+  const [tab, setTab] = useState<Tab>(preset ? 'sell' : (initial ?? 'browse'));
   useEffect(() => {
     if (preset) setTab('sell');
   }, [preset]);

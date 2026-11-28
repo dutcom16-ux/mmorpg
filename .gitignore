@@ -6,4 +6,3 @@ dist-apk/
 *.db
 *.db-wal
 *.db-shm
-docs/screenshots/

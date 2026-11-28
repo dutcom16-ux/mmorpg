@@ -369,7 +369,7 @@ test('Chip Wars: results, awards, rewards and Most Kills leaderboard agree on ev
   assert.match(await B.rpcErr('idle.set', { activity: 'mine', zone: 'victors_lode', claimId: claimId() }), /no access/);
 });
 
-test('Persistence: restart (hard kill) keeps everything; an interrupted claim never pays twice', T, async () => {
+test('Persistence: restart (hard kill) keeps everything; an interrupted claim never pays twice', { ...T, skip: !srv.canRestart && 'needs a local server process to kill' }, async () => {
   const snapA = await A.me();
   const snapB = await B.me();
   const snapC = await C.me();
@@ -387,7 +387,7 @@ test('Persistence: restart (hard kill) keeps everything; an interrupted claim ne
   const g0 = (await A.me()).character.gold;
   const pending = (await A.me()).idle.pending;
   const X = claimId('interrupted');
-  A.socket.emit('rpc', 'idle.claim', { claimId: X }, () => {});
+  A.fire('idle.claim', { claimId: X });
   await srv.stop('SIGKILL'); // crash mid-claim
   await srv.start();
   for (const c of [A, B, C, D]) c.player = null;

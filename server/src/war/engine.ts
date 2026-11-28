@@ -58,6 +58,7 @@ export interface Combatant {
   abilityReadyTick: number;
   overcharge: boolean;
   pendingAbility: boolean;
+  focus?: string | null;
   retiring: boolean;
   lastEngagedTick: number;
   joinedTick: number;
@@ -369,6 +370,17 @@ export class WarEngine {
     return c;
   }
 
+  /** Human players can pick which enemy to fight at their current base. */
+  setFocus(id: string, targetId: string | null) {
+    const c = this.get(id);
+    if (!c) throw new Error('not in war');
+    if (targetId) {
+      const t = this.get(targetId);
+      if (!t || t.faction === c.faction) throw new Error('Pick an enemy to focus.');
+    }
+    c.focus = targetId;
+  }
+
   queueAbility(id: string) {
     const c = this.get(id);
     if (!c) throw new Error('not in war');
@@ -492,12 +504,13 @@ export class WarEngine {
           mult = 3;
         }
       };
-      if (enemyBase && (hostiles.length === 0 || (c.role === 'assault' && this.rand() < 0.5))) {
+      const focused = !!(c.focus && hostiles.some((h) => h.id === c.focus));
+      if (enemyBase && (hostiles.length === 0 || (!focused && c.role === 'assault' && this.rand() < 0.5))) {
         useOver();
         intents.push({ a: c, kind: 'chip', chip: base, dmg: Math.round(c.atk * (0.9 + this.rand() * 0.2) * mult) });
       } else if (hostiles.length) {
         hostiles.sort((x, y) => x.hp - y.hp || (x.id < y.id ? -1 : 1));
-        const target = hostiles[0];
+        const target = (c.focus && hostiles.find((h) => h.id === c.focus)) || hostiles[0];
         useOver();
         intents.push({ a: c, kind: 'pilot', target, dmg: mitigate(c.atk, target.def, this.rand()) * mult, base });
       }

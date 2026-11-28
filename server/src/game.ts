@@ -1,11 +1,12 @@
-// Chipfall authoritative game server: HTTP (static client) + Socket.IO + SQLite.
-import fs from 'node:fs';
-import http from 'node:http';
-import os from 'node:os';
-import path from 'node:path';
-import { Server, type Socket } from 'socket.io';
+// Chipfall game core: authoritative logic, independent of transport and storage.
+// A host (node.ts for local play/tests, worker.ts for Cloudflare) feeds it connections and
+// messages and calls tick(); the core answers RPCs and pushes events as JSON over WebSockets.
+//
+// Wire protocol (one JSON object per WebSocket message):
+//   client → server  {t:'auth', token} | {t:'rpc', id, m, p} | {t:'ping'}
+//   server → client  {t:'hello', serverNow, authed} | {t:'res', id, ok, data|error} | {t:'ev', e, d} | {t:'pong'}
 import { DUNGEON_IDS, ITEMS, expToNext, trainXpToNext, type DungeonId, type FactionId } from '../../shared/content';
-import type { PlayerView, RpcResult } from '../../shared/protocol';
+import type { PlayerView } from '../../shared/protocol';
 import { manilaString } from '../../shared/time';
 import {
   accountForToken,
@@ -13,19 +14,20 @@ import {
   addStack,
   charForAccount,
   charStats,
-  createAccount,
   createCharacter,
   createSession,
   equip,
   getChar,
+  insertAccount,
   inventory,
+  prepareAccount,
   touchSeen,
   upgradeItem,
   verifyLogin,
 } from './characters';
 import { clock } from './clock';
 import { config, log } from './config';
-import { GameError, closeDb, fail, get, openDb, run, tx, type Row } from './db';
+import { GameError, fail, get, run, tx, type Row } from './db';
 import { ackRun, dungeonStatuses, retreat, runView, startRun, tickDungeons, useAbility } from './dungeons';
 import { bonusAccess, claimIdle, idleSession, previewIdle, setActivity } from './idle';
 import { buyListing, cancelListing, createListing, myListings, priceGuide, searchListings, tradeHistory } from './market';
@@ -35,21 +37,78 @@ import { cancelTrade, confirmTrade, myTrades, openTrade, tradeParties, updateOff
 import { WarManager } from './war/manager';
 import { worldBotsTick, worldSummary } from './worldBots';
 
-openDb(config.dbPath);
-clock.load();
-seedIfEmpty();
+export interface Conn {
+  id: number;
+  data: { charId?: number; isDev?: boolean };
+  sendRaw(text: string): void;
+  close(): void;
+}
 
-const httpServer = http.createServer(serveStatic);
-const io = new Server(httpServer, { cors: { origin: true, credentials: true }, pingInterval: 10000, pingTimeout: 8000 });
+const conns = new Set<Conn>();
+const byChar = new Map<number, Set<Conn>>(); // online characters -> their connections
+let connSeq = 1;
 
-const online = new Map<number, number>(); // charId -> socket count
+/** Optional extension points (the world simulation plugs in here). */
+export const hooks: {
+  onBind?: (conn: Conn, charId: number) => void;
+  onUnbind?: (conn: Conn, charId: number, lastConn: boolean) => void;
+  extraHandlers?: Record<string, (ctx: { conn: Conn; charId: number | null; isDev: boolean }, p: any) => any>;
+  onTick?: (now: number) => void;
+  onWarChange?: () => void;
+  onPlayerChanged?: (charId: number) => void;
+} = {};
 
-const wars = new WarManager({
-  broadcast: () => io.emit('war', wars.scheduleView()),
-  resolved: (result) => io.emit('warResult', result),
+export function send(conn: Conn, e: string, d: unknown) {
+  try {
+    conn.sendRaw(JSON.stringify({ t: 'ev', e, d }));
+  } catch {
+    /* connection closing */
+  }
+}
+export function emitTo(charId: number, e: string, d: unknown) {
+  const set = byChar.get(charId);
+  if (!set) return;
+  const text = JSON.stringify({ t: 'ev', e, d });
+  for (const c of set) {
+    try {
+      c.sendRaw(text);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+export function emitAll(e: string, d: unknown) {
+  const text = JSON.stringify({ t: 'ev', e, d });
+  for (const c of conns) {
+    try {
+      c.sendRaw(text);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+export function onlineCharIds(): number[] {
+  return [...byChar.keys()];
+}
+export function connCount() {
+  return conns.size;
+}
+
+export const wars = new WarManager({
+  broadcast: () => {
+    emitAll('war', wars.scheduleView());
+    hooks.onWarChange?.();
+  },
+  resolved: (result) => emitAll('warResult', result),
   playersChanged: (ids) => ids.forEach((id) => pushPlayer(id)),
 });
-wars.load();
+
+/** Prepare storage-dependent state. Call once after useBackend(). */
+export async function initGame() {
+  clock.load();
+  await seedIfEmpty();
+  wars.load();
+}
 
 // ------------------------------------------------------------------ views
 
@@ -95,8 +154,9 @@ function playerView(charId: number, returnSummary: PlayerView['idle']['returnSum
 }
 
 function pushPlayer(charId: number) {
+  hooks.onPlayerChanged?.(charId);
   try {
-    io.to(`c:${charId}`).emit('player', playerView(charId));
+    emitTo(charId, 'player', playerView(charId));
   } catch (e) {
     log('pushPlayer failed', (e as Error).message);
   }
@@ -104,18 +164,18 @@ function pushPlayer(charId: number) {
 
 function pushTrade(tradeId: number) {
   const [a, b] = tradeParties(tradeId);
-  for (const id of [a, b]) io.to(`c:${id}`).emit('trades', myTrades(id));
+  for (const id of [a, b]) emitTo(id, 'trades', myTrades(id));
 }
 
 // ------------------------------------------------------------------- RPC
 
 interface Ctx {
-  socket: Socket;
+  conn: Conn;
   charId: number | null;
   isDev: boolean;
 }
 
-type Handler = (ctx: Ctx, p: any) => any;
+type Handler = (ctx: Ctx, p: any) => any | Promise<any>;
 
 function needChar(ctx: Ctx): number {
   if (!ctx.charId) fail('Please sign in.');
@@ -126,14 +186,16 @@ function needDev(ctx: Ctx) {
   if (!ctx.isDev) fail('Developer tools are only available to developer accounts.');
 }
 
-function bindSocket(socket: Socket, account: Row) {
+function bindConn(conn: Conn, account: Row) {
   const ch = charForAccount(account.id);
   if (!ch) fail('Account has no pilot.');
-  if (socket.data.charId === ch.id) return ch.id;
-  socket.data.charId = ch.id;
-  socket.data.isDev = !!account.is_dev;
-  socket.join(`c:${ch.id}`);
-  online.set(ch.id, (online.get(ch.id) ?? 0) + 1);
+  if (conn.data.charId === ch.id) return ch.id;
+  if (conn.data.charId) unbindConn(conn);
+  conn.data.charId = ch.id;
+  conn.data.isDev = !!account.is_dev;
+  let set = byChar.get(ch.id);
+  if (!set) byChar.set(ch.id, (set = new Set()));
+  set.add(conn);
 
   const now = clock.now();
   const pending = previewIdle(ch.id);
@@ -141,13 +203,29 @@ function bindSocket(socket: Socket, account: Row) {
   const hasRewards = pending.exp + pending.gold + pending.trainXp + Object.keys(pending.items).length + pending.gear.length > 0;
   const summary = absent >= 60_000 && pending.elapsedMs >= 60_000 && hasRewards ? pending : null;
   touchSeen(ch.id);
-  socket.emit('player', playerView(ch.id, summary));
-  socket.emit('war', wars.scheduleView());
-  socket.emit('trades', myTrades(ch.id));
+  send(conn, 'player', playerView(ch.id, summary));
+  send(conn, 'war', wars.scheduleView());
+  send(conn, 'trades', myTrades(ch.id));
   const d = dungeonStatuses(ch.id);
   const runId = d.activeRunId ?? d.unseenRunId;
-  if (runId) socket.emit('dungeon', runView(runId));
+  if (runId) send(conn, 'dungeon', runView(runId));
+  hooks.onBind?.(conn, ch.id);
   return ch.id;
+}
+
+function unbindConn(conn: Conn) {
+  const id = conn.data.charId;
+  if (!id) return;
+  const set = byChar.get(id);
+  set?.delete(conn);
+  if (set && set.size === 0) byChar.delete(id);
+  conn.data.charId = undefined;
+  try {
+    touchSeen(id);
+  } catch {
+    /* ignore */
+  }
+  hooks.onUnbind?.(conn, id, !byChar.has(id));
 }
 
 const handlers: Record<string, Handler> = {
@@ -159,25 +237,26 @@ const handlers: Record<string, Handler> = {
     warTarget: config.warTargetPerFaction,
   }),
 
-  'auth.register': (ctx, p) => {
+  'auth.register': async (ctx, p) => {
+    const prepared = await prepareAccount(String(p.username ?? ''), String(p.password ?? ''));
     const token = tx(() => {
-      const accId = createAccount(String(p.username ?? ''), String(p.password ?? ''));
+      const accId = insertAccount(prepared);
       createCharacter({ accountId: accId, name: String(p.name ?? ''), faction: p.faction, role: p.role });
       return createSession(accId);
     });
-    bindSocket(ctx.socket, accountForToken(token)!);
+    bindConn(ctx.conn, accountForToken(token)!);
     return { token };
   },
-  'auth.login': (ctx, p) => {
-    const acc = verifyLogin(p.username, p.password);
+  'auth.login': async (ctx, p) => {
+    const acc = await verifyLogin(p.username, p.password);
     const token = createSession(acc.id);
-    bindSocket(ctx.socket, acc);
+    bindConn(ctx.conn, acc);
     return { token };
   },
   'auth.resume': (ctx, p) => {
     const acc = accountForToken(p.token);
     if (!acc) fail('Session expired. Please sign in again.');
-    bindSocket(ctx.socket, acc);
+    bindConn(ctx.conn, acc);
     return { ok: true };
   },
   'auth.logout': (ctx, p) => {
@@ -218,7 +297,7 @@ const handlers: Record<string, Handler> = {
     if (!DUNGEON_IDS.includes(p.dungeonId)) fail('Unknown dungeon.');
     const runId = startRun(id, p.dungeonId as DungeonId);
     const v = runView(runId);
-    io.to(`c:${id}`).emit('dungeon', v);
+    emitTo(id, 'dungeon', v);
     pushPlayer(id);
     return v;
   },
@@ -235,7 +314,7 @@ const handlers: Record<string, Handler> = {
   'dungeon.retreat': (ctx, p) => {
     const id = needChar(ctx);
     const v = retreat(id, Number(p.runId));
-    io.to(`c:${id}`).emit('dungeon', v);
+    emitTo(id, 'dungeon', v);
     pushPlayer(id);
     return v;
   },
@@ -254,14 +333,14 @@ const handlers: Record<string, Handler> = {
     const id = needChar(ctx);
     const l = createListing(id, p);
     pushPlayer(id);
-    io.emit('market', { changed: true });
+    emitAll('market', { changed: true });
     return l;
   },
   'market.cancel': (ctx, p) => {
     const id = needChar(ctx);
     const r = cancelListing(id, Number(p.listingId));
     pushPlayer(id);
-    io.emit('market', { changed: true });
+    emitAll('market', { changed: true });
     return r;
   },
   'market.buy': (ctx, p) => {
@@ -269,11 +348,11 @@ const handlers: Record<string, Handler> = {
     const r = buyListing(id, Number(p.listingId), Number(p.qty ?? 1), p.unitPrice === undefined ? undefined : Number(p.unitPrice));
     pushPlayer(id);
     pushPlayer(r.sellerId);
-    io.to(`c:${r.sellerId}`).emit('toast', {
+    emitTo(r.sellerId, 'toast', {
       kind: 'sale',
       text: `${getChar(id).name} bought ${r.qty} ${ITEMS[r.templateId].name} — you received ${r.sellerNet} Gold (fee ${r.fee}).`,
     });
-    io.emit('market', { changed: true });
+    emitAll('market', { changed: true });
     return r;
   },
   'market.history': (ctx, p) => tradeHistory(p?.scope === 'all' ? null : needChar(ctx)),
@@ -330,7 +409,7 @@ const handlers: Record<string, Handler> = {
   },
 
   'rank.get': (ctx, p) => rankings(wars, p.board ?? 'kills', p.scope ?? 'weekly', (p.faction ?? 'all') as FactionId | 'all', ctx.charId),
-  'world.summary': () => worldSummary(new Set(online.keys())),
+  'world.summary': () => worldSummary(new Set(byChar.keys())),
 
   // ------------------------------------------------------------- dev tools
   'dev.clock': (ctx, p) => {
@@ -339,9 +418,9 @@ const handlers: Record<string, Handler> = {
     else if (p.action === 'set') clock.setNow(Number(p.at));
     else if (p.action === 'reset') clock.setOffset(0);
     else fail('Unknown clock action.');
-    io.emit('clock', { offsetMs: clock.offset(), serverNow: clock.now() });
-    for (const id of online.keys()) pushPlayer(id);
-    io.emit('war', wars.scheduleView());
+    emitAll('clock', { offsetMs: clock.offset(), serverNow: clock.now() });
+    for (const id of byChar.keys()) pushPlayer(id);
+    emitAll('war', wars.scheduleView());
     return { serverNow: clock.now(), manilaNow: manilaString(clock.now()), offsetMs: clock.offset() };
   },
   'dev.testWar': (ctx, p) => {
@@ -379,134 +458,113 @@ const handlers: Record<string, Handler> = {
   },
 };
 
-io.on('connection', (socket) => {
-  const token = socket.handshake.auth?.token;
-  const acc = accountForToken(token);
-  if (acc) {
-    try {
-      bindSocket(socket, acc);
-    } catch (e) {
-      log('bind failed', (e as Error).message);
-    }
-  }
-  socket.emit('hello', { serverNow: clock.now(), authed: !!socket.data.charId });
 
-  socket.on('rpc', (method: string, params: any, ack?: (r: RpcResult) => void) => {
-    const reply = typeof ack === 'function' ? ack : () => {};
-    const h = handlers[method];
-    if (!h) return reply({ ok: false, error: `Unknown method ${method}` });
-    const ctx: Ctx = { socket, charId: socket.data.charId ?? null, isDev: !!socket.data.isDev };
-    try {
-      const data = h(ctx, params ?? {});
-      reply({ ok: true, data });
-    } catch (e) {
-      if (e instanceof GameError) reply({ ok: false, error: e.message });
-      else {
-        log(`RPC ${method} failed:`, e);
-        reply({ ok: false, error: 'Server error. Please try again.' });
+// ------------------------------------------------------------ connections
+
+export function openConn(sendRaw: (text: string) => void, close: () => void): Conn {
+  const conn: Conn = { id: connSeq++, data: {}, sendRaw, close };
+  conns.add(conn);
+  conn.sendRaw(JSON.stringify({ t: 'hello', serverNow: clock.now(), authed: false }));
+  return conn;
+}
+
+export function closeConn(conn: Conn) {
+  unbindConn(conn);
+  conns.delete(conn);
+}
+
+export async function handleMessage(conn: Conn, text: string) {
+  let m: any;
+  try {
+    m = JSON.parse(text);
+  } catch {
+    return;
+  }
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'ping') {
+    conn.sendRaw('{"t":"pong"}');
+    return;
+  }
+  if (m.t === 'auth') {
+    const acc = accountForToken(m.token);
+    if (acc) {
+      try {
+        bindConn(conn, acc);
+      } catch (e) {
+        log('bind failed', (e as Error).message);
       }
     }
-  });
-
-  socket.on('disconnect', () => {
-    const id = socket.data.charId as number | undefined;
-    if (!id) return;
-    const n = (online.get(id) ?? 1) - 1;
-    if (n <= 0) online.delete(id);
-    else online.set(id, n);
+    conn.sendRaw(JSON.stringify({ t: 'hello', serverNow: clock.now(), authed: !!conn.data.charId }));
+    return;
+  }
+  if (m.t !== 'rpc') return;
+  const reply = (r: object) => {
     try {
-      touchSeen(id);
+      conn.sendRaw(JSON.stringify({ t: 'res', id: m.id, ...r }));
     } catch {
       /* ignore */
     }
-  });
-});
+  };
+  const method = String(m.m ?? '');
+  const h = handlers[method] ?? hooks.extraHandlers?.[method];
+  if (!h) return reply({ ok: false, error: `Unknown method ${method}` });
+  const ctx: Ctx = { conn, charId: conn.data.charId ?? null, isDev: !!conn.data.isDev };
+  try {
+    const data = await h(ctx, m.p ?? {});
+    reply({ ok: true, data: data ?? null });
+  } catch (e) {
+    if (e instanceof GameError) reply({ ok: false, error: e.message });
+    else {
+      log(`RPC ${method} failed:`, e);
+      reply({ ok: false, error: 'Server error. Please try again.' });
+    }
+  }
+}
 
 // ------------------------------------------------------------------ loops
 
-setInterval(() => {
+let lastGameTick = 0;
+let lastSlowTick = 0;
+
+/** Call often (every 100 ms is ideal). Runs wars and dungeons at 4 Hz and slow jobs every 20 s. */
+export function tick() {
+  const real = Date.now();
   try {
-    wars.loop();
-    tickDungeons((charId, view) => {
-      io.to(`c:${charId}`).emit('dungeon', view);
-      if (view.finalized) pushPlayer(charId);
-    });
+    hooks.onTick?.(clock.now());
   } catch (e) {
-    log('Game loop error:', e);
+    log('World tick error:', e);
   }
-}, 250);
-
-setInterval(() => {
-  try {
-    worldBotsTick();
-    for (const id of online.keys()) touchSeen(id);
-    io.emit('world', worldSummary(new Set(online.keys())));
-  } catch (e) {
-    log('World loop error:', e);
-  }
-}, 20_000);
-
-// ------------------------------------------------------------ static files
-
-const MIME: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.json': 'application/json',
-  '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json',
-};
-
-function serveStatic(req: http.IncomingMessage, res: http.ServerResponse) {
-  const url = new URL(req.url ?? '/', 'http://x');
-  if (url.pathname === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
-    res.end(JSON.stringify({ ok: true, serverNow: clock.now(), manilaNow: manilaString(clock.now()) }));
-    return;
-  }
-  const root = config.clientDist;
-  let file = path.join(root, decodeURIComponent(url.pathname));
-  if (!file.startsWith(root)) {
-    res.writeHead(403).end();
-    return;
-  }
-  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(root, 'index.html');
-  if (!fs.existsSync(file)) {
-    res.writeHead(200, { 'content-type': 'text/html' });
-    res.end('<h1>Chipfall server is running</h1><p>The web client is not built yet. Run <code>npm run build:web</code>, or use <code>npm run dev:web</code>.</p>');
-    return;
-  }
-  res.writeHead(200, { 'content-type': MIME[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache' });
-  fs.createReadStream(file).pipe(res);
-}
-
-httpServer.listen(config.port, config.host, () => {
-  log(`Chipfall server listening on http://localhost:${config.port}`);
-  for (const nets of Object.values(os.networkInterfaces())) {
-    for (const n of nets ?? []) {
-      if (n.family === 'IPv4' && !n.internal) log(`  Phone on same Wi-Fi: http://${n.address}:${config.port}`);
+  if (real - lastGameTick >= 250) {
+    lastGameTick = real;
+    try {
+      wars.loop();
+      tickDungeons((charId, view) => {
+        emitTo(charId, 'dungeon', view);
+        if (view.finalized) pushPlayer(charId);
+      });
+    } catch (e) {
+      log('Game loop error:', e);
     }
   }
-  log(`  Android emulator:   http://10.0.2.2:${config.port}`);
-  log(`Database: ${config.dbPath}`);
-  log(`Server time: ${manilaString(clock.now())}${clock.offset() ? ` (test clock offset ${Math.round(clock.offset() / 1000)}s)` : ''}`);
-  log(`Wars every ${config.warIntervalMin} min, ${config.warDurationMin} min long. Dev tools: ${config.devTools ? 'ON' : 'off'}`);
-  if (process.send) process.send('ready');
-});
-
-function shutdown() {
-  log('Shutting down…');
-  io.close();
-  httpServer.close();
-  try {
-    closeDb();
-  } catch {
-    /* ignore */
+  if (real - lastSlowTick >= 20_000) {
+    lastSlowTick = real;
+    try {
+      worldBotsTick();
+      for (const id of byChar.keys()) touchSeen(id);
+      emitAll('world', worldSummary(new Set(byChar.keys())));
+    } catch (e) {
+      log('World loop error:', e);
+    }
   }
-  process.exit(0);
 }
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
 
+/** When nobody is connected, the next moment the server must wake up (Cloudflare alarms). */
+export function nextWakeAt(): number {
+  const now = clock.now();
+  const offset = now - Date.now();
+  let at = wars.engine && wars.row ? wars.row.ends_at + 1000 : config.scheduledWars ? wars.nextStartAt(now) + 1000 : now + 3_600_000;
+  if (get("SELECT 1 FROM dungeon_runs WHERE status = 'active' LIMIT 1")) at = Math.min(at, now + 60_000);
+  return Math.max(Date.now() + 1000, at - offset);
+}
+
+export { pushPlayer, playerView };

@@ -1,6 +1,6 @@
 // Seed data: three test accounts (one per faction) and a pool of clearly-labelled NPC pilots.
 import { FACTION_IDS, NPC_CALLSIGNS, ROLE_IDS, type FactionId, type RoleId } from '../../shared/content';
-import { addStack, createAccount, createCharacter } from './characters';
+import { addStack, createCharacter, insertAccount, prepareAccount } from './characters';
 import { get, run, tx } from './db';
 import { log } from './config';
 
@@ -10,11 +10,13 @@ export const TEST_ACCOUNTS: Array<{ username: string; password: string; name: st
   { username: 'vessari_pilot', password: 'chipfall', name: 'Ilsevel', faction: 'vessari', role: 'engineer' },
 ];
 
-export function seedIfEmpty() {
+export async function seedIfEmpty() {
   if (get('SELECT 1 FROM accounts LIMIT 1')) return false;
+  const prepared: Array<Awaited<ReturnType<typeof prepareAccount>>> = [];
+  for (const a of TEST_ACCOUNTS) prepared.push(await prepareAccount(a.username, a.password));
   tx(() => {
-    for (const a of TEST_ACCOUNTS) {
-      const acc = createAccount(a.username, a.password, true);
+    for (const [i, a] of TEST_ACCOUNTS.entries()) {
+      const acc = insertAccount(prepared[i], true);
       const id = createCharacter({ accountId: acc, name: a.name, faction: a.faction, role: a.role });
       // Mid-game starting point so every dungeon can be tested right away.
       run('UPDATE characters SET level = 6, gold = 600 WHERE id = ?', id);

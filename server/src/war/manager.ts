@@ -144,6 +144,16 @@ export class WarManager {
     return c.order;
   }
 
+  focus(charId: number, targetId: string | null) {
+    const c = this.mine(charId);
+    try {
+      this.engine!.setFocus(c.id, targetId);
+    } catch (e: any) {
+      fail(e.message);
+    }
+    return { focus: targetId };
+  }
+
   ability(charId: number) {
     const c = this.mine(charId);
     try {

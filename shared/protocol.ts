@@ -263,3 +263,82 @@ export const MARKET_FEE_RATE = 0.05;
 export function marketFee(total: number): number {
   return total <= 0 ? 0 : Math.max(1, Math.ceil(total * MARKET_FEE_RATE));
 }
+
+// ---------------------------------------------------------------------------
+// Open world (pushed as 'snap' 5× per second to each online player)
+// ---------------------------------------------------------------------------
+
+/** k: p = player, b = NPC pilot, m = monster, w = Chip War combatant */
+export interface WorldEnt {
+  k: 'p' | 'b' | 'm' | 'w';
+  id: string;
+  x: number;
+  y: number;
+  hp: number;
+  mhp: number;
+  n?: string; // name
+  f?: FactionId;
+  r?: RoleId;
+  l?: number; // level
+  ty?: string; // monster type
+  dead?: boolean;
+  party?: boolean;
+  moving?: boolean;
+  charId?: number;
+  tgt?: string;
+}
+
+export type WorldFx =
+  | { a: 'hit'; s: string; t: string; d: number; crit?: boolean }
+  | { a: 'heal'; s: string; t: string; d: number }
+  | { a: 'die'; t: string }
+  | { a: 'ab'; s: string; kind: string }
+  | { a: 'mined'; s: string; ore: number };
+
+export interface WorldMe {
+  id: string;
+  x: number;
+  y: number;
+  hp: number;
+  mhp: number;
+  dead: boolean;
+  respawnIn: number;
+  target: string | null;
+  mining: { ore: number; pct: number } | null;
+  abilityReadyIn: number;
+  inWar: boolean;
+  shield: boolean;
+  moving: boolean;
+}
+
+export interface WorldSnap {
+  t: number;
+  me: WorldMe | null;
+  ents: WorldEnt[];
+  ores: number[]; // depleted ore node ids
+  fx: WorldFx[];
+}
+
+export interface PartyMember {
+  charId: number;
+  name: string;
+  role: RoleId;
+  level: number;
+  online: boolean;
+}
+export interface PartyView {
+  id: number;
+  leader: number;
+  members: PartyMember[];
+}
+
+export interface ChatMsg {
+  id: number;
+  ch: 'world' | 'faction' | 'party' | 'system';
+  from: string;
+  charId: number | null;
+  f: FactionId | null;
+  text: string;
+  at: number;
+  npc?: boolean;
+}

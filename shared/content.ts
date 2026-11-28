@@ -523,3 +523,53 @@ export const NPC_CALLSIGNS = [
 export function rarityColor(r: Rarity): string {
   return r === 'epic' ? '#E58CFF' : r === 'rare' ? '#5DB8FF' : '#C9D2DC';
 }
+
+// ---------------------------------------------------------------------------
+// Open world: monsters, ranges and movement
+// ---------------------------------------------------------------------------
+
+export interface MonsterDef {
+  name: string;
+  range: number;
+  speed: number;
+  aggro: number;
+  elite?: boolean;
+  desc: string;
+}
+
+export const MONSTERS: Record<'skitter' | 'stalker' | 'crawler' | 'wraith' | 'colossus', MonsterDef> = {
+  skitter: { name: 'Rift Skitter', range: 1.3, speed: 2.4, aggro: 4, desc: 'Six-legged scavengers drawn to fresh ore dust.' },
+  stalker: { name: 'Glass Stalker', range: 1.4, speed: 2.8, aggro: 4.5, desc: 'Crystal-backed hunters that ambush from the shard fields.' },
+  crawler: { name: 'Ironback Crawler', range: 1.5, speed: 2.2, aggro: 4.5, desc: 'Armoured burrowers. Slow, heavy, hard to crack.' },
+  wraith: { name: 'Prism Wraith', range: 3.5, speed: 2.6, aggro: 5, desc: 'Floating light-shards that fire refracted beams.' },
+  colossus: { name: 'Rift Colossus', range: 2.2, speed: 2.0, aggro: 5, elite: true, desc: 'The plaza guardian. Bring a party.' },
+};
+
+export function monsterStats(type: keyof typeof MONSTERS, level: number) {
+  const elite = !!MONSTERS[type].elite;
+  return {
+    hp: Math.round((60 + 30 * level) * (elite ? 8 : 1)),
+    atk: Math.round((5 + 2.6 * level) * (elite ? 1.6 : 1)),
+    def: Math.round(2 + 1.1 * level),
+    exp: Math.round((14 + 7 * level) * (elite ? 6 : 1)),
+    gold: Math.round((1 + level) * (elite ? 5 : 1)),
+  };
+}
+
+export const WORLD = {
+  walkSpeed: 4, // tiles per second
+  attackMs: 1000,
+  monsterAttackMs: 1200,
+  respawnMs: 6000,
+  monsterRespawnMs: 25000,
+  eliteRespawnMs: 180000,
+  leash: 12,
+  viewRadius: 22,
+  shareRadius: 20,
+  partyMax: 4,
+  oreMineMs: 3000,
+  oreRespawnMs: 45000,
+  abilityRadius: 4,
+  hpMultiplier: 2,
+  range: { assault: 4.5, engineer: 3.5, guardian: 1.6 } as Record<RoleId, number>,
+};

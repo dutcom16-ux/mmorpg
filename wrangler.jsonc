@@ -1,0 +1,28 @@
+{
+  // Chipfall on Cloudflare Workers: the web client (client/dist, built by `npm run build:web`)
+  // plus the game server, which lives in one SQLite-backed Durable Object (GameDO).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chipfall",
+  "main": "server/src/worker.ts",
+  "compatibility_date": "2025-10-01",
+  "build": { "command": "npm run build:web" },
+  "assets": {
+    "directory": "./client/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "durable_objects": { "bindings": [{ "name": "GAME", "class_name": "GameDO" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameDO"] }],
+  "vars": {
+    // Developer tools (test war, test clock) for the seeded test accounts. Set to "0" before
+    // inviting the public: the test account passwords are published in the README.
+    "DEV_TOOLS": "1",
+    "SCHEDULED_WARS": "1",
+    "WAR_INTERVAL_MIN": "60",
+    "WAR_DURATION_MIN": "15",
+    "TEST_WAR_SEC": "120",
+    "WAR_TARGET_PER_FACTION": "6"
+  },
+  "observability": { "enabled": true }
+}

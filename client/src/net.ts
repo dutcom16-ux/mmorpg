@@ -1,13 +1,14 @@
 // Connection + client state. The server is authoritative; this module only mirrors what it pushes.
-import { io, type Socket } from 'socket.io-client';
 import { useSyncExternalStore } from 'react';
 import type {
+  ChatMsg,
   DungeonRunView,
+  PartyView,
   PlayerView,
-  RpcResult,
   TradeView,
   WarResultView,
   WarScheduleView,
+  WorldSnap,
 } from '../../shared/protocol';
 
 export interface Toast {
@@ -31,6 +32,11 @@ export interface State {
   world: Record<string, { humansOnline: number; npcs: number; hunt: number; mine: number; train: number }> | null;
   warResult: WarResultView | null;
   devTools: boolean;
+  snap: WorldSnap | null;
+  chat: ChatMsg[];
+  chatUnread: number;
+  party: PartyView | null;
+  partyInvite: { from: number; name: string } | null;
 }
 
 const LS = {
@@ -80,6 +86,11 @@ let state: State = {
   world: null,
   warResult: null,
   devTools: false,
+  snap: null,
+  chat: [],
+  chatUnread: 0,
+  party: null,
+  partyInvite: null,
 };
 const subs = new Set<() => void>();
 function set(patch: Partial<State>) {
@@ -110,47 +121,170 @@ export function toast(text: string, kind: Toast['kind'] = 'info') {
   setTimeout(() => set({ toasts: state.toasts.filter((x) => x.id !== t.id) }), kind === 'error' ? 5000 : 3500);
 }
 
-let socket: Socket | null = null;
+// ------------------------------------------------------------ connection
+// Plain WebSocket at <server>/ws carrying JSON messages (see server/src/game.ts for the protocol).
+
+interface Wire {
+  ws: WebSocket | null;
+  url: string;
+  manual: boolean;
+  open: boolean;
+  authed: boolean;
+  retry: number;
+  queue: string[];
+}
+let wire: Wire | null = null;
+let rpcSeq = 1;
+const pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void; timer: any }>();
+
+/** Snapshot buffer for the renderer: [previous, latest] with local receive times. */
+export const snaps: Array<{ at: number; s: WorldSnap }> = [];
+const snapListeners = new Set<(s: WorldSnap) => void>();
+export function onSnap(fn: (s: WorldSnap) => void) {
+  snapListeners.add(fn);
+  return () => snapListeners.delete(fn);
+}
+
+function wsUrl(url: string) {
+  return url.replace(/^http/, 'ws').replace(/\/+$/, '') + '/ws';
+}
+
+function handleEvent(e: string, d: any) {
+  switch (e) {
+    case 'player':
+      set({ player: d, authed: true, skew: d.serverNow - Date.now() });
+      break;
+    case 'war':
+      set({ war: d, skew: d.serverNow - Date.now() });
+      break;
+    case 'dungeon':
+      set({ dungeon: d });
+      break;
+    case 'trades':
+      set({ trades: d });
+      break;
+    case 'market':
+      set({ marketRev: state.marketRev + 1 });
+      break;
+    case 'world':
+      set({ world: d });
+      break;
+    case 'toast':
+      toast(d.text, d.kind ?? 'info');
+      break;
+    case 'warResult': {
+      const me = state.player?.character.id;
+      if (me && d.players.some((p: any) => p.charId === me)) set({ warResult: d });
+      break;
+    }
+    case 'clock':
+      rpc('war.schedule').then((w) => set({ war: w })).catch(() => {});
+      break;
+    case 'snap':
+      snaps.push({ at: performance.now(), s: d });
+      if (snaps.length > 3) snaps.shift();
+      set({ snap: d });
+      snapListeners.forEach((f) => f(d));
+      break;
+    case 'chatHistory':
+      set({ chat: d });
+      break;
+    case 'chat':
+      set({ chat: [...state.chat, d].slice(-100), chatUnread: state.chatUnread + 1 });
+      break;
+    case 'party':
+      set({ party: d });
+      break;
+    case 'partyInvite':
+      set({ partyInvite: d });
+      break;
+    case 'loot': {
+      const parts = [d.exp ? `+${d.exp} EXP` : '', d.gold ? `+${d.gold} Gold` : '', ...d.items].filter(Boolean);
+      toast(`${d.monster ? `${d.monster}: ` : ''}${parts.join(', ')}${d.shared ? ' (party share)' : ''}`, 'good');
+      if (d.levelUps) toast(`Level up! You are now level ${(state.player?.character.level ?? 0) + d.levelUps}.`, 'good');
+      break;
+    }
+  }
+}
+
+function openSocket(w: Wire) {
+  let ws: WebSocket;
+  try {
+    ws = new WebSocket(wsUrl(w.url));
+  } catch {
+    set({ conn: 'offline' });
+    return scheduleReconnect(w);
+  }
+  w.ws = ws;
+  let sentAuth = false;
+  ws.onmessage = (ev) => {
+    let m: any;
+    try {
+      m = JSON.parse(String(ev.data));
+    } catch {
+      return;
+    }
+    if (m.t === 'hello') {
+      const token = LS.get('cf.token');
+      if (token && !sentAuth) {
+        sentAuth = true;
+        ws.send(JSON.stringify({ t: 'auth', token }));
+        return;
+      }
+      w.open = true;
+      w.retry = 0;
+      w.authed = m.authed;
+      set({ conn: 'online', skew: m.serverNow - Date.now(), authed: m.authed, checkedAuth: true });
+      if (!m.authed && token) LS.set('cf.token', null);
+      const q = w.queue;
+      w.queue = [];
+      for (const raw of q) ws.send(raw);
+      rpc<{ devTools: boolean }>('server.info').then((i) => set({ devTools: i.devTools })).catch(() => {});
+      if (m.authed) retryPendingClaim();
+    } else if (m.t === 'res') {
+      const p = pending.get(m.id);
+      if (p) {
+        pending.delete(m.id);
+        clearTimeout(p.timer);
+        if (m.ok) p.resolve(m.data);
+        else p.reject(new Error(m.error));
+      }
+    } else if (m.t === 'ev') handleEvent(m.e, m.d);
+  };
+  ws.onclose = () => {
+    w.open = false;
+    if (wire !== w) return;
+    set({ conn: w.manual ? state.conn : 'offline' });
+    if (!w.manual) scheduleReconnect(w);
+  };
+  ws.onerror = () => {};
+}
+
+function scheduleReconnect(w: Wire) {
+  const delay = Math.min(4000, 600 * 2 ** w.retry++);
+  setTimeout(() => {
+    if (wire === w && !w.manual && !w.open) openSocket(w);
+  }, delay);
+}
 
 export function connect(url = state.serverUrl) {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
+  if (wire) {
+    wire.manual = true;
+    wire.ws?.close();
   }
   set({ serverUrl: url, conn: 'connecting', checkedAuth: false });
-  const token = LS.get('cf.token');
-  // Default transports: start with HTTP long-polling and upgrade to WebSocket when the network allows it.
-  // Some proxies and hosting sandboxes block WebSocket upgrades; polling keeps the game working there.
-  const s = io(url, { auth: token ? { token } : {}, reconnectionDelay: 800, reconnectionDelayMax: 4000 });
-  socket = s;
-  s.on('connect', () => set({ conn: 'online' }));
-  s.on('disconnect', () => set({ conn: 'offline' }));
-  s.on('connect_error', () => set({ conn: 'offline' }));
-  s.on('hello', (h: { serverNow: number; authed: boolean }) => {
-    set({ skew: h.serverNow - Date.now(), authed: h.authed, checkedAuth: true });
-    if (!h.authed && LS.get('cf.token')) {
-      // Token no longer valid on this server.
-      LS.set('cf.token', null);
-      s.auth = {};
-    }
-    rpc<{ devTools: boolean }>('server.info').then((i) => set({ devTools: i.devTools })).catch(() => {});
-    if (h.authed) retryPendingClaim();
-  });
-  s.on('player', (p: PlayerView) => set({ player: p, authed: true, skew: p.serverNow - Date.now() }));
-  s.on('war', (w: WarScheduleView) => set({ war: w, skew: w.serverNow - Date.now() }));
-  s.on('dungeon', (d: DungeonRunView) => set({ dungeon: d }));
-  s.on('trades', (t: TradeView[]) => set({ trades: t }));
-  s.on('market', () => set({ marketRev: state.marketRev + 1 }));
-  s.on('world', (w: State['world']) => set({ world: w }));
-  s.on('toast', (t: { text: string; kind?: Toast['kind'] }) => toast(t.text, t.kind ?? 'info'));
-  s.on('warResult', (r: WarResultView) => {
-    const me = state.player?.character.id;
-    if (me && r.players.some((p) => p.charId === me)) set({ warResult: r });
-  });
-  s.on('clock', () => {
-    rpc('war.schedule').then((w) => set({ war: w })).catch(() => {});
-  });
+  wire = { ws: null, url, manual: false, open: false, authed: false, retry: 0, queue: [] };
+  openSocket(wire);
 }
+
+let heartbeat: any = null;
+function startHeartbeat() {
+  if (heartbeat) return;
+  heartbeat = setInterval(() => {
+    if (wire?.open) wire.ws?.send('{"t":"ping"}');
+  }, 30_000);
+}
+startHeartbeat();
 
 export function setServerUrl(url: string) {
   const clean = url.trim().replace(/\/+$/, '');
@@ -160,13 +294,16 @@ export function setServerUrl(url: string) {
 
 export function rpc<T = any>(method: string, params: any = {}, timeoutMs = 12000): Promise<T> {
   return new Promise((resolve, reject) => {
-    if (!socket) return reject(new Error('Not connected.'));
-    const t = setTimeout(() => reject(new Error('The server did not answer. Check your connection.')), timeoutMs);
-    socket.emit('rpc', method, params, (r: RpcResult<T>) => {
-      clearTimeout(t);
-      if (r.ok) resolve(r.data);
-      else reject(new Error(r.error));
-    });
+    if (!wire) return reject(new Error('Not connected.'));
+    const id = rpcSeq++;
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error('The server did not answer. Check your connection.'));
+    }, timeoutMs);
+    pending.set(id, { resolve, reject, timer });
+    const raw = JSON.stringify({ t: 'rpc', id, m: method, p: params });
+    if (wire.open) wire.ws!.send(raw);
+    else wire.queue.push(raw);
   });
 }
 
@@ -185,7 +322,6 @@ export async function act<T = any>(method: string, params: any = {}, success?: s
 export async function signIn(method: 'auth.login' | 'auth.register', params: any) {
   const r = await rpc<{ token: string }>(method, params);
   LS.set('cf.token', r.token);
-  if (socket) socket.auth = { token: r.token };
   set({ authed: true });
   return r;
 }
@@ -194,7 +330,7 @@ export function signOut() {
   const token = LS.get('cf.token');
   rpc('auth.logout', { token }).catch(() => {});
   LS.set('cf.token', null);
-  set({ authed: false, player: null, dungeon: null, trades: [], warResult: null });
+  set({ authed: false, player: null, dungeon: null, trades: [], warResult: null, snap: null, chat: [], party: null });
   connect();
 }
 
@@ -253,10 +389,19 @@ export async function setActivity(activity: string, zone = 'quarry') {
 
 // Resync when the app comes back to the foreground (phone unlocked, tab re-opened).
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible' || !socket) return;
-  if (!socket.connected) socket.connect();
-  else if (state.authed) {
+  if (document.visibilityState !== 'visible' || !wire) return;
+  if (!wire.open) {
+    wire.retry = 0;
+    if (!wire.ws || wire.ws.readyState > 1) openSocket(wire);
+  } else if (state.authed) {
     rpc<PlayerView>('player.get').then((p) => set({ player: p, skew: p.serverNow - Date.now() })).catch(() => {});
     rpc<WarScheduleView>('war.schedule').then((w) => set({ war: w })).catch(() => {});
   }
 });
+
+export function clearPartyInvite() {
+  set({ partyInvite: null });
+}
+export function markChatRead() {
+  set({ chatUnread: 0 });
+}

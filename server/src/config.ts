@@ -1,36 +1,30 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-export const ROOT = path.resolve(here, '../..');
-
-function num(name: string, def: number): number {
-  const v = process.env[name];
-  if (v === undefined || v === '') return def;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : def;
-}
-
-function arg(name: string): string | undefined {
-  const pre = `--${name}=`;
-  const hit = process.argv.find((a) => a.startsWith(pre));
-  return hit ? hit.slice(pre.length) : undefined;
-}
-
+// Runtime configuration. Hosts call configure() with their environment (process.env on Node,
+// the Worker's env bindings on Cloudflare).
 export const config = {
-  port: Number(arg('port') ?? num('PORT', 3000)),
-  host: arg('host') ?? process.env.HOST ?? '0.0.0.0',
-  dbPath: path.resolve(ROOT, arg('db') ?? process.env.DB_PATH ?? 'data/chipfall.db'),
-  clientDist: path.resolve(ROOT, process.env.CLIENT_DIST ?? 'client/dist'),
-  // Developer tools (test war, test clock) are on unless explicitly disabled.
-  devTools: (arg('dev') ?? process.env.DEV_TOOLS ?? '1') !== '0',
-  scheduledWars: (process.env.SCHEDULED_WARS ?? '1') !== '0',
-  warIntervalMin: Math.max(5, num('WAR_INTERVAL_MIN', 60)),
-  warDurationMin: num('WAR_DURATION_MIN', 15),
-  testWarSec: num('TEST_WAR_SEC', 120),
-  warTargetPerFaction: num('WAR_TARGET_PER_FACTION', 6),
-  quiet: process.env.QUIET === '1' || process.argv.includes('--quiet'),
+  devTools: true,
+  scheduledWars: true,
+  warIntervalMin: 60,
+  warDurationMin: 15,
+  testWarSec: 120,
+  warTargetPerFaction: 6,
+  quiet: false,
 };
+
+export function configure(env: Record<string, unknown>) {
+  const str = (k: string) => (env[k] === undefined || env[k] === null || env[k] === '' ? undefined : String(env[k]));
+  const num = (k: string, d: number) => {
+    const v = str(k);
+    const n = v === undefined ? NaN : Number(v);
+    return Number.isFinite(n) ? n : d;
+  };
+  config.devTools = (str('DEV_TOOLS') ?? '1') !== '0';
+  config.scheduledWars = (str('SCHEDULED_WARS') ?? '1') !== '0';
+  config.warIntervalMin = Math.max(5, num('WAR_INTERVAL_MIN', 60));
+  config.warDurationMin = Math.max(1, num('WAR_DURATION_MIN', 15));
+  config.testWarSec = num('TEST_WAR_SEC', 120);
+  config.warTargetPerFaction = num('WAR_TARGET_PER_FACTION', 6);
+  config.quiet = str('QUIET') === '1';
+}
 
 export function log(...args: unknown[]) {
   if (!config.quiet) console.log(new Date().toISOString().slice(11, 19), ...args);

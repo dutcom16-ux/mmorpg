@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import {
   FACTION_IDS,
   ITEMS,
@@ -39,6 +38,8 @@ export interface CharRow {
   created_at: number;
   last_seen_at: number;
   last_war_seen: number;
+  world_x: number | null;
+  world_y: number | null;
 }
 
 export interface ItemRow {
@@ -54,37 +55,63 @@ export interface ItemRow {
 }
 
 // ---------------------------------------------------------------- accounts
+// Passwords are stored as salted PBKDF2-SHA-256 (Web Crypto, available in Node and Workers).
 
-function hashPassword(password: string, salt: string): string {
-  return crypto.scryptSync(password, salt, 32).toString('hex');
+const PBKDF2_ROUNDS = 60_000;
+
+export function randomHex(bytes: number): string {
+  const b = new Uint8Array(bytes);
+  crypto.getRandomValues(b);
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-export function createAccount(username: string, password: string, isDev = false): number {
-  const name = username.trim();
+export async function hashPassword(password: string, salt: string): Promise<string> {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode(salt), iterations: PBKDF2_ROUNDS },
+    key,
+    256,
+  );
+  return Array.from(new Uint8Array(bits), (x) => x.toString(16).padStart(2, '0')).join('');
+}
+
+function sameHex(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+export function checkNewAccount(username: string, password: string): string {
+  const name = String(username ?? '').trim();
   if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) fail('Username must be 3–20 letters, numbers or _.');
-  if (password.length < 4) fail('Password must be at least 4 characters.');
+  if (String(password ?? '').length < 4) fail('Password must be at least 4 characters.');
   if (get('SELECT id FROM accounts WHERE username = ?', name)) fail('That username is taken.');
-  const salt = crypto.randomBytes(16).toString('hex');
-  return run(
-    'INSERT INTO accounts(username, pass_hash, salt, is_dev, created_at) VALUES(?,?,?,?,?)',
-    name,
-    hashPassword(password, salt),
-    salt,
-    isDev ? 1 : 0,
-    clock.now(),
-  ).id;
+  return name;
 }
 
-export function verifyLogin(username: string, password: string): Row {
+/** Hashes outside any transaction (async), returns what insertAccount needs. */
+export async function prepareAccount(username: string, password: string) {
+  const name = checkNewAccount(username, password);
+  const salt = randomHex(16);
+  return { name, salt, hash: await hashPassword(String(password), salt) };
+}
+
+export function insertAccount(a: { name: string; salt: string; hash: string }, isDev = false): number {
+  if (get('SELECT id FROM accounts WHERE username = ?', a.name)) fail('That username is taken.');
+  return run('INSERT INTO accounts(username, pass_hash, salt, is_dev, created_at) VALUES(?,?,?,?,?)', a.name, a.hash, a.salt, isDev ? 1 : 0, clock.now()).id;
+}
+
+export async function verifyLogin(username: string, password: string): Promise<Row> {
   const acc = get('SELECT * FROM accounts WHERE username = ?', String(username ?? '').trim());
   if (!acc) fail('Unknown username or wrong password.');
-  const h = hashPassword(String(password ?? ''), acc.salt);
-  if (!crypto.timingSafeEqual(Buffer.from(h, 'hex'), Buffer.from(acc.pass_hash, 'hex'))) fail('Unknown username or wrong password.');
+  const h = await hashPassword(String(password ?? ''), acc.salt);
+  if (!sameHex(h, acc.pass_hash)) fail('Unknown username or wrong password.');
   return acc;
 }
 
 export function createSession(accountId: number): string {
-  const token = crypto.randomBytes(24).toString('hex');
+  const token = randomHex(24);
   run('INSERT INTO sessions(token, account_id, created_at) VALUES(?,?,?)', token, accountId, clock.now());
   return token;
 }

@@ -1478,3 +1478,337 @@ input[type='checkbox'] {
     display: none;
   }
 }
+
+/* -------------------------------------------------------------- open world */
+.tab-home .main {
+  padding: 0;
+  height: calc(100dvh - var(--topbar) - var(--nav) - var(--safe-b));
+  overflow: hidden;
+}
+.tab-home .run-banner {
+  position: absolute;
+  z-index: 15;
+}
+.world-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.world-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+.unit-frame {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 168px;
+  padding: 6px 8px 8px;
+  border: 1px solid var(--line);
+  background: rgba(14, 20, 36, 0.82);
+  text-align: left;
+  cursor: pointer;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.uf-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.unit-frame .bar {
+  margin: 4px 0 2px;
+  height: 14px;
+}
+.xp-thin {
+  height: 3px;
+  background: var(--fac);
+}
+.uf-idle {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.party-frames {
+  position: absolute;
+  top: 98px;
+  left: 8px;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.pf {
+  background: rgba(14, 20, 36, 0.78);
+  border-left: 3px solid #7cf59a;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.pf.off {
+  opacity: 0.6;
+}
+.pf .bar {
+  height: 6px;
+  margin: 2px 0 0;
+}
+.minimap {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 128px;
+  height: 64px;
+  background: rgba(14, 20, 36, 0.8);
+  border: 1px solid var(--line);
+}
+.zoom-btns {
+  position: absolute;
+  top: 78px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+}
+.zoom-btns button {
+  width: 40px;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: rgba(14, 20, 36, 0.82);
+  font-size: 20px;
+  cursor: pointer;
+}
+.hud-dungeons {
+  position: absolute;
+  top: 120px;
+  right: 8px;
+  width: 128px;
+  min-height: 56px;
+  border: 0;
+  cursor: pointer;
+  background:
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.1) 0 6px, transparent 6px 12px),
+    var(--fac);
+  color: var(--fac-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6px 12px;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.hud-dungeons b {
+  font-family: var(--display);
+  font-stretch: condensed;
+  font-size: 22px;
+  line-height: 1;
+}
+.hud-dungeons span {
+  font-size: 12px;
+  font-weight: 700;
+}
+.target-frame,
+.war-strip {
+  position: absolute;
+  top: 184px;
+  right: 8px;
+  width: min(230px, calc(100% - 196px));
+  min-width: 150px;
+  background: rgba(14, 20, 36, 0.86);
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.target-frame .bar {
+  height: 12px;
+  margin: 4px 0;
+}
+.war-strip {
+  top: auto;
+  bottom: 150px;
+  left: 8px;
+  right: auto;
+  width: calc(100% - 16px);
+  max-width: 340px;
+  border-color: var(--fac);
+}
+.ws-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.ws-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.ws-chip .bar {
+  flex: 1;
+  height: 8px;
+  margin: 0;
+}
+.ws-chip[data-faction='aurex'] .bar-fill {
+  background: #f4b740;
+}
+.ws-chip[data-faction='vessari'] .bar-fill {
+  background: #a77bff;
+}
+.ws-chip[data-faction='kreth'] .bar-fill {
+  background: #3fd0e0;
+}
+.ws-line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.ws-line b {
+  color: var(--fac);
+}
+.ws-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+.btn-row.tight {
+  margin-top: 6px;
+}
+.btn-row.tight .btn {
+  min-height: 40px;
+  flex: 1 1 80px;
+}
+.chat-peek {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: calc(100% - 120px);
+  max-width: 300px;
+  min-height: 44px;
+  max-height: 70px;
+  overflow: hidden;
+  background: rgba(14, 20, 36, 0.7);
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.chat-line {
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-list .chat-line {
+  white-space: normal;
+  padding: 3px 0;
+  font-size: 14px;
+}
+.ch-system {
+  color: var(--muted);
+  font-style: italic;
+}
+.unread {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-style: normal;
+  background: var(--enemy);
+  color: #fff;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  text-align: center;
+  line-height: 18px;
+}
+.chat-list {
+  height: 46dvh;
+  overflow-y: auto;
+  background: var(--bg-deep);
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+.hud-ability {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(circle at 35% 30%, var(--fac), color-mix(in srgb, var(--fac) 55%, #000));
+  color: var(--fac-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.hud-ability b {
+  font-family: var(--display);
+  font-stretch: condensed;
+  font-size: 14px;
+  line-height: 1.05;
+}
+.hud-ability span {
+  font-size: 12px;
+  font-weight: 700;
+}
+.hud-ability:disabled {
+  filter: grayscale(0.7) brightness(0.7);
+}
+.dead-veil {
+  position: absolute;
+  inset: 40% 10% auto;
+  text-align: center;
+  background: rgba(58, 35, 32, 0.9);
+  padding: 12px;
+  font-weight: 700;
+}
+.invite-pop {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  width: min(320px, calc(100% - 24px));
+  background: var(--panel);
+  border: 2px solid var(--fac);
+  padding: 14px;
+  z-index: 40;
+}
+.party-row {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.party-row .btn {
+  align-self: flex-start;
+  min-height: 36px;
+  margin-top: 4px;
+}
+@media (max-height: 640px) {
+  .hud-ability {
+    width: 82px;
+    height: 82px;
+  }
+  .war-strip {
+    bottom: 120px;
+  }
+}

@@ -1,13 +1,14 @@
-// Test harness: runs the real server as a child process and talks to it through socket.io-client,
-// exactly like the Android and browser clients do.
+// Test harness: runs the real server (Node host) as a child process, or targets an external
+// server via TEST_URL (e.g. `wrangler dev`), and talks to it over WebSockets exactly like the
+// Android and browser clients do.
 import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { io, type Socket } from 'socket.io-client';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+export const EXTERNAL = process.env.TEST_URL || '';
 
 export class TestServer {
   proc: ChildProcess | null = null;
@@ -18,12 +19,14 @@ export class TestServer {
     this.db = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'chipfall-test-')), 'test.db');
   }
   get url() {
-    return `http://127.0.0.1:${this.port}`;
+    return EXTERNAL || `http://127.0.0.1:${this.port}`;
+  }
+  get canRestart() {
+    return !EXTERNAL;
   }
   async start() {
-    // Run the server in-process with the tsx loader (no wrapper process), so a SIGKILL
-    // really kills the server — that is how the crash/restart test simulates a hard crash.
-    this.proc = spawn(process.execPath, ['--import', 'tsx', path.join(ROOT, 'server/src/index.ts'), `--port=${this.port}`, `--db=${this.db}`, '--host=127.0.0.1'], {
+    if (EXTERNAL) return;
+    this.proc = spawn(process.execPath, ['--import', 'tsx', path.join(ROOT, 'server/src/node.ts'), `--port=${this.port}`, `--db=${this.db}`, '--host=127.0.0.1'], {
       cwd: ROOT,
       env: { ...process.env, QUIET: '1', SCHEDULED_WARS: '0', WAR_TARGET_PER_FACTION: '6', NODE_NO_WARNINGS: '1' },
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
@@ -57,57 +60,114 @@ export class TestServer {
   }
 }
 
+export class RpcError extends Error {}
+
 export class TestClient {
-  socket: Socket;
+  ws: WebSocket | null = null;
   token: string | null = null;
+  connected = false;
+  manual = false;
   events: Record<string, any[]> = {};
   player: any = null;
   war: any = null;
   dungeon: any = null;
   trades: any[] = [];
-  constructor(public url: string, public label: string) {
-    this.socket = io(url, { transports: ['websocket'], autoConnect: false, reconnectionDelay: 300 });
-    for (const ev of ['player', 'war', 'dungeon', 'trades', 'warResult', 'toast', 'market', 'hello']) {
-      this.socket.on(ev, (data: any) => {
-        (this.events[ev] ??= []).push(data);
-        if (ev === 'player') this.player = data;
-        if (ev === 'war') this.war = data;
-        if (ev === 'dungeon') this.dungeon = data;
-        if (ev === 'trades') this.trades = data;
-      });
-    }
-  }
-  /** Like the real client: keep the session token in the handshake so automatic reconnects re-authenticate. */
+  snap: any = null;
+  private seq = 1;
+  private pending = new Map<number, { resolve: (v: any) => void; reject: (e: any) => void }>();
+  private helloWaiters: Array<() => void> = [];
+
+  constructor(public url: string, public label: string) {}
+
   setToken(token: string) {
     this.token = token;
-    this.socket.auth = { token };
   }
+
   connect(): Promise<void> {
-    this.socket.auth = this.token ? { token: this.token } : {};
+    this.manual = false;
     return new Promise((resolve, reject) => {
       const t = setTimeout(() => reject(new Error(`${this.label}: connect timeout`)), 8000);
-      const onC = () => {
+      this.helloWaiters.push(() => {
         clearTimeout(t);
-        this.socket.off('connect', onC);
         resolve();
-      };
-      this.socket.on('connect', onC);
-      this.socket.connect();
-    });
-  }
-  disconnect() {
-    this.socket.disconnect();
-  }
-  rpc<T = any>(method: string, params: any = {}): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`${this.label}: ${method} timed out`)), 15000);
-      this.socket.emit('rpc', method, params, (r: any) => {
-        clearTimeout(t);
-        if (r.ok) resolve(r.data);
-        else reject(new RpcError(r.error));
       });
+      this.open();
     });
   }
+
+  private open() {
+    const ws = new WebSocket(this.url.replace(/^http/, 'ws') + '/ws');
+    this.ws = ws;
+    let sentAuth = false;
+    ws.onmessage = (ev) => {
+      const m = JSON.parse(String(ev.data));
+      if (m.t === 'hello') {
+        if (this.token && !sentAuth) {
+          sentAuth = true;
+          ws.send(JSON.stringify({ t: 'auth', token: this.token }));
+          return;
+        }
+        this.connected = true;
+        const w = this.helloWaiters;
+        this.helloWaiters = [];
+        w.forEach((f) => f());
+      } else if (m.t === 'res') {
+        const p = this.pending.get(m.id);
+        if (p) {
+          this.pending.delete(m.id);
+          if (m.ok) p.resolve(m.data);
+          else p.reject(new RpcError(m.error));
+        }
+      } else if (m.t === 'ev') {
+        (this.events[m.e] ??= []).push(m.d);
+        if (this.events[m.e].length > 200) this.events[m.e].shift();
+        if (m.e === 'player') this.player = m.d;
+        if (m.e === 'war') this.war = m.d;
+        if (m.e === 'dungeon') this.dungeon = m.d;
+        if (m.e === 'trades') this.trades = m.d;
+        if (m.e === 'snap') this.snap = m.d;
+      }
+    };
+    ws.onclose = () => {
+      this.connected = false;
+      if (!this.manual) setTimeout(() => !this.manual && this.open(), 300);
+    };
+    ws.onerror = () => {};
+  }
+
+  disconnect() {
+    this.manual = true;
+    this.connected = false;
+    this.ws?.close();
+  }
+
+  /** Sends an RPC without waiting for the answer (used to simulate a crash mid-request). */
+  fire(method: string, params: any = {}) {
+    this.ws?.send(JSON.stringify({ t: 'rpc', id: this.seq++, m: method, p: params }));
+  }
+
+  async rpc<T = any>(method: string, params: any = {}): Promise<T> {
+    await this.waitFor(() => this.connected, 15000, `${method}: connection`);
+    return new Promise((resolve, reject) => {
+      const id = this.seq++;
+      const t = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${this.label}: ${method} timed out`));
+      }, 15000);
+      this.pending.set(id, {
+        resolve: (v) => {
+          clearTimeout(t);
+          resolve(v);
+        },
+        reject: (e) => {
+          clearTimeout(t);
+          reject(e);
+        },
+      });
+      this.ws!.send(JSON.stringify({ t: 'rpc', id, m: method, p: params }));
+    });
+  }
+
   async rpcErr(method: string, params: any = {}): Promise<string> {
     try {
       await this.rpc(method, params);
@@ -117,28 +177,29 @@ export class TestClient {
     }
     throw new Error(`${this.label}: expected ${method} to fail`);
   }
+
   async login(username: string, password = 'chipfall') {
     const r = await this.rpc('auth.login', { username, password });
     this.setToken(r.token);
     await this.waitFor(() => this.player);
     return r;
   }
+
   async me() {
     this.player = await this.rpc('player.get');
     return this.player;
   }
+
   async waitFor<T>(fn: () => T | undefined | null | false, ms = 15000, what = 'condition'): Promise<T> {
     const start = Date.now();
     while (Date.now() - start < ms) {
       const v = fn();
       if (v) return v as T;
-      await sleep(100);
+      await sleep(50);
     }
     throw new Error(`${this.label}: timed out waiting for ${what}`);
   }
 }
-
-export class RpcError extends Error {}
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
